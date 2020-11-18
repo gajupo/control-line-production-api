@@ -21,6 +21,7 @@
   "license": "UNLICENSED",
   "homepage": "https://bitbucket.org/virtualidevs/simpl-dashboard-api#readme",
   "dependencies": {
-    "express": "^4.17.1"
+    "express": "^4.17.1",
+    "sequelize": "^6.3.5"
   }
 }
