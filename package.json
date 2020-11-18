@@ -1,0 +1,26 @@
+{
+  "name": "simpl-dashboard-api",
+  "version": "0.0.1",
+  "description": "REST api to display production information in a dashboard panel",
+  "main": "app.js",
+  "scripts": {
+    "test": "test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@bitbucket.org/virtualidevs/simpl-dashboard-api.git"
+  },
+  "keywords": [
+    "api",
+    "virtualis",
+    "dashboard",
+    "rest",
+    "sqlserver"
+  ],
+  "author": "Virtualis",
+  "license": "UNLICENSED",
+  "homepage": "https://bitbucket.org/virtualidevs/simpl-dashboard-api#readme",
+  "dependencies": {
+    "express": "^4.17.1"
+  }
+}
