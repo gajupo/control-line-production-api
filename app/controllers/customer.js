@@ -2,11 +2,17 @@
 
 const {Customer} = require("../models/customer");
 
-async function getCustomerList(req, res) {
+async function getCustomerList(req, res, next) {
 
-    const customers = Customer.findAll();
-
-    res.send(JSON.stringify(customers, null, 2));
+    try {
+        const customers = await Customer.findAll( {
+            attributes: ['id', 'customerNumber', 'customerName']
+        });
+        res.send(JSON.stringify(customers, null, 2));
+    }
+    catch(error) {
+        next(error);
+    }
 }
 
 module.exports.getCustomerList = getCustomerList;
