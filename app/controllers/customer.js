@@ -2,7 +2,7 @@
 
 const {Customer} = require("../models/customer");
 
-async function getCustomerList(req, res, next) {
+async function getCustomerList(res, next) {
 
     try {
         const customers = await Customer.findAll( {

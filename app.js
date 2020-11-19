@@ -7,7 +7,7 @@ const port = 3000;
 const {getCustomerList} = require("./app/controllers/customer");
 
 app.get('/customers', async (req, res, next) => {
-    await getCustomerList(req, res, next);
+    await getCustomerList(res, next);
 });
 
 app.listen(port, () => {
