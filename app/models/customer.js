@@ -1,12 +1,11 @@
 'use strict';
 
-const config = require('config');
 const {DataTypes, Model} = require('sequelize');
 const {sequelize} = require("../helpers/sequelize");
 
-class Cliente extends Model {}
+class Customer extends Model {}
 
-Cliente.init({
+Customer.init({
     customerNumber: {
         type: DataTypes.STRING,
         allowNull: false,
@@ -60,7 +59,8 @@ Cliente.init({
     }
 }, {
     tableName: 'Customers',
+    timestamps: false,
     sequelize
 });
 
-module.exports.Customer = Cliente;
+module.exports.Customer = Customer;
