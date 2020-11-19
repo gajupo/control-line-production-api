@@ -1,6 +1,7 @@
 'use strict';
 
 const config = require('config');
+const {DataTypes, Model} = require('sequelize');
 const {sequelize} = require("../helpers/sequelize");
 
 class Cliente extends Model {}

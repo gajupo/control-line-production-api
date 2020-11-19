@@ -1,8 +1,8 @@
 'use strict';
 
 const config = require('config');
+const {Sequelize} = require('sequelize');
 
-const {Sequelize, DataTypes, Model} = require('sequelize');
 const sequelize = new Sequelize(
     config.get("database.name"),
     config.get("database.user"),
