@@ -1,10 +1,15 @@
 'use strict';
 
+const config = require('config');
+
 const {Sequelize, DataTypes, Model} = require('sequelize');
-const sequelize = new Sequelize('PASSIMPLEDB_DEV.MDF', 'virtualis', 'a@V]eH38/z', {
+const sequelize = new Sequelize(
+    config.get("database.name"),
+    config.get("database.user"),
+    config.get("database.password"), {
     dialect: 'mssql',
-    host: 'localhost',
-    port: '55948'
+    host: config.get("database.host"),
+    port: config.get("database.port")
 });
 
 class Cliente extends Model {}
@@ -65,3 +70,5 @@ Cliente.init({
     tableName: 'Customers',
     sequelize
 });
+
+module.exports.Customer = Cliente;
