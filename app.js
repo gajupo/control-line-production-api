@@ -4,8 +4,10 @@ const express = require('express');
 const app = express();
 const port = 3000;
 
-app.get('/', (req, res) => {
-    res.send('SIMPL Dashboard API');
+const {getCustomerList} = require("./app/controllers/customer");
+
+app.get('/customers', async (req, res, next) => {
+    await getCustomerList(req, res, next);
 });
 
 app.listen(port, () => {
