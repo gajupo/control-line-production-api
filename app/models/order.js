@@ -22,10 +22,6 @@ Order.init({
         type: DataTypes.DATE,
         allowNull: false
     },
-    // operatingStationId: {
-    //     type: DataTypes.INTEGER,
-    //     allowNull: false
-    // },
     active: {
         type: DataTypes.TINYINT,
         allowNull: true
@@ -38,10 +34,6 @@ Order.init({
         type: DataTypes.INTEGER,
         allowNull: false
     },
-    // shiftId: {
-    //     type: DataTypes.INTEGER,
-    //     allowNull: false
-    // }
 }, {
     tableName: 'Orders',
     timestamps: false,

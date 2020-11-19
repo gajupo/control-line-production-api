@@ -10,10 +10,6 @@ OperatingStation.init({
         type: DataTypes.STRING,
         allowNull: false
     },
-    // lineId : {
-    //     type: DataTypes.INTEGER,
-    //     allowNull: false
-    // },
     status : {
         type: DataTypes.TINYINT,
         allowNull: false
