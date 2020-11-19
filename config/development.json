@@ -4,6 +4,7 @@
         "host": "localhost",
         "port": "55948",
         "name": "PASSIMPLEDB_DEV.MDF",
-        "user": "virtualis"
+        "user": "virtualis",
+        "password": "MAIL_PASSWORD"
     }
 }
