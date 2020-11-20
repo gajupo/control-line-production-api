@@ -1,9 +1,9 @@
 'use strict';
 
-const {DataTypes, Model, TINYINT} = require('sequelize');
+const {DataTypes, Model} = require('sequelize');
 const {sequelize} = require("../helpers/sequelize");
 
-class Order extends Model {}
+class Order extends Model {};
 
 Order.init({
     orderIdentifier: {

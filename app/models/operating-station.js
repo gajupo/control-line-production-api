@@ -3,7 +3,7 @@
 const {DataTypes, Model} = require('sequelize');
 const {sequelize} = require("../helpers/sequelize");
 
-class OperatingStation extends Model {}
+class OperatingStation extends Model {};
 
 OperatingStation.init({
     stationIdentifier: {
@@ -15,7 +15,7 @@ OperatingStation.init({
         allowNull: false
     }
 }, {
-    tableName: 'ProductionLines',
+    tableName: 'OperatingStations',
     timestamps: false,
     sequelize
 });
