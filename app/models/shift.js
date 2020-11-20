@@ -8,19 +8,23 @@ class Shift extends Model {}
 Shift.init({
     shiftDescription: {
         type: DataTypes.STRING,
-        allowNull: false
+        allowNull: false,
+        field: 'shiftDescription'
     },
     shiftStart: {
         type: DataTypes.DATE,
-        allowNull: false
+        allowNull: false,
+        field: 'ShiftStart'
     },
     shiftEnd: {
         type: DataTypes.DATE,
-        allowNull: false
+        allowNull: false,
+        field: 'ShiftEnd'
     },
     active: {
         type: DataTypes.TINYINT,
-        allowNull: false
+        allowNull: false,
+        field: 'Active'
     }
 }, {
     tableName: 'Shifts',

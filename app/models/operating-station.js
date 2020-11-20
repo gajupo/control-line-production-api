@@ -8,11 +8,13 @@ class OperatingStation extends Model {};
 OperatingStation.init({
     stationIdentifier: {
         type: DataTypes.STRING,
-        allowNull: false
+        allowNull: false,
+        field: 'StationIdentifier'
     },
     status : {
         type: DataTypes.TINYINT,
-        allowNull: false
+        allowNull: false,
+        field: 'Status'
     }
 }, {
     tableName: 'OperatingStations',

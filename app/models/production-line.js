@@ -8,15 +8,18 @@ class ProductionLine extends Model {};
 Model.init({
     lineName: {
         type: DataTypes.STRING,
-        allowNull: false
+        allowNull: false,
+        field: 'LineName'
     },
     lineDescription: {
         type: DataTypes.STRING,
-        allowNull: true
+        allowNull: true,
+        field: 'LineDescription'
     },
     status: {
         type: DataTypes.TINYINT,
-        allowNull: false
+        allowNull: false,
+        field: 'Status'
     }
 }, {
     tableName: 'ProductionLines',

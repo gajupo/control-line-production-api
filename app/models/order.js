@@ -8,31 +8,38 @@ class Order extends Model {};
 Order.init({
     orderIdentifier: {
         type: DataTypes.STRING,
-        allowNull: false
+        allowNull: false,
+        field: 'OrderIdentifier'
     },
     pasPN: {
         type: DataTypes.STRING,
-        allowNull: true
+        allowNull: true,
+        field: 'PasPN'
     },
     materialScanned: {
         type: DataTypes.INTEGER,
-        allowNull: false
+        allowNull: false,
+        field: 'MaterialScanned'
     },
     createdAt: {
         type: DataTypes.DATE,
-        allowNull: false
+        allowNull: false,
+        field: 'CreatedAt'
     },
     active: {
         type: DataTypes.TINYINT,
-        allowNull: true
+        allowNull: true,
+        field: 'Active'
     },
     isIncomplete: {
         type: DataTypes.BOOLEAN,
-        allowNull: true
+        allowNull: true,
+        field: 'IsIncomplete'
     },
     orderGoal: {
         type: DataTypes.INTEGER,
-        allowNull: false
+        allowNull: false,
+        field: 'OrderGoal'
     },
 }, {
     tableName: 'Orders',
