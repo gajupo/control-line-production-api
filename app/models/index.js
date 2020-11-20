@@ -7,19 +7,25 @@ const {Shift} = require("./shift");
 const {Customer} = require("./customer");
 
 ProductionLine.hasMany(OperatingStation, {
-    foreignKey: 'lineId'
+    foreignKey: 'LineId'
 });
-OperatingStation.belongsTo(ProductionLine);
+OperatingStation.belongsTo(ProductionLine, {
+    foreignKey: 'LineId'
+});
 
 OperatingStation.hasMany(Order, {
-    foreignKey: 'operatingStationId'
+    foreignKey: 'OperatingStationId'
 });
-Order.belongsTo(OperatingStation);
+Order.belongsTo(OperatingStation, {
+    foreignKey: 'OperatingStationId'
+});
 
 Shift.hasMany(Order, {
-    foreignKey: 'shiftId'
+    foreignKey: 'ShiftId'
 })
-Order.belongsTo(Shift);
+Order.belongsTo(Shift, {
+    foreignKey: 'ShiftId'
+});
 
 module.exports.Order = Order;
 module.exports.ProductionLine = ProductionLine;
