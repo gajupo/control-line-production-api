@@ -1,10 +1,12 @@
 'use strict';
 
-const {OperatingStation} = require("./operating-station");
-const {ProductionLine} = require("./production-line");
-const {Order} = require("./order");
-const {Shift} = require("./shift");
-const {Customer} = require("./customer");
+const { OperatingStation } = require("./operating-station");
+const { ProductionLine } = require("./production-line");
+const { Order } = require("./order");
+const { Shift } = require("./shift");
+const { Customer } = require("./customer");
+const { UserType } = require("./user-type");
+const { User } = require("./user");
 
 ProductionLine.hasMany(OperatingStation, {
     foreignKey: 'LineId'
@@ -25,6 +27,13 @@ Shift.hasMany(Order, {
 })
 Order.belongsTo(Shift, {
     foreignKey: 'ShiftId'
+});
+
+User.hasMany(UserType, {
+    foreignKey: 'UserTypeId'
+});
+UserType.belongsTo(User, {
+    foreignKey: 'UserTypeId'
 });
 
 module.exports.Order = Order;
