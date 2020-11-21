@@ -7,7 +7,7 @@ async function getActiveStopCauseLogs(res, next) {
         const stopCauseLogs = StopCauseLog.findAll({
             where: { status: true }
         });
-        res.send(stopCauseLogs.toJSON());
+        res.send(JSON.stringify(stopCauseLogs, null, 2));
     }
     catch(error) {
         next(error);
@@ -16,10 +16,11 @@ async function getActiveStopCauseLogs(res, next) {
 
 async function getStopCauseLogsRecord(res, next) {
     try {
-        const historicCauseLog = StopCauseLog.findAll({
+        const recordCauseLog = StopCauseLog.findAll({
             where: { status: false },
             limit: 10
         });
+        res.send(JSON.stringify(recordCauseLog, null, 2));
     }
     catch(error) {
         next(error);
