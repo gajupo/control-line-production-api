@@ -7,6 +7,7 @@ const Shift = require("./shift");
 const Customer = require("./customer");
 const  UserType = require("./user-type");
 const  User = require("./user");
+const  StopCauseLog = require("./stop-cause-log");
 
 ProductionLine.hasMany(OperatingStation, {
     foreignKey: 'LineId'
@@ -43,3 +44,4 @@ module.exports.Customer = Customer;
 module.exports.UserType = UserType;
 module.exports.Shift = Shift;
 module.exports.User = User;
+module.exports.StopCauseLog = StopCauseLog;
