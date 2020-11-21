@@ -3,9 +3,7 @@
 const {DataTypes, Model} = require('sequelize');
 const {sequelize} = require("../helpers/sequelize");
 
-class Order extends Model {};
-
-Order.init({
+module.exports = sequelize.define({
     orderIdentifier: {
         type: DataTypes.STRING,
         allowNull: false,
@@ -40,11 +38,9 @@ Order.init({
         type: DataTypes.INTEGER,
         allowNull: false,
         field: 'OrderGoal'
-    },
+    }
 }, {
     tableName: 'Orders',
     timestamps: false,
     sequelize
 });
-
-module.exports.Order = Order;
