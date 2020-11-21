@@ -1,10 +1,10 @@
 'use strict';
 
-const { OperatingStation } = require("./operating-station");
-const { ProductionLine } = require("./production-line");
-const { Order } = require("./order");
-const { Shift } = require("./shift");
-const { Customer } = require("./customer");
+const OperatingStation = require("./operating-station");
+const ProductionLine = require("./production-line");
+const Order = require("./order");
+const Shift = require("./shift");
+const Customer = require("./customer");
 const  UserType = require("./user-type");
 const  User = require("./user");
 
@@ -40,3 +40,6 @@ module.exports.Order = Order;
 module.exports.ProductionLine = ProductionLine;
 module.exports.OperatingStation = OperatingStation;
 module.exports.Customer = Customer;
+module.exports.UserType = UserType;
+module.exports.Shift = Shift;
+module.exports.User = User;
