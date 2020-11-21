@@ -67,6 +67,13 @@ StopCauseLog.belongsTo(Order, {
     foreignKey: 'OrderId'
 });
 
+OperatingStation.hasMany(StopCauseLog, {
+    foreignKey: 'StationId'
+});
+StopCauseLog.belongsTo(OperatingStation, {
+    foreignKey: 'StationId'
+});
+
 module.exports.Order = Order;
 module.exports.ProductionLine = ProductionLine;
 module.exports.OperatingStation = OperatingStation;

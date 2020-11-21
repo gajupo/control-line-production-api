@@ -1,6 +1,6 @@
 'use strict';
 
-const { StopCauseLog, User, Order } = require("../models");
+const { StopCauseLog, User, Order, OperatingStation } = require("../models");
 
 async function getActiveStopCauseLogs(res, next) {
     try {
@@ -27,6 +27,8 @@ async function getStopCauseLogsRecord(res, next) {
                 as: 'Resolver'
             }, {
                 model: Order
+            }, {
+                model: OperatingStation
             }]
         });
         res.send(JSON.stringify(recordCauseLog, null, 2));
