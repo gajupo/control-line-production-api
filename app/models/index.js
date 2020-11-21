@@ -41,7 +41,8 @@ User.hasMany(StopCauseLog, {
     foreignKey: 'UserId'
 });
 StopCauseLog.belongsTo(User, {
-    foreignKey: 'UserId'
+    foreignKey: 'UserId',
+    as: 'User'
 });
 
 OperatingStation.hasMany(StopCauseLog, {
@@ -55,7 +56,8 @@ User.hasMany(StopCauseLog, {
     foreignKey: 'ResolverId'
 });
 StopCauseLog.belongsTo(User, {
-    foreignKey: 'ResolverId'
+    foreignKey: 'ResolverId',
+    as: 'Resolver'
 });
 
 Order.hasMany(StopCauseLog, {

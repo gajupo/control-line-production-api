@@ -1,11 +1,11 @@
 'use strict';
 
-const { StopCauseLog } = require("../models");
+const { StopCauseLog, User, Order } = require("../models");
 
 async function getActiveStopCauseLogs(res, next) {
     try {
-        const stopCauseLogs = StopCauseLog.findAll({
-            where: { status: true }
+        const stopCauseLogs = await StopCauseLog.findAll({
+            where: { Status: true }
         });
         res.send(JSON.stringify(stopCauseLogs, null, 2));
     }
@@ -16,9 +16,18 @@ async function getActiveStopCauseLogs(res, next) {
 
 async function getStopCauseLogsRecord(res, next) {
     try {
-        const recordCauseLog = StopCauseLog.findAll({
+        const recordCauseLog = await StopCauseLog.findAll({
             where: { status: false },
-            limit: 10
+            limit: 10,
+            include: [{
+                model: User,
+                as: 'User'
+            }, {
+                model: User,
+                as: 'Resolver'
+            }, {
+                model: Order
+            }]
         });
         res.send(JSON.stringify(recordCauseLog, null, 2));
     }
