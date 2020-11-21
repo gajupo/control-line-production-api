@@ -3,7 +3,7 @@
 const {DataTypes, Model} = require('sequelize');
 const {sequelize} = require("../helpers/sequelize");
 
-module.exports = sequelize.define({
+module.exports = sequelize.define('Order', {
     orderIdentifier: {
         type: DataTypes.STRING,
         allowNull: false,
