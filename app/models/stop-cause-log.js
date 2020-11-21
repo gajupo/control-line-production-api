@@ -24,10 +24,10 @@ module.exports = sequelize.define('StopCauseLog', {
         allowNull: false,
         field: 'Status'
     },
-    stopCauseKeys: {
+    stopCausesKeys: {
         type: DataTypes.STRING,
         allowNull: true,
-        field: 'StopCauseKeys'
+        field: 'StopCausesKeys'
     },
     notificationSent: {
         type: DataTypes.BOOLEAN,
