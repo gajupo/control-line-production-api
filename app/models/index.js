@@ -5,9 +5,9 @@ const ProductionLine = require("./production-line");
 const Order = require("./order");
 const Shift = require("./shift");
 const Customer = require("./customer");
-const  UserType = require("./user-type");
-const  User = require("./user");
-const  StopCauseLog = require("./stop-cause-log");
+const UserType = require("./user-type");
+const User = require("./user");
+const StopCauseLog = require("./stop-cause-log");
 
 ProductionLine.hasMany(OperatingStation, {
     foreignKey: 'LineId'
@@ -35,6 +35,34 @@ User.hasMany(UserType, {
 });
 UserType.belongsTo(User, {
     foreignKey: 'UserTypeId'
+});
+
+User.hasMany(StopCauseLog, {
+    foreignKey: 'UserId'
+});
+StopCauseLog.belongsTo(User, {
+    foreignKey: 'UserId'
+});
+
+OperatingStation.hasMany(StopCauseLog, {
+    foreignKey: 'StationId'
+});
+StopCauseLog.belongsTo(OperatingStation, {
+    foreignKey: 'StationId'
+});
+
+User.hasMany(StopCauseLog, {
+    foreignKey: 'ResolverId'
+});
+StopCauseLog.belongsTo(User, {
+    foreignKey: 'ResolverId'
+});
+
+Order.hasMany(StopCauseLog, {
+    foreignKey: 'OrderId'
+});
+StopCauseLog.belongsTo(Order, {
+    foreignKey: 'OrderId'
 });
 
 module.exports.Order = Order;
