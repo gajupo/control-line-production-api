@@ -3,9 +3,7 @@
 const {DataTypes, Model} = require('sequelize');
 const {sequelize} = require("../helpers/sequelize");
 
-class OperatingStation extends Model {};
-
-OperatingStation.init({
+module.exports = sequelize.define('OperatingStation', {
     stationIdentifier: {
         type: DataTypes.STRING,
         allowNull: false,
@@ -21,5 +19,3 @@ OperatingStation.init({
     timestamps: false,
     sequelize
 });
-
-module.exports.OperatingStation = OperatingStation;

@@ -3,9 +3,7 @@
 const {DataTypes, Model} = require('sequelize');
 const {sequelize} = require("../helpers/sequelize");
 
-class ProductionLine extends Model {};
-
-Model.init({
+modules.export = sequelize.define({
     lineName: {
         type: DataTypes.STRING,
         allowNull: false,
@@ -26,5 +24,3 @@ Model.init({
     timestamps: false,
     sequelize
 });
-
-module.exports.ProductionLine = ProductionLine;

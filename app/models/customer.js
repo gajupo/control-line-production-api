@@ -3,9 +3,7 @@
 const {DataTypes, Model} = require('sequelize');
 const {sequelize} = require("../helpers/sequelize");
 
-class Customer extends Model {}
-
-Customer.init({
+module.exports = sequelize.define('Customer', {
     customerNumber: {
         type: DataTypes.STRING,
         allowNull: false,
@@ -62,5 +60,3 @@ Customer.init({
     timestamps: false,
     sequelize
 });
-
-module.exports.Customer = Customer;

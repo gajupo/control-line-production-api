@@ -3,9 +3,7 @@
 const {DataTypes, Model} = require('sequelize');
 const {sequelize} = require("../helpers/sequelize");
 
-class StopCauseLog extends Model {};
-
-StopCauseLog.init({
+module.exports = sequelize.define('StopCauseLog', {
     createdDate: {
         type: DataTypes.DATE,
         allowNull: false,

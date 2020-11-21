@@ -3,13 +3,11 @@
 const {DataTypes, Model} = require('sequelize');
 const {sequelize} = require("../helpers/sequelize");
 
-class Shift extends Model {}
-
-Shift.init({
+module.exports = sequelize.define({
     shiftDescription: {
         type: DataTypes.STRING,
         allowNull: false,
-        field: 'shiftDescription'
+        field: 'ShiftDescription'
     },
     shiftStart: {
         type: DataTypes.DATE,
@@ -22,7 +20,7 @@ Shift.init({
         field: 'ShiftEnd'
     },
     active: {
-        type: DataTypes.TINYINT,
+        type: DataTypes.BOOLEAN,
         allowNull: false,
         field: 'Active'
     }
@@ -31,5 +29,3 @@ Shift.init({
     timestamps: false,
     sequelize
 });
-
-module.exports.Shift = Shift;
