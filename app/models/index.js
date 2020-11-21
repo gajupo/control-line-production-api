@@ -5,8 +5,8 @@ const { ProductionLine } = require("./production-line");
 const { Order } = require("./order");
 const { Shift } = require("./shift");
 const { Customer } = require("./customer");
-const { UserType } = require("./user-type");
-const { User } = require("./user");
+const  UserType = require("./user-type");
+const  User = require("./user");
 
 ProductionLine.hasMany(OperatingStation, {
     foreignKey: 'LineId'
