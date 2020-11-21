@@ -3,9 +3,7 @@
 const {DataTypes, Model} = require('sequelize');
 const {sequelize} = require("../helpers/sequelize");
 
-class UserType extends Model {};
-
-UserType.init({
+module.exports = sequelize.define('UserType', {
     name: {
         type: DataTypes.STRING,
         allowNull: false,
