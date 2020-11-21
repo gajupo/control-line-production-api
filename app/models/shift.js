@@ -3,7 +3,7 @@
 const {DataTypes, Model} = require('sequelize');
 const {sequelize} = require("../helpers/sequelize");
 
-module.exports = sequelize.define({
+module.exports = sequelize.define('Shift', {
     shiftDescription: {
         type: DataTypes.STRING,
         allowNull: false,
