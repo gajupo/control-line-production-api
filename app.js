@@ -6,7 +6,7 @@ const port = 3000;
 
 const { getCustomerList } = require("./app/controllers/customer");
 const { getCurrentOrders } = require("./app/controllers/orders");
-const { getActiveStopCauseLogs } = require("./app/controllers/stop-cause-log");
+const { getActiveStopCauseLogs, getStopCauseLogsRecord } = require("./app/controllers/stop-cause-log");
 
 app.get('/customers', async (req, res, next) => {
     await getCustomerList(res, next);
@@ -18,6 +18,10 @@ app.get('/orders', async (req, res, next) => {
 
 app.get('/stopcauselogs', async (req, res, next) => {
     await getActiveStopCauseLogs(res, next);
+});
+
+app.get('/stopcauselogs/historical', async (req, res, next) => {
+    await getStopCauseLogsRecord(res, next);
 });
 
 app.listen(port, () => {
