@@ -3,7 +3,7 @@
 const {DataTypes, Model} = require('sequelize');
 const {sequelize} = require("../helpers/sequelize");
 
-modules.export = sequelize.define('ProductionLine', {
+module.exports = sequelize.define('ProductionLine', {
     lineName: {
         type: DataTypes.STRING,
         allowNull: false,
