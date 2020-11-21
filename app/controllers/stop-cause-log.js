@@ -1,6 +1,6 @@
 'use strict';
 
-const { StopCauseLog, User, Order, OperatingStation } = require("../models");
+const { StopCauseLog, User, Order, OperatingStation, Shift } = require("../models");
 
 async function getActiveStopCauseLogs(res, next) {
     try {
@@ -26,7 +26,10 @@ async function getStopCauseLogsRecord(res, next) {
                 model: User,
                 as: 'Resolver'
             }, {
-                model: Order
+                model: Order,
+                include: [{
+                    model: Shift
+                }]
             }, {
                 model: OperatingStation
             }]
