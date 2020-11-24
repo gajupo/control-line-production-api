@@ -11,10 +11,12 @@ async function getActiveStopCauseLogs(res, next) {
         const stopCauseLogs = await StopCauseLog.findAll({
             where: { Status: true }
         });
+        const payload = stopCauseLogs.map(p => p.dataValues);
+
+        logMessage("getActiveStopCauseLogs consumed", payload);
         res.send(JSON.stringify(stopCauseLogs, null, 2));
     }
-    catch(error)
-    {
+    catch(error) {
         logError("Error in getActiveStopCauseLogs", error);
         next(error);
     }
@@ -40,10 +42,12 @@ async function getStopCauseLogsRecord(res, next) {
                 model: OperatingStation
             }]
         });
+        const payload = recordCauseLog.map(p => p.dataValues);
+
+        logMessage("getStopCauseLogsRecord consumed", payload);
         res.send(JSON.stringify(recordCauseLog, null, 2));
     }
-    catch(error)
-    {
+    catch(error) {
         logError("Error in getStopCauseLogsRecord", error);
         next(error);
     }
@@ -62,6 +66,7 @@ async function unblockLine(req, res, next) {
         if (stoppedLine) {
             var actualizados = await updateStoppedLine(stoppedLine.id);
             if (actualizados) {
+                logMessage("unblockLine consumed", recordCauseLog.dataValues);
                 successfulOperation(`The operating station ${stationIdentifier} was unblocked succesfully`, res);
             }
             else {
@@ -72,8 +77,7 @@ async function unblockLine(req, res, next) {
             notFoundError(`A blocked operating station with the identifier ${stationIdentifier} was not found`, res);
         }
     }
-    catch(error)
-    {
+    catch(error) {
         logError("Error in unblockLine", error);
         next(error);
     }
