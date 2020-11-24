@@ -3,6 +3,7 @@
 const Hoek = require('@hapi/hoek');
 const {sequelize} = require("../helpers/sequelize");
 const { StopCauseLog, User, Order, OperatingStation, Shift } = require("../models");
+const { notFoundError } = require("./core");
 
 async function getActiveStopCauseLogs(res, next) {
     try {
@@ -58,8 +59,7 @@ async function unblockLine(req, res, next) {
             res.send(JSON.stringify(actualizados, null, 2));
         }
         else{
-            // TODO: Send error 404.
-            res.send(JSON.stringify(stoppedLine, null, 2));
+            notFoundError(`A blocked line with the operating station with the identifier ${stationIdentifier} was not found`, res);
         }
     }
     catch(error) {

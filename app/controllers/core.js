@@ -7,7 +7,7 @@ function notFoundError(message, res) {
         error: 'Not found',
         message: message
     }
-    res.status(404).send(response);
+    res.status(404).send(JSON.stringify(response, null, 2));
 }
 
 module.exports.notFoundError = notFoundError;
