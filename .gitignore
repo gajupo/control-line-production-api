@@ -135,3 +135,6 @@ sw.*
 .vscode
 # Deploy script for DEV ENV
 deploy.sh
+
+# Log files
+app/logs

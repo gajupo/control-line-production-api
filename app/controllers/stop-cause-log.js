@@ -2,6 +2,7 @@
 
 const Hoek = require('@hapi/hoek');
 const {sequelize} = require("../helpers/sequelize");
+const { logError, logMessage } = require('../helpers/logger');
 const { StopCauseLog, User, Order, OperatingStation, Shift } = require("../models");
 const { notFoundError, successfulOperation } = require("./core");
 
@@ -12,7 +13,9 @@ async function getActiveStopCauseLogs(res, next) {
         });
         res.send(JSON.stringify(stopCauseLogs, null, 2));
     }
-    catch(error) {
+    catch(error)
+    {
+        logError("Error in getActiveStopCauseLogs", error);
         next(error);
     }
 }
@@ -39,7 +42,9 @@ async function getStopCauseLogsRecord(res, next) {
         });
         res.send(JSON.stringify(recordCauseLog, null, 2));
     }
-    catch(error) {
+    catch(error)
+    {
+        logError("Error in getStopCauseLogsRecord", error);
         next(error);
     }
 }
@@ -67,7 +72,9 @@ async function unblockLine(req, res, next) {
             notFoundError(`A blocked operating station with the identifier ${stationIdentifier} was not found`, res);
         }
     }
-    catch(error) {
+    catch(error)
+    {
+        logError("Error in unblockLine", error);
         next(error);
     }
 }
