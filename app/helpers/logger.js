@@ -7,7 +7,7 @@ const logger = createLogger({
     level: 'info',
     format: format.combine(
         format.timestamp({
-            format: config.get("logging.dateFormat")
+            format: config.get("logger.dateFormat")
         }),
         format.splat(),
         format.json(),
@@ -15,8 +15,8 @@ const logger = createLogger({
     ),
     defaultMeta: { service: config.get("name") },
     transports: [
-        new transports.File({ filename: config.get("logging.errorFile"), level: 'error' }),
-        new transports.File({ filename: config.get("logging.combinedFile") }),
+        new transports.File({ filename: config.get("logger.errorFile"), level: 'error' }),
+        new transports.File({ filename: config.get("logger.combinedFile") }),
     ],
 });
 
