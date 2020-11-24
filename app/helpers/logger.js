@@ -1,21 +1,22 @@
 'use strict';
 
+const config = require('config');
 const {createLogger, format, transports} = require('winston');
 
 const logger = createLogger({
     level: 'info',
     format: format.combine(
         format.timestamp({
-            format: 'YYYY-MM-DD HH:mm:ss'
+            format: config.get("logging.dateFormat")
         }),
         format.splat(),
         format.json(),
         format.prettyPrint()
     ),
-    defaultMeta: { service: 'simpl-dashboard-api' },
+    defaultMeta: { service: config.get("name") },
     transports: [
-        new transports.File({ filename: 'app/logs/error.log', level: 'error' }),
-        new transports.File({ filename: 'app/logs/combined.log' }),
+        new transports.File({ filename: config.get("logging.errorFile"), level: 'error' }),
+        new transports.File({ filename: config.get("logging.combinedFile") }),
     ],
 });
 
