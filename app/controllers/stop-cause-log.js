@@ -41,8 +41,9 @@ async function getStopCauseLogsRecord(res, next) {
     }
 }
 
-async function unblockLine(stationIdentifier, res, next) {
+async function unblockLine(req, res, next) {
     try {
+        const stationIdentifier = req.params.stationIdentifier;
         const stoppedLine = await StopCauseLog.findAll({
             include: {
                 model: OperatingStation,
