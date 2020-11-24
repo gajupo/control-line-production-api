@@ -1,15 +1,5 @@
 'use strict';
 
-function notFoundError(message, res) {
-    
-    const response = {
-        statusCode: 404,
-        error: 'Not found',
-        message: message
-    };
-    res.status(404).send(JSON.stringify(response, null, 2));
-}
-
 function successfulOperation(message, res) {
 
     const response = {
@@ -19,13 +9,24 @@ function successfulOperation(message, res) {
     res.status(200).send(JSON.stringify(response, null, 2));
 }
 
+function notFoundError(message, res) {
+
+    errorMessage(message, 'Not found', 404, res);
+}
+
 function internalServerError(message, res) {
+
+    errorMessage(message, 'Internal server error', 500, res);
+}
+
+function errorMessage(message, error, statusCode, res) {
+    
     const response = {
-        statusCode: 500,
-        error: 'Internal server error',
+        statusCode: statusCode,
+        error: error,
         message: message
     };
-    res.status(500).send(JSON.stringify(response, null, 2));
+    res.status(statusCode).send(JSON.stringify(response, null, 2));
 }
 
 module.exports.notFoundError = notFoundError;
