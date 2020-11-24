@@ -64,7 +64,7 @@ async function unblockLine(req, res, next) {
             }
         }
         else{
-            notFoundError(`A blocked line with the operating station with the identifier ${stationIdentifier} was not found`, res);
+            notFoundError(`A blocked operating station with the identifier ${stationIdentifier} was not found`, res);
         }
     }
     catch(error) {
