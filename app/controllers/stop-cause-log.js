@@ -1,6 +1,7 @@
 'use strict';
 
 const Hoek = require('@hapi/hoek');
+const {sequelize} = require("../helpers/sequelize");
 const { StopCauseLog, User, Order, OperatingStation, Shift } = require("../models");
 
 async function getActiveStopCauseLogs(res, next) {
@@ -45,18 +46,37 @@ async function getStopCauseLogsRecord(res, next) {
 async function unblockLine(req, res, next) {
     try {
         const stationIdentifier = Hoek.escapeHtml(req.params.stationIdentifier);
-        const stoppedLine = await StopCauseLog.findAll({
+        const stoppedLine = await StopCauseLog.findOne({
             include: {
                 model: OperatingStation,
                 where: { stationIdentifier: stationIdentifier }
             },
             where: { status: true }
         });
-        res.send(JSON.stringify(stoppedLine, null, 2));
+        if (stoppedLine) {
+            var actualizados = await updateStoppedLine(stoppedLine.id);
+            res.send(JSON.stringify(actualizados, null, 2));
+        }
+        else{
+            // TODO: Send error 404.
+            res.send(JSON.stringify(stoppedLine, null, 2));
+        }
     }
     catch(error) {
         next(error);
     }
+}
+
+async function updateStoppedLine(stopCauseLogId) {
+
+    var actualizados = await StopCauseLog.update({ 
+        status: false,
+        // TODO: Find a better way to do this.
+        solutionDate: sequelize.literal('CURRENT_TIMESTAMP')
+     }, {
+        where: { id: stopCauseLogId }
+    });
+    return actualizados;
 }
 
 module.exports.getActiveStopCauseLogs = getActiveStopCauseLogs;
