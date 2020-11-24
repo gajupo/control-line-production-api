@@ -60,7 +60,7 @@ async function unblockLine(req, res, next) {
                 successfulOperation(`The operating station ${stationIdentifier} was unblocked succesfully`, res);
             }
             else {
-                res.send(JSON.stringify(actualizados, null, 2));
+                internalServerError(`There was an error unblocking the operating station ${stationIdentifier}`, res);
             }
         }
         else{
