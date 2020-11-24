@@ -1,3 +1,8 @@
 {
-    "name": "simpl dashboard api"
+    "name": "simpl dashboard api",
+    "logging": {
+        "dateFormat": "YYYY-MM-DD HH:mm:ss",
+        "errorFile": "app/logs/error.log",
+        "combinedFile": "app/logs/combined.log"
+    }
 }
