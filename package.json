@@ -26,6 +26,7 @@
     "dotenv": "^8.2.0",
     "express": "^4.17.1",
     "sequelize": "^6.3.5",
-    "tedious": "^9.2.1"
+    "tedious": "^9.2.1",
+    "winston": "^3.3.3"
   }
 }
