@@ -1,5 +1,6 @@
 'use strict';
 
+const Hoek = require('@hapi/hoek');
 const { StopCauseLog, User, Order, OperatingStation, Shift } = require("../models");
 
 async function getActiveStopCauseLogs(res, next) {
@@ -43,7 +44,7 @@ async function getStopCauseLogsRecord(res, next) {
 
 async function unblockLine(req, res, next) {
     try {
-        const stationIdentifier = req.params.stationIdentifier;
+        const stationIdentifier = Hoek.escapeHtml(req.params.stationIdentifier);
         const stoppedLine = await StopCauseLog.findAll({
             include: {
                 model: OperatingStation,
