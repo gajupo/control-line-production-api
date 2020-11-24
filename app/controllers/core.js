@@ -19,5 +19,15 @@ function successfulOperation(message, res) {
     res.status(200).send(JSON.stringify(response, null, 2));
 }
 
+function internalServerError(message, res) {
+    const response = {
+        statusCode: 500,
+        error: 'Internal server error',
+        message: message
+    };
+    res.status(500).send(JSON.stringify(response, null, 2));
+}
+
 module.exports.notFoundError = notFoundError;
 module.exports.successfulOperation = successfulOperation;
+module.exports.internalServerError = internalServerError;
