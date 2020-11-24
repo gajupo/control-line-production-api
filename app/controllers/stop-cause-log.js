@@ -41,5 +41,22 @@ async function getStopCauseLogsRecord(res, next) {
     }
 }
 
+async function unblockLine(stationIdentifier, res, next) {
+    try {
+        const stoppedLine = await StopCauseLog.findAll({
+            include: {
+                model: OperatingStation,
+                where: { stationIdentifier: stationIdentifier }
+            },
+            where: { status: true }
+        });
+        res.send(JSON.stringify(stoppedLine, null, 2));
+    }
+    catch(error) {
+        next(error);
+    }
+}
+
 module.exports.getActiveStopCauseLogs = getActiveStopCauseLogs;
 module.exports.getStopCauseLogsRecord = getStopCauseLogsRecord;
+module.exports.unblockLine = unblockLine;
