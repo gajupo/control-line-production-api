@@ -12,7 +12,15 @@ async function getPaginatedReportList(page, req, res, next) {
             const errorList = error.details.map(e => e.message);
             return badRequestError(`The schema is not valid`, res, errorList);
         }
-        res.send(JSON.stringify(req.body, null, 2));
+        const {count, rows} = await Order.findAndCountAll({
+            include: [
+                { model: OperatingStation },
+                { model: Shift }
+            ],
+            limit: 10
+        });
+        console.log(`Total: ${count}, valores: ${rows}`);
+        return res.send(JSON.stringify(rows, null, 2));
     }
     catch(error) {
         next(error);
