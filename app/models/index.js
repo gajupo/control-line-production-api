@@ -83,6 +83,13 @@ Material.belongsTo(Supplier, {
     foreignKey: 'SupplierId'
 });
 
+Order.hasMany(Material, {
+    foreignKey: 'PasPN'
+});
+Material.belongsTo(Order, {
+    foreignKey: 'PasPN'
+});
+
 module.exports.Order = Order;
 module.exports.ProductionLine = ProductionLine;
 module.exports.OperatingStation = OperatingStation;
