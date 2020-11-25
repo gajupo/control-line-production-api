@@ -34,4 +34,8 @@ module.exports = sequelize.define('Material', {
         allowNull: false,
         field: 'Status'
     }
+}, {
+    tableName: 'Materials',
+    timestamps: false,
+    sequelize
 });
