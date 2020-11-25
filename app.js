@@ -5,6 +5,7 @@ var bodyParser = require('body-parser');
 
 const { getCustomerList } = require("./app/controllers/customer");
 const { getCurrentOrders } = require("./app/controllers/orders");
+const { getPaginatedReportList } = require("./app/controllers/reports");
 const { getActiveStopCauseLogs, getStopCauseLogsRecord, unblockLine } = require("./app/controllers/stop-cause-log");
 
 const app = express();
@@ -30,6 +31,10 @@ app.get('/stopcauselogs/historical', async (req, res, next) => {
 
 app.get('/unblock/:stationIdentifier', async (req, res, next) => {
     await unblockLine(req, res, next);
+});
+
+app.get('/reportlist', async (req, res, next) => {
+    await getPaginatedReportList(1, req, res, next);
 });
 
 app.listen(port, () => {
