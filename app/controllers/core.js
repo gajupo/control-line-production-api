@@ -19,9 +19,9 @@ function internalServerError(message, res) {
     errorMessage(message, 'Internal server error', 500, res);
 }
 
-function badRequestError(message, res) {
+function badRequestError(message, res, errorList = undefined) {
 
-    errorMessage(message, 'Bad request error', 400, res);
+    errorMessage(message, 'Bad request error', 400, res, errorList);
 }
 
 function errorMessage(message, description, statusCode, res, errorList = undefined) {
