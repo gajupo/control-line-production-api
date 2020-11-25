@@ -11,7 +11,7 @@ const { getActiveStopCauseLogs, getStopCauseLogsRecord, unblockLine } = require(
 const app = express();
 const port = 3000;
 
-app.use(bodyParser.json({ type: 'application/*+json' }));
+app.use(bodyParser.json())
 
 app.get('/customers', async (req, res, next) => {
     await getCustomerList(res, next);
