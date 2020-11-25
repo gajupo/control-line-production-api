@@ -24,13 +24,16 @@ function badRequestError(message, res) {
     errorMessage(message, 'Bad request error', 400, res);
 }
 
-function errorMessage(message, error, statusCode, res) {
+function errorMessage(message, description, statusCode, res, errorList = undefined) {
     
-    const response = {
+    var response = {
         statusCode: statusCode,
-        error: error,
+        error: description,
         message: message
     };
+    if (errorList) {
+        response.errorList = errorList;
+    }
     res.status(statusCode).send(JSON.stringify(response, null, 2));
 }
 
