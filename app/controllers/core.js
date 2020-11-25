@@ -19,6 +19,11 @@ function internalServerError(message, res) {
     errorMessage(message, 'Internal server error', 500, res);
 }
 
+function badRequestError(message, res) {
+
+    errorMessage(message, 'Bad request error', 400, res);
+}
+
 function errorMessage(message, error, statusCode, res) {
     
     const response = {
@@ -32,3 +37,4 @@ function errorMessage(message, error, statusCode, res) {
 module.exports.notFoundError = notFoundError;
 module.exports.successfulOperation = successfulOperation;
 module.exports.internalServerError = internalServerError;
+module.exports.badRequestError = badRequestError;
