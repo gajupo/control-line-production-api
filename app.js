@@ -1,12 +1,16 @@
 'use strict';
 
 const express = require('express');
-const app = express();
-const port = 3000;
+var bodyParser = require('body-parser');
 
 const { getCustomerList } = require("./app/controllers/customer");
 const { getCurrentOrders } = require("./app/controllers/orders");
 const { getActiveStopCauseLogs, getStopCauseLogsRecord, unblockLine } = require("./app/controllers/stop-cause-log");
+
+const app = express();
+const port = 3000;
+
+app.use(bodyParser.json({ type: 'application/*+json' }));
 
 app.get('/customers', async (req, res, next) => {
     await getCustomerList(res, next);
