@@ -11,6 +11,8 @@ const StopCauseLog = require("./stop-cause-log");
 const Supplier = require("./supplier");
 const Material = require("./material");
 
+const ReportParameterSchema = require("./schemas");
+
 ProductionLine.hasMany(OperatingStation, {
     foreignKey: 'LineId'
 });
@@ -100,3 +102,4 @@ module.exports.User = User;
 module.exports.StopCauseLog = StopCauseLog;
 module.exports.Supplier = Supplier;
 module.exports.Material = Material;
+module.exports.ReportParameterSchema = ReportParameterSchema;
