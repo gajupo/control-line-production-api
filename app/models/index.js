@@ -8,6 +8,8 @@ const Customer = require("./customer");
 const UserType = require("./user-type");
 const User = require("./user");
 const StopCauseLog = require("./stop-cause-log");
+const Supplier = require("./supplier");
+const Material = require("./material");
 
 ProductionLine.hasMany(OperatingStation, {
     foreignKey: 'LineId'
@@ -74,6 +76,13 @@ StopCauseLog.belongsTo(OperatingStation, {
     foreignKey: 'StationId'
 });
 
+Supplier.hasMany(Material, {
+    foreignKey: 'SupplierId'
+});
+Material.belongsTo(Supplier, {
+    foreignKey: 'SupplierId'
+});
+
 module.exports.Order = Order;
 module.exports.ProductionLine = ProductionLine;
 module.exports.OperatingStation = OperatingStation;
@@ -82,3 +91,5 @@ module.exports.UserType = UserType;
 module.exports.Shift = Shift;
 module.exports.User = User;
 module.exports.StopCauseLog = StopCauseLog;
+module.exports.Supplier = Supplier;
+module.exports.Material = Material;
