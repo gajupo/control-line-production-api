@@ -34,7 +34,7 @@ app.get('/unblock/:stationIdentifier', async (req, res, next) => {
 });
 
 app.get('/reportlist/:page', async (req, res, next) => {
-    await getPaginatedReportList(1, req, res, next);
+    await getPaginatedReportList(req, res, next);
 });
 
 app.listen(port, () => {

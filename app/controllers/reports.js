@@ -7,7 +7,7 @@ const { sequelize } = require("../helpers/sequelize");
 const { ValidationResult, Customer, Material, OperatingStation, ReportParameterSchema, PageParameterSchema } = require("../models");
 const { badRequestError } = require("./core");
 
-async function getPaginatedReportList(page, req, res, next) {
+async function getPaginatedReportList(req, res, next) {
 
     try {
         const {error} = ReportParameterSchema.validate(req.body);
@@ -53,7 +53,7 @@ function createWhereQuery(payload) {
 }
 
 function calculatePaginationOffset(page) {
-    
+
     const {error} = PageParameterSchema.validate({ page: page });
     if (error) {
         return 0;
