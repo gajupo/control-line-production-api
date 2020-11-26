@@ -15,9 +15,14 @@ module.exports = sequelize.define('ProductionLine', {
         field: 'LineDescription'
     },
     status: {
-        type: DataTypes.TINYINT,
+        type: DataTypes.BOOLEAN,
         allowNull: false,
         field: 'Status'
+    },
+    orderType: {
+        type: DataTypes.TINYINT,
+        allowNull: false,
+        field: 'OrderType'
     }
 }, {
     tableName: 'ProductionLines',
