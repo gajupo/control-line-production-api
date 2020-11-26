@@ -17,7 +17,7 @@ async function getPaginatedReportList(page, req, res, next) {
         }
         const where = createWhereQuery(req.body);
 
-        const {count, rows} = await ValidationResult.findAndCountAll({
+        const result = await ValidationResult.findAndCountAll({
             include: [
                 { model: Customer },
                 { model: Material },
@@ -26,7 +26,7 @@ async function getPaginatedReportList(page, req, res, next) {
             limit: 10,
             where: where
         });
-        return res.send(JSON.stringify(rows, null, 2));
+        return res.send(JSON.stringify(result, null, 2));
     }
     catch(error) {
         next(error);
@@ -36,7 +36,7 @@ async function getPaginatedReportList(page, req, res, next) {
 function createWhereQuery(payload) {
 
     var where = { };
-    if (payload.hasOwnProperty('pasPN')) {
+    if (payload.hasOwnProperty('orderIdentifier')) {
         where.orderIdentifier = payload.pasPN;
     }
     if (payload.hasOwnProperty('scanDate')) {
