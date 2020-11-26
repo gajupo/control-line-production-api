@@ -85,11 +85,12 @@ Material.belongsTo(Supplier, {
     foreignKey: 'SupplierId'
 });
 
-Order.hasMany(Material, {
+Order.hasOne(Material, {
     foreignKey: 'PasPN'
 });
 Material.belongsTo(Order, {
-    foreignKey: 'PasPN'
+    foreignKey: 'PasPN',
+    targetKey: 'pasPN'
 });
 
 module.exports.Order = Order;

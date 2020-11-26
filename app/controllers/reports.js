@@ -15,7 +15,8 @@ async function getPaginatedReportList(page, req, res, next) {
         const {count, rows} = await Order.findAndCountAll({
             include: [
                 { model: OperatingStation },
-                { model: Shift }
+                { model: Shift },
+                { model: Material }
             ],
             limit: 10
         });
