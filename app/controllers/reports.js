@@ -1,5 +1,6 @@
 'use strict';
 
+const Joi = require("joi");
 const { Op } = require("sequelize");
 const { sequelize } = require("../helpers/sequelize");
 
@@ -15,6 +16,7 @@ async function getPaginatedReportList(page, req, res, next) {
             const errorList = error.details.map(e => e.message);
             return badRequestError(`The schema is not valid`, res, errorList);
         }
+        const offset = calculatePaginationOffset(page);
         const where = createWhereQuery(req.body);
 
         const result = await ValidationResult.findAndCountAll({
@@ -24,6 +26,7 @@ async function getPaginatedReportList(page, req, res, next) {
                 { model: OperatingStation }
             ],
             limit: 10,
+            offset: offset,
             where: where
         });
         return res.send(JSON.stringify(result, null, 2));
@@ -48,5 +51,15 @@ function createWhereQuery(payload) {
     }
     return where;
 }
+
+function calculatePaginationOffset(page) {
+    const {error} = Joi.validate({ page: page });
+    if (error) {
+        return 0;
+    }
+    return (page * LIMIT) - LIMIT;
+}
+
+const LIMIT = 10;
 
 module.exports.getPaginatedReportList = getPaginatedReportList;
