@@ -20,11 +20,11 @@ OperatingStation.belongsTo(ProductionLine, {
     foreignKey: 'LineId'
 });
 
-OperatingStation.hasMany(Order, {
-    foreignKey: 'OperatingStationId'
+ProductionLine.hasMany(Order, {
+    foreignKey: 'ProductionLineId'
 });
-Order.belongsTo(OperatingStation, {
-    foreignKey: 'OperatingStationId'
+Order.belongsTo(ProductionLine, {
+    foreignKey: 'ProductionLineId'
 });
 
 Shift.hasMany(Order, {
@@ -83,14 +83,6 @@ Supplier.hasMany(Material, {
 });
 Material.belongsTo(Supplier, {
     foreignKey: 'SupplierId'
-});
-
-Order.hasOne(Material, {
-    foreignKey: 'PasPN'
-});
-Material.belongsTo(Order, {
-    foreignKey: 'PasPN',
-    targetKey: 'pasPN'
 });
 
 module.exports.Order = Order;

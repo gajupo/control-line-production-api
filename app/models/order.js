@@ -39,6 +39,11 @@ module.exports = sequelize.define('Order', {
         type: DataTypes.INTEGER,
         allowNull: false,
         field: 'OrderGoal'
+    },
+    stationIdentifier: {
+        type: DataTypes.STRING,
+        allowNull:true,
+        field: 'StationIdentifier'
     }
 }, {
     tableName: 'Orders',
