@@ -26,8 +26,6 @@ async function getPaginatedReportList(page, req, res, next) {
             limit: 10,
             where: where
         });
-        console.log(`Total: ${count}, valores: ${rows}`);
-        console.log(`Where: ${Op}`);
         return res.send(JSON.stringify(rows, null, 2));
     }
     catch(error) {
