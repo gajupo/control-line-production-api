@@ -37,12 +37,13 @@ function createWhereQuery(payload) {
 
     var where = { };
     if (payload.hasOwnProperty('orderIdentifier')) {
-        where.orderIdentifier = payload.pasPN;
+        where.orderIdentifier = payload.orderIdentifier;
     }
     if (payload.hasOwnProperty('scanDate')) {
+        const convertFunction = sequelize.fn('CONVERT', sequelize.literal('date'), sequelize.col('ScanDate'));
         where[Op.and] = [
-            sequelize.where(sequelize.fn('CONVERT', sequelize.literal('date'), sequelize.col('ScanDate')), '>=', payload.scanDate.from),
-            sequelize.where(sequelize.fn('CONVERT', sequelize.literal('date'), sequelize.col('ScanDate')), '<=', payload.scanDate.to),
+            sequelize.where(convertFunction, '>=', payload.scanDate.from),
+            sequelize.where(convertFunction, '<=', payload.scanDate.to),
         ]
     }
     return where;
