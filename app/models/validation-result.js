@@ -44,4 +44,8 @@ module.exports = sequelize.define('ValidationResult', {
         allowNull: false,
         field: 'OrderIdentifier'
     }
+}, {
+    tableName: 'ValidationResults',
+    timestamps: false,
+    sequelize
 });
