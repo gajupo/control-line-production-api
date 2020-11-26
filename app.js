@@ -33,7 +33,7 @@ app.get('/unblock/:stationIdentifier', async (req, res, next) => {
     await unblockLine(req, res, next);
 });
 
-app.get('/reportlist', async (req, res, next) => {
+app.get('/reportlist/:page', async (req, res, next) => {
     await getPaginatedReportList(1, req, res, next);
 });
 
