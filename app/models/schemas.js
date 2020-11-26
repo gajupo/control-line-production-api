@@ -3,9 +3,9 @@
 const Joi = require('joi');
 
 module.exports = Joi.object ({
-    pasPN: Joi.string().length(8).alphanum(),
+    orderIdentifier: Joi.string().length(20).alphanum(),
     scanDate: Joi.object({
         from: Joi.date().iso().required(),
         to: Joi.date().iso().required()
     })
-}).or('pasPN', 'scanDate');
+}).or('orderIdentifier', 'scanDate');
