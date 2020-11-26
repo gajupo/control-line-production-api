@@ -16,7 +16,7 @@ async function getPaginatedReportList(page, req, res, next) {
             const errorList = error.details.map(e => e.message);
             return badRequestError(`The schema is not valid`, res, errorList);
         }
-        const offset = calculatePaginationOffset(page);
+        const offset = calculatePaginationOffset(req.params.page);
         const where = createWhereQuery(req.body);
 
         const result = await ValidationResult.findAndCountAll({
