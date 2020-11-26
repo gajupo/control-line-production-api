@@ -12,7 +12,8 @@ const Supplier = require("./supplier");
 const Material = require("./material");
 const ValidationResult = require("./validation-result");
 
-const ReportParameterSchema = require("./schemas");
+const {ReportParameterSchema} = require("./schemas");
+const {PageParameterSchema} = require("./schemas");
 
 ProductionLine.hasMany(OperatingStation, {
     foreignKey: 'LineId'
@@ -126,3 +127,4 @@ module.exports.Supplier = Supplier;
 module.exports.Material = Material;
 module.exports.ValidationResult = ValidationResult;
 module.exports.ReportParameterSchema = ReportParameterSchema;
+module.exports.PageParameterSchema = PageParameterSchema;
