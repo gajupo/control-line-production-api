@@ -11,5 +11,5 @@ module.exports.ReportParameterSchema = Joi.object ({
 }).or('orderIdentifier', 'scanDate');
 
 module.exports.PageParameterSchema = Joi.object ({
-    page: Joi.integer().positive()
+    page: Joi.number().integer().positive().required()
 });
