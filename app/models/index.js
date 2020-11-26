@@ -10,6 +10,7 @@ const User = require("./user");
 const StopCauseLog = require("./stop-cause-log");
 const Supplier = require("./supplier");
 const Material = require("./material");
+const ValidationResult = require("./validation-result");
 
 const ReportParameterSchema = require("./schemas");
 
@@ -85,6 +86,34 @@ Material.belongsTo(Supplier, {
     foreignKey: 'SupplierId'
 });
 
+Customer.hasMany(ValidationResult, {
+    foreignKey: 'CustomerId'
+});
+ValidationResult.belongsTo(Customer, {
+    foreignKey: 'CustomerId'
+});
+
+Material.hasMany(ValidationResult, {
+    foreignKey: 'MaterialId'
+});
+ValidationResult.belongsTo(Material, {
+    foreignKey: 'MaterialId'
+});
+
+OperatingStation.hasMany(ValidationResult, {
+    foreignKey: 'StationId'
+});
+ValidationResult.belongsTo(OperatingStation, {
+    foreignKey: 'StationId'
+});
+
+User.hasMany(ValidationResult, {
+    foreignKey: 'UserId'
+});
+ValidationResult.belongsTo(User, {
+    foreignKey: 'UserId'
+});
+
 module.exports.Order = Order;
 module.exports.ProductionLine = ProductionLine;
 module.exports.OperatingStation = OperatingStation;
@@ -95,4 +124,5 @@ module.exports.User = User;
 module.exports.StopCauseLog = StopCauseLog;
 module.exports.Supplier = Supplier;
 module.exports.Material = Material;
+module.exports.ValidationResult = ValidationResult;
 module.exports.ReportParameterSchema = ReportParameterSchema;
