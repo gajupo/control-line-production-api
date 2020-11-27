@@ -39,15 +39,21 @@ async function getPaginatedReportList(req, res, next) {
 function createDateWhereQuery(payload) {
 
     var where = { };
-    if (payload.hasOwnProperty('orderIdentifier')) {
-        where.orderIdentifier = payload.orderIdentifier;
-    }
     if (payload.hasOwnProperty('scanDate')) {
         const convertFunction = sequelize.fn('CONVERT', sequelize.literal('date'), sequelize.col('ScanDate'));
         where[Op.and] = [
             sequelize.where(convertFunction, '>=', payload.scanDate.from),
             sequelize.where(convertFunction, '<=', payload.scanDate.to),
         ]
+    }
+    return where;
+}
+
+function createPasPanQuery(payload) {
+
+    var where = { };
+    if (payload.hasOwnProperty('orderIdentifier')) {
+        where.orderIdentifier = payload.orderIdentifier;
     }
     return where;
 }
