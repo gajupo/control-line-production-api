@@ -17,7 +17,7 @@ async function getPaginatedReportList(req, res, next) {
             return badRequestError(`The schema is not valid`, res, errorList);
         }
         const offset = calculatePaginationOffset(req.params.page);
-        const where = createWhereQuery(req.body);
+        const dateWhere = createDateWhereQuery(req.body);
 
         const result = await ValidationResult.findAndCountAll({
             include: [
@@ -27,7 +27,7 @@ async function getPaginatedReportList(req, res, next) {
             ],
             limit: 10,
             offset: offset,
-            where: where
+            where: dateWhere
         });
         return res.send(JSON.stringify(result, null, 2));
     }
@@ -36,7 +36,7 @@ async function getPaginatedReportList(req, res, next) {
     }
 }
 
-function createWhereQuery(payload) {
+function createDateWhereQuery(payload) {
 
     var where = { };
     if (payload.hasOwnProperty('orderIdentifier')) {
