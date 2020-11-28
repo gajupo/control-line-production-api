@@ -4,7 +4,7 @@ const Hoek = require('@hapi/hoek');
 
 const {sequelize} = require("../helpers/sequelize");
 const { logError, logMessage } = require('../helpers/logger');
-const { StopCauseLog, Order, OperatingStation, Shift, StopCause, ProductionLine } = require("../models");
+const { StopCauseLog, Order, OperatingStation, Shift, StopCause, ProductionLine, Material } = require("../models");
 const { notFoundError, successfulOperation } = require("./core");
 
 async function getActiveStopCauseLogs(res, next) {
@@ -19,6 +19,10 @@ async function getActiveStopCauseLogs(res, next) {
                 include: [{
                     model: Shift,
                     attributes: ['shiftDescription']
+                }, {
+                    model: Material,
+                    foreignKey: 'PasPN',
+                    attributes: ['id']
                 }]
             }, {
                 model: StopCause,

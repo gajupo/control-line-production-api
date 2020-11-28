@@ -12,7 +12,11 @@ module.exports = sequelize.define('Order', {
     pasPN: {
         type: DataTypes.STRING,
         allowNull: true,
-        field: 'PasPN'
+        field: 'PasPN',
+        references: {
+            model: 'Material',
+            key: 'PasPN'
+        }
     },
     materialScanned: {
         type: DataTypes.INTEGER,

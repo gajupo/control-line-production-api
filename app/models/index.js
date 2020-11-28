@@ -165,6 +165,13 @@ stopCauseLog.belongsTo(stopCause, {
     foreignKey: 'StopCausesKeys'
 });
 
+Material.hasMany(Order, {
+    foreignKey: 'PasPN'
+});
+Order.belongsTo(Material, {
+    foreignKey: 'PasPN'
+})
+
 module.exports.Order = Order;
 module.exports.ProductionLine = ProductionLine;
 module.exports.OperatingStation = OperatingStation;
