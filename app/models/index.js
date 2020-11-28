@@ -118,6 +118,13 @@ ValidationResult.belongsTo(User, {
     foreignKey: 'UserId'
 });
 
+Order.hasMany(ValidationResult, {
+    foreignKey: 'OrderId'
+});
+ValidationResult.belongsTo(Order, {
+    foreignKey: 'OrderId'
+});
+
 const ProductionLineShift = sequelize.define('ProductionLineShifts', {
     shiftId: {
         type: DataTypes.INTEGER,
