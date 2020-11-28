@@ -173,6 +173,7 @@ module.exports.UserType = UserType;
 module.exports.Shift = Shift;
 module.exports.User = User;
 module.exports.StopCauseLog = StopCauseLog;
+module.exports.StopCause = StopCause;
 module.exports.Supplier = Supplier;
 module.exports.Material = Material;
 module.exports.ValidationResult = ValidationResult;
