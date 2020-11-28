@@ -25,7 +25,7 @@ async function getActiveStopCauseLogs(res, next) {
                         model: Customer,
                         attributes: ['customerName']
                     }],
-                    attributes: []
+                    attributes: ['id']
                 }]
             }, {
                 model: StopCause,

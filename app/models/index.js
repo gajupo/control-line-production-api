@@ -172,6 +172,13 @@ Order.belongsTo(Material, {
     foreignKey: 'PasPN'
 })
 
+Customer.hasMany(Material, {
+    foreignKey: 'CustomerId'
+});
+Material.belongsTo(Customer, {
+    foreignKey: 'CustomerId'
+});
+
 module.exports.Order = Order;
 module.exports.ProductionLine = ProductionLine;
 module.exports.OperatingStation = OperatingStation;
