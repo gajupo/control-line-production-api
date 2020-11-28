@@ -4,7 +4,7 @@ const Hoek = require('@hapi/hoek');
 
 const {sequelize} = require("../helpers/sequelize");
 const { logError, logMessage } = require('../helpers/logger');
-const { StopCauseLog, Order, OperatingStation, Shift } = require("../models");
+const { StopCauseLog, Order, OperatingStation, Shift, StopCause } = require("../models");
 const { notFoundError, successfulOperation } = require("./core");
 
 async function getActiveStopCauseLogs(res, next) {
@@ -37,7 +37,10 @@ async function getStopCauseLogsRecord(res, next) {
                     model: Shift,
                     attributes: ['shiftDescription']
                 }]
-            }]
+            }, {
+                    model: StopCause,
+                    attributes: ['description']
+                }]
         });
         const payload = recordCauseLog.map(p => p.dataValues);
 

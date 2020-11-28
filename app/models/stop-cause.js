@@ -7,7 +7,8 @@ module.exports = sequelize.define('StopCause', {
     stopCauseKey: {
         type: DataTypes.STRING,
         allowNull: false,
-        field: 'StopCauseKey'
+        field: 'StopCauseKey',
+        primaryKey: true
     },
     description: {
         type: DataTypes.STRING,
