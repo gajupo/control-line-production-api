@@ -18,12 +18,16 @@ async function getPaginatedReportList(req, res, next) {
         }
         const offset = calculatePaginationOffset(req.params.page);
         const dateWhere = createDateWhereQuery(req.body);
+        const pasWhere = createPasPanQuery(req.body);
 
         const result = await ValidationResult.findAndCountAll({
             include: [
                 { model: Customer },
-                { model: Material },
-                { model: OperatingStation }
+                { model: OperatingStation },
+                {
+                    model: Material,
+                    where: pasWhere
+                }
             ],
             limit: 10,
             offset: offset,
