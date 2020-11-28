@@ -1,11 +1,10 @@
 'use strict';
 
 const Hoek = require('@hapi/hoek');
-const { Op } = require("sequelize");
 
 const {sequelize} = require("../helpers/sequelize");
 const { logError, logMessage } = require('../helpers/logger');
-const { StopCauseLog, User, Order, OperatingStation, Shift } = require("../models");
+const { StopCauseLog, Order, OperatingStation, Shift } = require("../models");
 const { notFoundError, successfulOperation } = require("./core");
 
 async function getActiveStopCauseLogs(res, next) {
@@ -29,22 +28,15 @@ async function getStopCauseLogsRecord(res, next) {
         const recordCauseLog = await StopCauseLog.findAll({
             where: { status: false },
             limit: 10,
+            attributes: ['id', 'createdDate'],
             include: [{
-                model: User,
-                as: 'User',
-                attributes: []
-            }, {
-                model: User,
-                as: 'Resolver',
-                attributes: []
-            }, {
                 model: Order,
                 required: true,
+                attributes: ['orderIdentifier', 'pasPN'],
                 include: [{
-                    model: Shift
+                    model: Shift,
+                    attributes: ['shiftDescription']
                 }]
-            }, {
-                model: OperatingStation
             }]
         });
         const payload = recordCauseLog.map(p => p.dataValues);
