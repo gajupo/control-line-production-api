@@ -115,6 +115,13 @@ ValidationResult.belongsTo(User, {
     foreignKey: 'UserId'
 });
 
+OperatingStation.belongsToMany(Shift, {
+    through: 'ProductionLineShifts'
+});
+Shift.belongsToMany(OperatingStation, {
+    through: 'ProductionLineShifts'
+});
+
 module.exports.Order = Order;
 module.exports.ProductionLine = ProductionLine;
 module.exports.OperatingStation = OperatingStation;
