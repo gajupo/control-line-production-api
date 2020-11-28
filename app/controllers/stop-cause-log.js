@@ -4,13 +4,33 @@ const Hoek = require('@hapi/hoek');
 
 const {sequelize} = require("../helpers/sequelize");
 const { logError, logMessage } = require('../helpers/logger');
-const { StopCauseLog, Order, OperatingStation, Shift, StopCause } = require("../models");
+const { StopCauseLog, Order, OperatingStation, Shift, StopCause, ProductionLine } = require("../models");
 const { notFoundError, successfulOperation } = require("./core");
 
 async function getActiveStopCauseLogs(res, next) {
     try {
         const stopCauseLogs = await StopCauseLog.findAll({
-            where: { Status: true }
+            where: { status: true },
+            attributes: ['id', 'status'],
+            include: [{
+                model: Order,
+                required: true,
+                attributes: ['orderIdentifier', 'pasPN'],
+                include: [{
+                    model: Shift,
+                    attributes: ['shiftDescription']
+                }]
+            }, {
+                model: StopCause,
+                attributes: ['description']
+            }, {
+                model: OperatingStation,
+                attributes: ['id'],
+                include: [{
+                    model: ProductionLine,
+                    attributes: ['lineName']
+                    }]
+            }]
         });
         const payload = stopCauseLogs.map(p => p.dataValues);
 
