@@ -1,5 +1,8 @@
 'use strict';
 
+const {DataTypes} = require('sequelize');
+const { sequelize } = require("../helpers/sequelize");
+
 const OperatingStation = require("./operating-station");
 const ProductionLine = require("./production-line");
 const Order = require("./order");
@@ -115,11 +118,34 @@ ValidationResult.belongsTo(User, {
     foreignKey: 'UserId'
 });
 
+const ProductionLineShift = sequelize.define('ProductionLineShifts', {
+    shiftId: {
+        type: DataTypes.INTEGER,
+        field: 'ShiftId',
+        references: {
+            model: Shift,
+            key:
+            'Id'
+        }
+    },
+    productionLineId: {
+        type: DataTypes.INTEGER,
+        field: 'ProductionLineId',
+        references: {
+            model: ProductionLine,
+            key: 'Id'
+        }
+    }
+}, {
+    tableName: 'ProductionLineShifts',
+    timestamps: false,
+    sequelize
+});
 ProductionLine.belongsToMany(Shift, {
-    through: 'ProductionLineShifts'
+    through: ProductionLineShift
 });
 Shift.belongsToMany(ProductionLine, {
-    through: 'ProductionLineShifts'
+    through: ProductionLineShift
 });
 
 module.exports.Order = Order;
