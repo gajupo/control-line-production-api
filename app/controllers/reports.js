@@ -3,7 +3,7 @@
 const { Op } = require("sequelize");
 const { sequelize } = require("../helpers/sequelize");
 
-const { ValidationResult, Material, OperatingStation, ProductionLine, Shift, ReportParameterSchema, PageParameterSchema } = require("../models");
+const { ValidationResult, Material, OperatingStation, Order, Shift, ReportParameterSchema, PageParameterSchema } = require("../models");
 const { badRequestError } = require("./core");
 
 async function getPaginatedReportList(req, res, next) {
@@ -17,22 +17,24 @@ async function getPaginatedReportList(req, res, next) {
         }
         const offset = calculatePaginationOffset(req.params.page);
         const dateWhere = createDateWhereQuery(req.body);
-        const pasWhere = createPasPanQuery(req.body);
+        const pasWhere = createPasPnQuery(req.body);
 
         const result = await ValidationResult.findAndCountAll({
-            attributes: ['id', 'scanDate', 'orderIdentifier'],
-            include: [
-                {
+            attributes: ['id', 'scanDate'],
+            include: [{
                     model: OperatingStation,
-                    attributes: ['stationIdentifier'],
-                    include: [{
-                        model: ProductionLine,
-                        attributes: ['id']
-                    }]
+                    attributes: ['stationIdentifier']
                 }, {
                     model: Material,
                     where: pasWhere,
                     attributes: ['pasPN']
+                }, {
+                    model: Order,
+                    attributes: ['orderIdentifier'],
+                    include: [{
+                        model: Shift,
+                        attributes: ['shiftDescription']
+                    }],
                 }
             ],
             limit: 10,
@@ -59,7 +61,7 @@ function createDateWhereQuery(payload) {
     return where;
 }
 
-function createPasPanQuery(payload) {
+function createPasPnQuery(payload) {
 
     var where = { };
     if (payload.hasOwnProperty('pasPN')) {
