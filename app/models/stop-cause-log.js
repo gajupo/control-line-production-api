@@ -20,7 +20,7 @@ module.exports = sequelize.define('StopCauseLog', {
         field: 'StopComments'
     },
     status: {
-        type: DataTypes.TINYINT,
+        type: DataTypes.BOOLEAN,
         allowNull: false,
         field: 'Status'
     },
