@@ -27,11 +27,7 @@ async function getPaginatedReportList(req, res, next) {
                     attributes: ['stationIdentifier'],
                     include: [{
                         model: ProductionLine,
-                        attributes: ['id'],
-                        include: [{
-                            model: Shift,
-                            attributes: ['shiftDescription']
-                        }]
+                        attributes: ['id']
                     }]
                 }, {
                     model: Material,
