@@ -21,7 +21,7 @@ async function getPaginatedReportList(req, res, next) {
         const pasWhere = createPasPanQuery(req.body);
 
         const result = await ValidationResult.findAndCountAll({
-            attributes: ['id', 'scanDate'],
+            attributes: ['id', 'scanDate', 'orderIdentifier'],
             include: [
                 {
                     model: OperatingStation,
