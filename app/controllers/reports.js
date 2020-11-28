@@ -4,7 +4,7 @@ const Joi = require("joi");
 const { Op } = require("sequelize");
 const { sequelize } = require("../helpers/sequelize");
 
-const { ValidationResult, Customer, Material, OperatingStation, ReportParameterSchema, PageParameterSchema } = require("../models");
+const { ValidationResult, Material, OperatingStation, ReportParameterSchema, PageParameterSchema } = require("../models");
 const { badRequestError } = require("./core");
 
 async function getPaginatedReportList(req, res, next) {
@@ -21,12 +21,15 @@ async function getPaginatedReportList(req, res, next) {
         const pasWhere = createPasPanQuery(req.body);
 
         const result = await ValidationResult.findAndCountAll({
+            attributes: ['id', 'scanDate'],
             include: [
-                { model: Customer },
-                { model: OperatingStation },
                 {
+                    model: OperatingStation,
+                    attributes: ['stationIdentifier']
+                }, {
                     model: Material,
-                    where: pasWhere
+                    where: pasWhere,
+                    attributes: ['pasPN']
                 }
             ],
             limit: 10,
