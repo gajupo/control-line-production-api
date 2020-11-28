@@ -11,12 +11,15 @@ const Customer = require("./customer");
 const UserType = require("./user-type");
 const User = require("./user");
 const StopCauseLog = require("./stop-cause-log");
+const StopCause = require("./stop-cause");
 const Supplier = require("./supplier");
 const Material = require("./material");
 const ValidationResult = require("./validation-result");
 
 const {ReportParameterSchema} = require("./schemas");
 const {PageParameterSchema} = require("./schemas");
+const stopCauseLog = require('./stop-cause-log');
+const stopCause = require('./stop-cause');
 
 ProductionLine.hasMany(OperatingStation, {
     foreignKey: 'LineId'
@@ -153,6 +156,13 @@ ProductionLine.belongsToMany(Shift, {
 });
 Shift.belongsToMany(ProductionLine, {
     through: ProductionLineShift
+});
+
+StopCause.hasMany(StopCauseLog, {
+    foreignKey: 'StopCausesKeys'
+});
+stopCauseLog.belongsTo(stopCause, {
+    foreignKey: 'StopCausesKeys'
 });
 
 module.exports.Order = Order;
