@@ -5,7 +5,7 @@ const Hoek = require('@hapi/hoek');
 const {sequelize} = require("../helpers/sequelize");
 const { logError, logMessage } = require('../helpers/logger');
 const { StopCauseLog, Order, OperatingStation, Shift, StopCause, ProductionLine, Material, Customer } = require("../models");
-const { notFoundError, successfulOperation } = require("./core");
+const { notFoundError, successfulOperation, internalServerError } = require("./core");
 
 async function getActiveStopCauseLogs(res, next) {
     try {
@@ -46,7 +46,7 @@ async function getActiveStopCauseLogs(res, next) {
     }
     catch(error) {
         logError("Error in getActiveStopCauseLogs", error);
-        next(error);
+        return internalServerError(`Internal server error`);
     }
 }
 
@@ -76,7 +76,7 @@ async function getStopCauseLogsRecord(res, next) {
     }
     catch(error) {
         logError("Error in getStopCauseLogsRecord", error);
-        next(error);
+        return internalServerError(`Internal server error`);
     }
 }
 
@@ -106,7 +106,7 @@ async function unblockLine(req, res, next) {
     }
     catch(error) {
         logError("Error in unblockLine", error);
-        next(error);
+        return internalServerError(`Internal server error`);
     }
 }
 
