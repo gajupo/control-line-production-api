@@ -44,7 +44,8 @@ async function getPaginatedReportList(req, res, next) {
         return res.send(JSON.stringify(result, null, 2));
     }
     catch(error) {
-        next(error);
+        logError("Error in getPaginatedReportList", error);
+        return internalServerError(`Internal server error`);
     }
 }
 
