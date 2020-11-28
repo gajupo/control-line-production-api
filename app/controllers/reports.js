@@ -1,6 +1,5 @@
 'use strict';
 
-const Joi = require("joi");
 const { Op } = require("sequelize");
 const { sequelize } = require("../helpers/sequelize");
 
