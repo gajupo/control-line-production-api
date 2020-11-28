@@ -42,6 +42,7 @@ async function getPaginatedReportList(req, res, next) {
             offset: offset,
             where: dateWhere
         });
+        logMessage("getPaginatedReportList consumed", result);
         return res.send(JSON.stringify(result, null, 2));
     }
     catch(error) {
