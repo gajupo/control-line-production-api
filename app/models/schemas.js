@@ -3,7 +3,7 @@
 const Joi = require('joi');
 
 module.exports.ReportParameterSchema = Joi.object ({
-    orderIdentifier: Joi.string().length(20).alphanum(),
+    pasPN: Joi.string().min(8).alphanum(),
     scanDate: Joi.object({
         from: Joi.date().iso().required(),
         to: Joi.date().iso().required()
