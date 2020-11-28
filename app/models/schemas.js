@@ -8,7 +8,7 @@ module.exports.ReportParameterSchema = Joi.object ({
         from: Joi.date().iso().required(),
         to: Joi.date().iso().required()
     })
-}).or('orderIdentifier', 'scanDate');
+}).or('pasPN', 'scanDate');
 
 module.exports.PageParameterSchema = Joi.object ({
     page: Joi.number().integer().positive().required()
