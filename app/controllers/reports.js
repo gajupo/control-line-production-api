@@ -56,8 +56,8 @@ function createDateWhereQuery(payload) {
 function createPasPanQuery(payload) {
 
     var where = { };
-    if (payload.hasOwnProperty('orderIdentifier')) {
-        where.orderIdentifier = payload.orderIdentifier;
+    if (payload.hasOwnProperty('pasPN')) {
+        where.pasPN = payload.pasPN;
     }
     return where;
 }
