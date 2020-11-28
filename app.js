@@ -21,18 +21,30 @@ app.get('/orders', async (req, res, next) => {
     await getCurrentOrders(res, next);
 });
 
+/**
+ * GET /stopcauselogs
+ */
 app.get('/stopcauselogs', async (req, res, next) => {
     await getActiveStopCauseLogs(res, next);
 });
 
+/**
+ * GET /stopcauselogs/historical
+ */
 app.get('/stopcauselogs/historical', async (req, res, next) => {
     await getStopCauseLogsRecord(res, next);
 });
 
+/**
+ * GET /unblock/STATION01
+ */
 app.get('/unblock/:stationIdentifier', async (req, res, next) => {
     await unblockLine(req, res, next);
 });
 
+/**
+ * GET /reportlist/1
+ */
 app.get('/reportlist/:page', async (req, res, next) => {
     await getPaginatedReportList(req, res, next);
 });
