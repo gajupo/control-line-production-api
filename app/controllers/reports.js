@@ -3,7 +3,7 @@
 const { Op } = require("sequelize");
 const { sequelize } = require("../helpers/sequelize");
 
-const { ValidationResult, Material, OperatingStation, ProductionLine, ReportParameterSchema, PageParameterSchema } = require("../models");
+const { ValidationResult, Material, OperatingStation, ProductionLine, Shift, ReportParameterSchema, PageParameterSchema } = require("../models");
 const { badRequestError } = require("./core");
 
 async function getPaginatedReportList(req, res, next) {
@@ -25,10 +25,14 @@ async function getPaginatedReportList(req, res, next) {
                 {
                     model: OperatingStation,
                     attributes: ['stationIdentifier'],
-                    include: {
+                    include: [{
                         model: ProductionLine,
-                        attributes: ['id']
-                    }
+                        attributes: ['id'],
+                        include: [{
+                            model: Shift,
+                            attributes: ['shiftDescription']
+                        }]
+                    }]
                 }, {
                     model: Material,
                     where: pasWhere,

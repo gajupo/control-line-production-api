@@ -115,10 +115,10 @@ ValidationResult.belongsTo(User, {
     foreignKey: 'UserId'
 });
 
-OperatingStation.belongsToMany(Shift, {
+ProductionLine.belongsToMany(Shift, {
     through: 'ProductionLineShifts'
 });
-Shift.belongsToMany(OperatingStation, {
+Shift.belongsToMany(ProductionLine, {
     through: 'ProductionLineShifts'
 });
 
