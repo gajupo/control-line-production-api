@@ -36,9 +36,9 @@ app.get('/stopcauselogs/historical', async (req, res, next) => {
 });
 
 /**
- * GET /unblock/STATION01
+ * PUT /unblock/STATION01
  */
-app.get('/unblock/:stationIdentifier', async (req, res, next) => {
+app.put('/unblock/:stationIdentifier', async (req, res, next) => {
     await unblockLine(req, res, next);
 });
 
