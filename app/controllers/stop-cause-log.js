@@ -1,6 +1,8 @@
 'use strict';
 
 const Hoek = require('@hapi/hoek');
+const { Op } = require("sequelize");
+
 const {sequelize} = require("../helpers/sequelize");
 const { logError, logMessage } = require('../helpers/logger');
 const { StopCauseLog, User, Order, OperatingStation, Shift } = require("../models");
@@ -29,12 +31,15 @@ async function getStopCauseLogsRecord(res, next) {
             limit: 10,
             include: [{
                 model: User,
-                as: 'User'
+                as: 'User',
+                attributes: []
             }, {
                 model: User,
-                as: 'Resolver'
+                as: 'Resolver',
+                attributes: []
             }, {
                 model: Order,
+                required: true,
                 include: [{
                     model: Shift
                 }]
