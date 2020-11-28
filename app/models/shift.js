@@ -1,28 +1,28 @@
 'use strict';
 
-const {DataTypes, Model} = require('sequelize');
+const {DataTypes} = require('sequelize');
 const {sequelize} = require("../helpers/sequelize");
 
 module.exports = sequelize.define('Shift', {
     shiftDescription: {
         type: DataTypes.STRING,
-        allowNull: false,
+        allowNull: true,
         field: 'ShiftDescription'
     },
+    active: {
+        type: DataTypes.BOOLEAN,
+        allowNull: true,
+        field: 'Active'
+    },
     shiftStart: {
-        type: DataTypes.DATE,
+        type: DataTypes.REAL,
         allowNull: false,
         field: 'ShiftStart'
     },
     shiftEnd: {
-        type: DataTypes.DATE,
+        type: DataTypes.REAL,
         allowNull: false,
         field: 'ShiftEnd'
-    },
-    active: {
-        type: DataTypes.BOOLEAN,
-        allowNull: false,
-        field: 'Active'
     }
 }, {
     tableName: 'Shifts',
