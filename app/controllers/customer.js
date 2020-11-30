@@ -14,7 +14,7 @@ async function getCustomerList(res, next) {
     }
     catch(error) {
         logError("Error in getCustomerList", error);
-        return internalServerError(`Internal server error`);
+        return internalServerError(`Internal server error`, res);
     }
 }
 

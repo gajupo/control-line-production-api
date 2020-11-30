@@ -19,7 +19,7 @@ async function getCurrentOrders(res, next) {
     }
     catch(error) {
         logError("Error in getCurrentOrders", error);
-        return internalServerError(`Internal server error`);
+        return internalServerError(`Internal server error`, res);
     }
 }
 
