@@ -1,6 +1,8 @@
 'use strict';
 
-const {Customer} = require("../models/customer");
+const { logError } = require('../helpers/logger');
+const { Customer } = require("../models");
+const { internalServerError } = require("./core");
 
 async function getCustomerList(res, next) {
 
@@ -11,7 +13,8 @@ async function getCustomerList(res, next) {
         res.send(JSON.stringify(customers, null, 2));
     }
     catch(error) {
-        next(error);
+        logError("Error in getCustomerList", error);
+        return internalServerError(`Internal server error`);
     }
 }
 
