@@ -1,5 +1,7 @@
 'use strict';
 
+const { logError } = require('../helpers/logger');
+const { internalServerError } = require("./core");
 const { Order, OperatingStation, ProductionLine } = require("../models");
 
 async function getCurrentOrders(res, next) {
@@ -16,7 +18,8 @@ async function getCurrentOrders(res, next) {
         res.send(JSON.stringify(orders, null, 2));
     }
     catch(error) {
-        next(error);
+        logError("Error in getCurrentOrders", error);
+        return internalServerError(`Internal server error`);
     }
 }
 
