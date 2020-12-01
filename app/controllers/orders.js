@@ -1,8 +1,8 @@
 'use strict';
 
 const { logError } = require('../helpers/logger');
-const { internalServerError } = require("./core");
-const { Order, Material, Customer, ProductionLine, Shift } = require("../models");
+const { internalServerError, notFoundError } = require("./core");
+const { Order, Material, Customer, ProductionLine, Shift, OperatingStation } = require("../models");
 
 async function getCurrentOrders(res, next) {
 
@@ -32,4 +32,44 @@ async function getCurrentOrders(res, next) {
     }
 }
 
+async function createNewOrder(lineId, materialId, res) {
+    
+    try {
+        const productionLine = await getProductionLine(lineId);
+        if (productionLine == null) {
+            return notFoundError(`A order with the id ${lineId} was not found`);
+        }
+        const material = await getMaterial(materialId);
+        if (material == null) {
+            return notFoundError(`A material with the id ${materialId} was not found`);
+        }
+    }
+    catch(error) {
+        logError("Error in createNewOrder", error);
+        return internalServerError(`Internal server error`, res);
+    }
+}
+
+async function getProductionLine(lineId) {
+    
+    var productionLine = await ProductionLine.findOne({
+        where: { id: lineId },
+        include: [{
+            model: OperatingStation,
+            attributes: ['id']
+        }],
+        attributes: ['id', 'stationIdentifier']
+    });
+    return productionLine;
+}
+
+async function getMaterial(materialId) {
+    var material = await Material.findOne({
+        where: { id: materialId },
+        attributes: ['id', 'pasPAN']
+    });
+    return material;
+}
+
 module.exports.getCurrentOrders = getCurrentOrders;
+module.exports.createNewOrder = createNewOrder;
