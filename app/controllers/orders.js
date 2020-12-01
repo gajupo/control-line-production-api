@@ -43,8 +43,10 @@ async function createNewOrder(lineId, materialId, res) {
         if (material == null) {
             return notFoundError(`A material with the id ${materialId} was not found`);
         }
+        res.send(JSON.stringify({ productionLine: productionLine, material: material }, null, 2));
     }
     catch(error) {
+        console.log(error);
         logError("Error in createNewOrder", error);
         return internalServerError(`Internal server error`, res);
     }
@@ -56,17 +58,18 @@ async function getProductionLine(lineId) {
         where: { id: lineId },
         include: [{
             model: OperatingStation,
-            attributes: ['id']
+            attributes: ['id', 'stationIdentifier']
         }],
-        attributes: ['id', 'stationIdentifier']
+        attributes: ['id']
     });
     return productionLine;
 }
 
 async function getMaterial(materialId) {
+
     var material = await Material.findOne({
         where: { id: materialId },
-        attributes: ['id', 'pasPAN']
+        attributes: ['id', 'pasPN']
     });
     return material;
 }
