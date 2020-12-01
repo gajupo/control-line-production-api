@@ -2,7 +2,7 @@
 
 const { format } = require('date-fns');
 const { logError } = require('../helpers/logger');
-const { internalServerError, notFoundError } = require("./core");
+const { internalServerError, notFoundError, successfulOperation } = require("./core");
 const { Order, Material, Customer, ProductionLine, Shift, OperatingStation, ProductionLineShift } = require("../models");
 
 async function getCurrentOrders(res, next) {
@@ -51,7 +51,23 @@ async function createNewOrder(lineId, materialId, res) {
             return notFoundError(`A shift for the ProductionLine with the id ${productionLine.id} was not found`);
         }
         const orderIdentifier = generateOrderIdentifier(now, productionLine);
-        res.send(JSON.stringify({ productionLine: productionLine, material: material, shift: shift, orderIdentifier: orderIdentifier }, null, 2));
+
+        const order = Order.create({
+            orderIdentifier: orderIdentifier,
+            pasPN: material.pasPN,
+            materialScanned: 0,
+            createdAt: now,
+            active: true,
+            isIncomplete: true,
+            orderGoal: 0,
+            stationIdentifier: productionLine.OperatingStation.stationIdentifier,
+            ShiftId: shift.id,
+            ProductionLineId: productionLine.id
+        });
+        if (order) {
+            return successfulOperation(`The order with the identifier ${orderIdentifier} was created succesfully.`, res);
+        }
+        return internalServerError(`There was an error saving the new Order`, res);
     }
     catch(error) {
         console.log(error);
