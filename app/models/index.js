@@ -21,7 +21,7 @@ const {PageParameterSchema} = require("./schemas");
 const stopCauseLog = require('./stop-cause-log');
 const stopCause = require('./stop-cause');
 
-ProductionLine.hasMany(OperatingStation, {
+ProductionLine.hasOne(OperatingStation, {
     foreignKey: 'LineId'
 });
 OperatingStation.belongsTo(ProductionLine, {

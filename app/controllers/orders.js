@@ -1,5 +1,6 @@
 'use strict';
 
+const { format } = require('date-fns');
 const { logError } = require('../helpers/logger');
 const { internalServerError, notFoundError } = require("./core");
 const { Order, Material, Customer, ProductionLine, Shift, OperatingStation, ProductionLineShift } = require("../models");
@@ -49,7 +50,8 @@ async function createNewOrder(lineId, materialId, res) {
         if (shift == null) {
             return notFoundError(`A shift for the ProductionLine with the id ${productionLine.id} was not found`);
         }
-        res.send(JSON.stringify({ productionLine: productionLine, material: material, shift: shift }, null, 2));
+        const orderIdentifier = generateOrderIdentifier(now, productionLine);
+        res.send(JSON.stringify({ productionLine: productionLine, material: material, shift: shift, orderIdentifier: orderIdentifier }, null, 2));
     }
     catch(error) {
         console.log(error);
@@ -92,6 +94,11 @@ async function getCurrentShift(dateTime, productionLine) {
     });
     const shift = shifts.find(s => fractionalHours >= s.shiftStart && fractionalHours <= s.shiftEnd);
     return shift;
+}
+
+function generateOrderIdentifier(dateTime, productionLine) {
+
+    return `${format(dateTime, 'ddMMyyHHmmss')}${productionLine.OperatingStation.stationIdentifier}-${productionLine.OperatingStation.id}`;
 }
 
 module.exports.getCurrentOrders = getCurrentOrders;
