@@ -28,7 +28,6 @@ async function getCurrentOrders(res, next) {
     }
     catch(error) {
         logError("Error in getCurrentOrders", error);
-        console.log(error);
         return internalServerError(`Internal server error`, res);
     }
 }

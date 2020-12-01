@@ -13,10 +13,16 @@ const port = 3000;
 
 app.use(bodyParser.json())
 
+/**
+ * GET /customers
+ */
 app.get('/customers', async (req, res, next) => {
     await getCustomerList(res, next);
 });
 
+/**
+ * GET /orders
+ */
 app.get('/orders', async (req, res, next) => {
     await getCurrentOrders(res, next);
 });
@@ -44,6 +50,15 @@ app.put('/unblock/:stationIdentifier', async (req, res, next) => {
 
 /**
  * GET /reportlist/1
+ * 
+ * {
+ *     "pasPN": "290D2851G001",
+ *     "scanDate": 
+ *     {
+ *         "from": "2020-11-27T14:34:41.157Z",
+ *         "to": "2020-11-27T20:37:48.330Z"
+ *     }
+ * }
  */
 app.get('/reportlist/:page', async (req, res, next) => {
     await getPaginatedReportList(req, res, next);
