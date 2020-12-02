@@ -33,7 +33,7 @@ async function getCurrentOrders(res, next) {
     }
 }
 
-async function createNewOrder(lineId, materialId, res) {
+async function createNewOrder(lineId, materialId, req, res) {
     
     try {
         var now = new Date();

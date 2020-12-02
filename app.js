@@ -65,7 +65,7 @@ app.get('/reportlist/:page', async (req, res, next) => {
 });
 
 app.post('/orders/new', async (req, res, next) => {
-    await createNewOrder(2, 5, res);
+    await createNewOrder(2, 5, req, res);
 });
 
 app.listen(port, () => {
