@@ -33,10 +33,16 @@ async function getCurrentOrders(res, next) {
     }
 }
 
-async function createNewOrder(lineId, materialId, req, res) {
+async function createNewOrder(req, res) {
     
     try {
-        var now = new Date();
+        const params = validateParameters(req.body);
+        if (!params.isValid) {
+            return badRequestError(`The schema is not valid`, res, params.errorList);
+        }
+        const lineId = req.body.productionLineId;
+        const materialId = req.body.materialId;
+        const now = new Date();
 
         const productionLine = await getProductionLine(lineId);
         if (productionLine == null) {
