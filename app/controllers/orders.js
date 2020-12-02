@@ -117,5 +117,22 @@ function generateOrderIdentifier(dateTime, productionLine) {
     return `${format(dateTime, 'ddMMyyHHmmss')}${productionLine.OperatingStation.stationIdentifier}-${productionLine.OperatingStation.id}`;
 }
 
+function validateParameters(payload) {
+
+    var returned = {
+        isValid: true,
+        errorList: []
+    };
+    const {error} = OrderParameterSchema.validate({
+        productionLineId: payload.productionLineId,
+        materialId: payload.materialId
+    });
+    if (error) {
+        returned.isValid = false;
+        returned.errorList = error.details.map(e => e.message);
+    }
+    return returned;
+}
+
 module.exports.getCurrentOrders = getCurrentOrders;
 module.exports.createNewOrder = createNewOrder;
