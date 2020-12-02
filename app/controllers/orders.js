@@ -2,8 +2,8 @@
 
 const { format } = require('date-fns');
 const { logError } = require('../helpers/logger');
-const { internalServerError, notFoundError, successfulOperation } = require("./core");
-const { Order, Material, Customer, ProductionLine, Shift, OperatingStation } = require("../models");
+const { internalServerError, notFoundError, successfulOperation, badRequestError } = require("./core");
+const { Order, Material, Customer, ProductionLine, Shift, OperatingStation, OrderParameterSchema } = require("../models");
 
 async function getCurrentOrders(res, next) {
 
