@@ -1,6 +1,6 @@
 'use strict';
 
-const {DataTypes} = require('sequelize');
+const { DataTypes } = require('sequelize');
 const { sequelize } = require("../helpers/sequelize");
 
 const OperatingStation = require("./operating-station");
@@ -16,8 +16,7 @@ const Supplier = require("./supplier");
 const Material = require("./material");
 const ValidationResult = require("./validation-result");
 
-const {ReportParameterSchema} = require("./schemas");
-const {PageParameterSchema} = require("./schemas");
+const { ReportParameterSchema, PageParameterSchema, OrderParameterSchema } = require("./schemas");
 const stopCauseLog = require('./stop-cause-log');
 const stopCause = require('./stop-cause');
 
@@ -193,3 +192,4 @@ module.exports.Material = Material;
 module.exports.ValidationResult = ValidationResult;
 module.exports.ReportParameterSchema = ReportParameterSchema;
 module.exports.PageParameterSchema = PageParameterSchema;
+module.exports.OrderParameterSchema = OrderParameterSchema;

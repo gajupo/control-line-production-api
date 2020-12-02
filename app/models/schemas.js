@@ -13,3 +13,8 @@ module.exports.ReportParameterSchema = Joi.object ({
 module.exports.PageParameterSchema = Joi.object ({
     page: Joi.number().integer().positive().required()
 });
+
+module.exports.OrderParameterSchema = Joi.object ({
+    productionLineId: Joi.number().integer().positive().required(),
+    materialId: Joi.number().integer().positive().required()
+});
