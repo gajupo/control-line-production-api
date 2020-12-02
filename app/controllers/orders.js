@@ -58,7 +58,7 @@ async function createNewOrder(req, res) {
         }
         const orderIdentifier = generateOrderIdentifier(now, productionLine);
 
-        const order = Order.create({
+        const order = await Order.create({
             orderIdentifier: orderIdentifier,
             pasPN: material.pasPN,
             materialScanned: 0,
@@ -71,7 +71,7 @@ async function createNewOrder(req, res) {
             ProductionLineId: productionLine.id
         });
         if (order) {
-            return successfulOperation(`The order with the identifier ${orderIdentifier} was created succesfully.`, res);
+            return successfulOperation(`The order with the identifier ${orderIdentifier} was created succesfully.`, res, 'order', order);
         }
         return internalServerError(`There was an error saving the new Order`, res);
     }

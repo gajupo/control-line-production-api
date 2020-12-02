@@ -1,11 +1,14 @@
 'use strict';
 
-function successfulOperation(message, res) {
+function successfulOperation(message, res, propName = undefined, value = undefined ) {
 
-    const response = {
+    var response = {
         statusCode: 200,
         message: message
     };
+    if (propName) {
+        response[propName] = value;
+    }
     res.status(200).send(JSON.stringify(response, null, 2));
 }
 
