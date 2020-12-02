@@ -64,6 +64,14 @@ app.get('/reportlist/:page', async (req, res, next) => {
     await getPaginatedReportList(req, res, next);
 });
 
+/**
+ * POST /orders/new
+ * 
+ * {
+ *      "productionLineId": 1,
+ *      "materialId": 5
+ * }
+ */
 app.post('/orders/new', async (req, res, next) => {
     await createNewOrder(req, res);
 });
