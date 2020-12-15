@@ -4,7 +4,8 @@
   "description": "REST api to display production information in a dashboard panel",
   "main": "app.js",
   "scripts": {
-    "test": "test"
+    "test": "test",
+    "start": "nodemon app.js"
   },
   "repository": {
     "type": "git",
