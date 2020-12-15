@@ -1,7 +1,8 @@
 'use strict';
 
 const express = require('express');
-var bodyParser = require('body-parser');
+const bodyParser = require('body-parser');
+const cors = require('cors');
 
 const { getCustomerList } = require("./app/controllers/customer");
 const { getCurrentOrders, createNewOrder } = require("./app/controllers/orders");
@@ -11,7 +12,8 @@ const { getActiveStopCauseLogs, getStopCauseLogsRecord, unblockLine } = require(
 const app = express();
 const port = 3000;
 
-app.use(bodyParser.json())
+app.use(bodyParser.json());
+app.use(cors());
 
 /**
  * GET /customers
