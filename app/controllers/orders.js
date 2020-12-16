@@ -3,7 +3,7 @@
 const { format } = require('date-fns');
 const { logError } = require('../helpers/logger');
 const { internalServerError, notFoundError, successfulOperation, badRequestError } = require("./core");
-const { Order, Material, Customer, ProductionLine, Shift, OperatingStation, OrderParameterSchema } = require("../models");
+const { Order, Material, Customer, ProductionLine, Shift, OperatingStation, OrderParameterSchema, PageParameterSchema } = require("../models");
 
 async function getCurrentOrders(res, next) {
 
@@ -29,6 +29,40 @@ async function getCurrentOrders(res, next) {
     }
     catch(error) {
         logError("Error in getCurrentOrders", error);
+        return internalServerError(`Internal server error`, res);
+    }
+}
+
+async function getCustomerOrders(req, res) {
+
+    try {
+        const {error} = PageParameterSchema.validate({ page: req.params.id });
+        if (error) {
+            const errorList = error.details.map(e => e.message);
+            return badRequestError(`The customer ID ${req.params.id} is not valid`, res, errorList);
+        }
+        const orders = await Order.findAll({
+            where: { id: req.params.id },
+            attributes: ['id', 'orderIdentifier', 'materialScanned', 'orderGoal', 'isIncomplete'],
+            include: [{
+                model: Material,
+                attributes: ['id', 'pasPN'],
+                include: [{
+                    model: Customer,
+                    attributes: ['id', 'customerName']
+                }]
+            }, {
+                model: ProductionLine,
+                attributes: ['id', 'lineName']
+            }, {
+                model: Shift,
+                attributes: ['id', 'shiftDescription']
+            }]
+        });
+        res.send(JSON.stringify(orders, null, 2));
+    }
+    catch(error) {
+        logError("Error in getCustomerOrders", error);
         return internalServerError(`Internal server error`, res);
     }
 }
@@ -142,3 +176,4 @@ function validateParameters(payload) {
 
 module.exports.getCurrentOrders = getCurrentOrders;
 module.exports.createNewOrder = createNewOrder;
+module.exports.getCustomerOrders = getCustomerOrders;
