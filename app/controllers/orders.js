@@ -42,14 +42,15 @@ async function getCustomerOrders(req, res) {
             return badRequestError(`The customer ID ${req.params.id} is not valid`, res, errorList);
         }
         const orders = await Order.findAll({
-            where: { id: req.params.id },
             attributes: ['id', 'orderIdentifier', 'materialScanned', 'orderGoal', 'isIncomplete'],
             include: [{
                 model: Material,
                 attributes: ['id', 'pasPN'],
+                required: true,
                 include: [{
                     model: Customer,
-                    attributes: ['id', 'customerName']
+                    attributes: ['id', 'customerName'],
+                    where: { id: req.params.id }
                 }]
             }, {
                 model: ProductionLine,

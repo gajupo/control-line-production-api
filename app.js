@@ -23,17 +23,17 @@ app.get('/customers', async (req, res, next) => {
 });
 
 /**
- * GET /customers/id
- */
-app.get('/customers/:id', async (req, res) => {
-    await getCustomerOrders(req, res);
-});
-
-/**
  * GET /orders
  */
 app.get('/orders', async (req, res, next) => {
     await getCurrentOrders(res, next);
+});
+
+/**
+ * GET /customers/id
+ */
+app.get('/orders/:id', async (req, res) => {
+    await getCustomerOrders(req, res);
 });
 
 /**
