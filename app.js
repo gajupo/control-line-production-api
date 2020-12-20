@@ -8,6 +8,7 @@ const { getCustomerList } = require("./app/controllers/customer");
 const { getCurrentOrders, createNewOrder, getCustomerOrders } = require("./app/controllers/orders");
 const { getPaginatedReportList } = require("./app/controllers/reports");
 const { getActiveStopCauseLogs, getStopCauseLogsRecord, unblockLine } = require("./app/controllers/stop-cause-log");
+const { getMaterialList } = require("./app/controllers/materials");
 
 const app = express();
 const port = 3000;
@@ -83,6 +84,13 @@ app.get('/reportlist/:page', async (req, res, next) => {
  */
 app.post('/orders/new', async (req, res, next) => {
     await createNewOrder(req, res);
+});
+
+/**
+ * GET /materials
+ */
+app.post('/materials', async (req, res, next) => {
+    await getMaterialList(res);
 });
 
 app.listen(port, () => {

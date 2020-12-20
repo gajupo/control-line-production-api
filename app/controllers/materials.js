@@ -12,6 +12,7 @@ async function getMaterialList(res) {
         if (materials == null) {
             return notFoundError("There are not active materials");
         }
+        res.send(JSON.stringify(materials, null, 2));
     }
     catch (error) {
         logError("Error in getMaterialList", error);
