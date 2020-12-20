@@ -89,7 +89,7 @@ app.post('/orders/new', async (req, res, next) => {
 /**
  * GET /materials
  */
-app.post('/materials', async (req, res, next) => {
+app.get('/materials', async (req, res, next) => {
     await getMaterialList(res);
 });
 
