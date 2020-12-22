@@ -7,7 +7,7 @@ async function getMaterialList(res) {
 
     try {
         const materials = await Material.findAll({
-            attributes: ['id', 'materialDescription']
+            attributes: ['id', 'pasPN']
         });
         if (materials == null) {
             return notFoundError("There are not active materials");
