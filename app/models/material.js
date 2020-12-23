@@ -12,8 +12,7 @@ module.exports = sequelize.define('Material', {
     pasPN : {
         type: DataTypes.STRING,
         allowNull: false,
-        field: 'PasPN',
-        primaryKey: true
+        field: 'PasPN'
     },
     materialDescription: {
         type: DataTypes.STRING,
