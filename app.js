@@ -70,7 +70,7 @@ app.put('/unblock/:stationIdentifier', async (req, res, next) => {
  *     }
  * }
  */
-app.get('/reportlist/:page', async (req, res, next) => {
+app.post('/reportlist/:page', async (req, res, next) => {
     await getPaginatedReportList(req, res, next);
 });
 
