@@ -165,10 +165,10 @@ stopCauseLog.belongsTo(stopCause, {
 });
 
 Material.hasMany(Order, {
-    foreignKey: 'PasPN'
+    foreignKey: 'MaterialId'
 });
 Order.belongsTo(Material, {
-    foreignKey: 'PasPN'
+    foreignKey: 'MaterialId'
 })
 
 Customer.hasMany(Material, {
