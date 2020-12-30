@@ -20,7 +20,7 @@ async function getPaginatedReportList(req, res, next) {
         const dateWhere = createDateWhereQuery(req.body);
         const pasWhere = createPasPnQuery(req.body);
 
-        const result = await ValidationResult.findAndCountAll({
+        var result = await ValidationResult.findAndCountAll({
             attributes: ['id', 'scanDate'],
             include: [{
                     model: OperatingStation,
@@ -42,9 +42,10 @@ async function getPaginatedReportList(req, res, next) {
             offset: offset,
             where: dateWhere
         });
-        result.currentPage = req.params.page;
-        result.totalPages = result.count / 10;
+        result.currentPage = parseInt(req.params.page);
+        result.totalPages = Math.ceil(result.count / 10);
         logMessage("getPaginatedReportList consumed", result);
+
         return res.send(JSON.stringify(result, null, 2));
     }
     catch(error) {
