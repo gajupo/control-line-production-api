@@ -42,6 +42,8 @@ async function getPaginatedReportList(req, res, next) {
             offset: offset,
             where: dateWhere
         });
+        result.currentPage = req.params.page;
+        result.totalPages = result.count / 10;
         logMessage("getPaginatedReportList consumed", result);
         return res.send(JSON.stringify(result, null, 2));
     }
