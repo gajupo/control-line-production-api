@@ -32,7 +32,7 @@ async function getActiveStopCauseLogs(res, next) {
                 attributes: ['description']
             }, {
                 model: OperatingStation,
-                attributes: ['id'],
+                attributes: ['id', 'stationIdentifier'],
                 include: [{
                     model: ProductionLine,
                     attributes: ['lineName']
