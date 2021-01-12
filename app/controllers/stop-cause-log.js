@@ -67,7 +67,8 @@ async function getStopCauseLogsRecord(res, next) {
             }, {
                     model: StopCause,
                     attributes: ['description']
-                }]
+                }],
+            order: [['createdDate', 'DESC']]
         });
         const payload = recordCauseLog.map(p => p.dataValues);
 
