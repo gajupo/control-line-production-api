@@ -93,7 +93,7 @@ async function unblockLine(req, res, next) {
         if (stoppedLine) {
             var actualizados = await updateStoppedLine(stoppedLine.id);
             if (actualizados) {
-                logMessage("unblockLine consumed", recordCauseLog.dataValues);
+                logMessage("unblockLine consumed", stoppedLine.dataValues);
                 successfulOperation(`The operating station ${stationIdentifier} was unblocked succesfully`, res);
             }
             else {
