@@ -11,7 +11,7 @@ async function getActiveStopCauseLogs(res, next) {
     try {
         const stopCauseLogs = await StopCauseLog.findAll({
             where: { status: true },
-            attributes: ['id', 'status'],
+            attributes: ['id', 'status', 'createdDate'],
             include: [{
                 model: Order,
                 required: true,
