@@ -11,9 +11,9 @@ async function getProductionLines(res) {
                 model: OperatingStation,
                 attributes: ['id', 'stationIdentifier']
             }],
-            attributes: ['id']
+            attributes: ['id', 'lineName']
         });
-        return productionlines;
+        res.send(JSON.stringify(productionlines, null, 2));
     }
     catch (error) {
         logError("Error in getProductionLines", error);
