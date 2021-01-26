@@ -103,7 +103,8 @@ async function createNewOrder(req, res) {
             orderGoal: 0,
             stationIdentifier: productionLine.OperatingStation.stationIdentifier,
             ShiftId: shift.id,
-            ProductionLineId: productionLine.id
+            ProductionLineId: productionLine.id,
+            MaterialId: materialId
         });
         if (order) {
             return successfulOperation(`The order with the identifier ${orderIdentifier} was created succesfully.`, res, 'order', order);
