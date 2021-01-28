@@ -8,7 +8,7 @@ const { getCustomerList } = require("./app/controllers/customer");
 const { getCurrentOrders, createNewOrder, getCustomerOrders } = require("./app/controllers/orders");
 const { getPaginatedReportList } = require("./app/controllers/reports");
 const { getActiveStopCauseLogs, getStopCauseLogsRecord, unblockLine } = require("./app/controllers/stop-cause-log");
-const { getMaterialList } = require("./app/controllers/materials");
+const { getMaterialList, getMaterialListPerCustomer } = require("./app/controllers/materials");
 const { getProductionLines } = require("./app/controllers/production-lines");
 
 const app = express();
@@ -92,6 +92,13 @@ app.post('/orders/new', async (req, res, next) => {
  */
 app.get('/materials', async (req, res, next) => {
     await getMaterialList(res);
+});
+
+/**
+ * GET /materials/client/6
+ */
+app.get('/materials/client/:id', async (req, res, next) => {
+    await getMaterialListPerCustomer(req, res);
 });
 
 /**
