@@ -33,7 +33,7 @@ async function getMaterialListPerCustomer(req, res) {
         }
         const materials = await Material.findAll({
             where: { CustomerId: req.params.id },
-            attributes: ['id', 'pasPN']
+            attributes: ['id', 'pasPN', 'materialDescription']
         });
         res.send(JSON.stringify(materials, null, 2));
     }
