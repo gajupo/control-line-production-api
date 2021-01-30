@@ -167,7 +167,8 @@ function validateParameters(payload) {
     };
     const {error} = OrderParameterSchema.validate({
         productionLineId: payload.productionLineId,
-        materialId: payload.materialId
+        materialId: payload.materialId,
+        goal: payload.goal
     });
     if (error) {
         returned.isValid = false;
