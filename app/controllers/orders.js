@@ -85,11 +85,11 @@ async function createNewOrder(req, res) {
         }
         const material = await getMaterial(materialId);
         if (material == null) {
-            return notFoundError(`A material with the id ${materialId} was not found`);
+            return notFoundError(`A material with the id ${materialId} was not found`, res);
         }
         const shift = await getCurrentShift(now, productionLine);
         if (shift == null) {
-            return notFoundError(`A shift for the ProductionLine with the id ${productionLine.id} was not found`);
+            return notFoundError(`A shift for the ProductionLine with the id ${productionLine.id} was not found`, res);
         }
         const orderIdentifier = generateOrderIdentifier(now, productionLine);
 
