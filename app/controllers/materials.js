@@ -43,6 +43,15 @@ async function getMaterialListPerCustomer(req, res) {
     }
 }
 
+async function getMaterial(materialId) {
+
+    var material = await Material.findOne({
+        where: { id: materialId },
+        attributes: ['id', 'pasPN']
+    });
+    return material;
+}
+
 function isValidCustomerID(id) {
 
     const {error} = PageParameterSchema.validate({ page: id });
@@ -54,3 +63,4 @@ function isValidCustomerID(id) {
 
 module.exports.getMaterialList = getMaterialList;
 module.exports.getMaterialListPerCustomer = getMaterialListPerCustomer;
+module.exports.getMaterial = getMaterial;

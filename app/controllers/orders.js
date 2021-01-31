@@ -5,6 +5,7 @@ const { logError } = require('../helpers/logger');
 const { internalServerError, notFoundError, successfulOperation, badRequestError } = require("./core");
 const { Order, Material, Customer, ProductionLine, Shift, OrderParameterSchema, PageParameterSchema } = require("../models");
 const { getProductionLine } = require("./production-lines");
+const { getMaterial } = require("./materials");
 
 
 async function getCurrentOrders(res, next) {
@@ -118,15 +119,6 @@ async function createNewOrder(req, res) {
         logError("Error in createNewOrder", error);
         return internalServerError(`Internal server error`, res);
     }
-}
-
-async function getMaterial(materialId) {
-
-    var material = await Material.findOne({
-        where: { id: materialId },
-        attributes: ['id', 'pasPN']
-    });
-    return material;
 }
 
 async function getCurrentShift(dateTime, productionLine) {
