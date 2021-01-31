@@ -1,7 +1,7 @@
 'use strict';
 
 const { logError } = require('../helpers/logger');
-const { Shift, PageParameterSchema, ProductionLine } = require("../models");
+const { Shift, ProductionLine, validateModelId } = require("../models");
 const { internalServerError, badRequestError } = require("./core");
 
 /**
@@ -10,12 +10,12 @@ const { internalServerError, badRequestError } = require("./core");
  */
 async function getShiftsPerProductionLine(req, res) {
     try {
-        const {error} = PageParameterSchema.validate({ page: req.params.productionLineId });
-        if (error) {
-            const errorList = error.details.map(e => e.message);
-            return badRequestError(`The production line ID ${req.params.productionLineId} is not valid`, res, errorList);
-        }
         const productionLineId = req.params.productionLineId;
+        const modelId = validateModelId(productionLineId);
+
+        if (!modelId.isValid) {
+            return badRequestError(`The production line ID ${productionLineId} is not valid`, res, modelId.errorList);
+        }
         const shifts = await getShiftsPerProductionLineImpl(productionLineId);
         res.json(shifts);
     }

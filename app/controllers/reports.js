@@ -4,7 +4,7 @@ const { Op } = require("sequelize");
 
 const { sequelize } = require("../helpers/sequelize");
 const { logError, logMessage } = require('../helpers/logger');
-const { ValidationResult, Material, OperatingStation, Order, Shift, ReportParameterSchema, PageParameterSchema } = require("../models");
+const { ValidationResult, Material, OperatingStation, Order, Shift, ReportParameterSchema } = require("../models");
 const { badRequestError, internalServerError } = require("./core");
 
 async function getPaginatedReportList(req, res, next) {
@@ -78,8 +78,8 @@ function createPasPnQuery(payload) {
 
 function calculatePaginationOffset(page) {
 
-    const {error} = PageParameterSchema.validate({ page: page });
-    if (error) {
+    const validate = validatePaginationPage(req.params.id);
+    if (!validate.isValid) {
         return 0;
     }
     return (page * LIMIT) - LIMIT;
