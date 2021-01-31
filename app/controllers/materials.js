@@ -16,7 +16,7 @@ async function getMaterialList(res) {
         if (materials == null) {
             return notFoundError("There are not active materials");
         }
-        res.send(JSON.stringify(materials, null, 2));
+        res.json(materials);
     }
     catch (error) {
         logError("Error in getMaterialList", error);
@@ -35,7 +35,7 @@ async function getMaterialListPerCustomer(req, res) {
             where: { CustomerId: req.params.id },
             attributes: ['id', 'pasPN', 'materialDescription']
         });
-        res.send(JSON.stringify(materials, null, 2));
+        res.json(materials);
     }
     catch (error) {
         logError("Error in getMaterialListPerCustomer", error);

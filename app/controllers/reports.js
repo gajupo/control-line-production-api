@@ -46,7 +46,7 @@ async function getPaginatedReportList(req, res, next) {
         result.totalPages = Math.ceil(result.count / 10);
         logMessage("getPaginatedReportList consumed", result);
 
-        return res.send(JSON.stringify(result, null, 2));
+        return res.json(result);
     }
     catch(error) {
         logError("Error in getPaginatedReportList", error);

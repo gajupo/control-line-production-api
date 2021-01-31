@@ -25,7 +25,7 @@ async function getCurrentOrders(res, next) {
                 attributes: ['id', 'shiftDescription']
             }]
         });
-        res.send(JSON.stringify(orders, null, 2));
+        res.json(orders);
     }
     catch(error) {
         logError("Error in getCurrentOrders", error);
@@ -60,7 +60,7 @@ async function getCustomerOrders(req, res) {
                 attributes: ['id', 'shiftDescription']
             }]
         });
-        res.send(JSON.stringify(orders, null, 2));
+        res.json(orders);
     }
     catch(error) {
         logError("Error in getCustomerOrders", error);

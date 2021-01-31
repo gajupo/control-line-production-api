@@ -13,7 +13,7 @@ async function getProductionLines(res) {
             }],
             attributes: ['id', 'lineName']
         });
-        res.send(JSON.stringify(productionlines, null, 2));
+        res.json(productionlines);
     }
     catch (error) {
         logError("Error in getProductionLines", error);

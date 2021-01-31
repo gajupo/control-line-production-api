@@ -10,7 +10,7 @@ async function getCustomerList(res, next) {
         const customers = await Customer.findAll( {
             attributes: ['id', 'customerNumber', 'customerName']
         });
-        res.send(JSON.stringify(customers, null, 2));
+        res.json(customers);
     }
     catch(error) {
         logError("Error in getCustomerList", error);

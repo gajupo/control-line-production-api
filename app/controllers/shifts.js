@@ -27,7 +27,7 @@ async function getShiftsPerProductionLine(req, res) {
             },
             attributes: ['id', 'shiftDescription', 'shiftStart', 'shiftEnd']
         });
-        res.send(JSON.stringify(shifts, null, 2));
+        res.json(shifts);
     }
     catch (error) {
         logError("Error in getShiftsPerProductionLine", error);

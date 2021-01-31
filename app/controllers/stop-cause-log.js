@@ -42,7 +42,7 @@ async function getActiveStopCauseLogs(res, next) {
         const payload = stopCauseLogs.map(p => p.dataValues);
 
         logMessage("getActiveStopCauseLogs consumed", payload);
-        res.send(JSON.stringify(stopCauseLogs, null, 2));
+        res.json(stopCauseLogs);
     }
     catch(error) {
         logError("Error in getActiveStopCauseLogs", error);
@@ -73,7 +73,7 @@ async function getStopCauseLogsRecord(res, next) {
         const payload = recordCauseLog.map(p => p.dataValues);
 
         logMessage("getStopCauseLogsRecord consumed", payload);
-        res.send(JSON.stringify(recordCauseLog, null, 2));
+        res.json(recordCauseLog);
     }
     catch(error) {
         logError("Error in getStopCauseLogsRecord", error);
