@@ -71,7 +71,7 @@ async function getCustomerOrders(req, res) {
 async function createNewOrder(req, res) {
     
     try {
-        const params = validateParameters(req.body);
+        const params = validateOrderParameters(req.body);
         if (!params.isValid) {
             return badRequestError(`The schema is not valid`, res, params.errorList);
         }
@@ -159,7 +159,7 @@ function generateOrderIdentifier(dateTime, productionLine) {
     return `${format(dateTime, 'ddMMyyHHmmss')}${productionLine.OperatingStation.stationIdentifier}-${productionLine.OperatingStation.id}`;
 }
 
-function validateParameters(payload) {
+function validateOrderParameters(payload) {
 
     var returned = {
         isValid: true,
@@ -168,6 +168,7 @@ function validateParameters(payload) {
     const {error} = OrderParameterSchema.validate({
         productionLineId: payload.productionLineId,
         materialId: payload.materialId,
+        shift: payload.shiftId,
         goal: payload.goal
     });
     if (error) {

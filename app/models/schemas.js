@@ -17,5 +17,6 @@ module.exports.PageParameterSchema = Joi.object ({
 module.exports.OrderParameterSchema = Joi.object ({
     productionLineId: Joi.number().integer().positive().required(),
     materialId: Joi.number().integer().positive().required(),
+    shiftId: Joi.number().integer().positive().required(),
     goal: Joi.number().integer().positive().required()
 });
