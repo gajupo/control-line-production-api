@@ -14,7 +14,7 @@ module.exports.PageParameterSchema = Joi.object ({
     page: Joi.number().integer().positive().required()
 });
 
-module.exports.OrderParameterSchema = Joi.object ({
+const OrderParameterSchema = Joi.object ({
     productionLineId: Joi.number().integer().positive().required(),
     materialId: Joi.number().integer().positive().required(),
     shiftId: Joi.number().integer().positive().required(),
@@ -59,7 +59,7 @@ module.exports.validateOrderParameters = function validateOrderParameters(payloa
     const {error} = OrderParameterSchema.validate({
         productionLineId: payload.productionLineId,
         materialId: payload.materialId,
-        shift: payload.shiftId,
+        shiftId: payload.shiftId,
         goal: payload.goal
     });
     if (error) {
