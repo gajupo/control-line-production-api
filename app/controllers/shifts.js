@@ -16,17 +16,7 @@ async function getShiftsPerProductionLine(req, res) {
             return badRequestError(`The production line ID ${req.params.productionLineId} is not valid`, res, errorList);
         }
         const productionLineId = req.params.productionLineId;
-        const shifts = await Shift.findAll({
-            include: {
-                model: ProductionLine,
-                through: {
-                    where: { productionLineId: productionLineId },
-                },
-                required: true,
-                attributes: []
-            },
-            attributes: ['id', 'shiftDescription', 'shiftStart', 'shiftEnd']
-        });
+        const shifts = await getShiftsPerProductionLineImpl(productionLineId);
         res.json(shifts);
     }
     catch (error) {
@@ -35,4 +25,21 @@ async function getShiftsPerProductionLine(req, res) {
     }
 }
 
+async function getShiftsPerProductionLineImpl(productionLineId) {
+
+    const shifts = await Shift.findAll({
+        include: {
+            model: ProductionLine,
+            through: {
+                where: { productionLineId: productionLineId },
+            },
+            required: true,
+            attributes: []
+        },
+        attributes: ['id', 'shiftDescription', 'shiftStart', 'shiftEnd']
+    });
+    return shifts;
+}
+
 module.exports.getShiftsPerProductionLine = getShiftsPerProductionLine;
+module.exports.getShiftsPerProductionLineImpl = getShiftsPerProductionLineImpl;
