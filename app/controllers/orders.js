@@ -3,7 +3,8 @@
 const { format } = require('date-fns');
 const { logError } = require('../helpers/logger');
 const { internalServerError, notFoundError, successfulOperation, badRequestError } = require("./core");
-const { Order, Material, Customer, ProductionLine, Shift, OrderParameterSchema, PageParameterSchema } = require("../models");
+const { Order, Material, Customer, ProductionLine, Shift, OrderParameterSchema, 
+    PageParameterSchema, validateModelId } = require("../models");
 const { getProductionLine } = require("./production-lines");
 const { getMaterial } = require("./materials");
 const { getCurrentShift } = require("./shifts");
@@ -40,10 +41,9 @@ async function getCurrentOrders(res, next) {
 async function getCustomerOrders(req, res) {
 
     try {
-        const {error} = PageParameterSchema.validate({ page: req.params.id });
-        if (error) {
-            const errorList = error.details.map(e => e.message);
-            return badRequestError(`The customer ID ${req.params.id} is not valid`, res, errorList);
+        const modelId = validateModelId(req.params.id);
+        if (!modelId.isValid) {
+            return badRequestError(`The customer ID ${req.params.id} is not valid`, res, modelId.errorList);
         }
         const orders = await Order.findAll({
             attributes: ['id', 'orderIdentifier', 'materialScanned', 'orderGoal', 'isIncomplete'],
@@ -116,7 +116,6 @@ async function createNewOrder(req, res) {
         return internalServerError(`There was an error saving the new Order`, res);
     }
     catch(error) {
-        console.log(error);
         logError("Error in createNewOrder", error);
         return internalServerError(`Internal server error`, res);
     }
