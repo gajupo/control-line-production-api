@@ -25,6 +25,16 @@ async function getShiftsPerProductionLine(req, res) {
     }
 }
 
+async function getCurrentShift(dateTime, productionLine) {
+
+    const fractionalHours = dateTime.getHours() + (dateTime.getMinutes() / 60);
+
+    const shifts = await getShiftsPerProductionLineImpl(productionLine);
+    const shift = shifts.find(s => fractionalHours >= s.shiftStart && fractionalHours <= s.shiftEnd);
+
+    return shift;
+}
+
 async function getShiftsPerProductionLineImpl(productionLineId) {
 
     const shifts = await Shift.findAll({
@@ -42,4 +52,5 @@ async function getShiftsPerProductionLineImpl(productionLineId) {
 }
 
 module.exports.getShiftsPerProductionLine = getShiftsPerProductionLine;
+module.exports.getCurrentShift = getCurrentShift;
 module.exports.getShiftsPerProductionLineImpl = getShiftsPerProductionLineImpl;

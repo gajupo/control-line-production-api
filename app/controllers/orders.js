@@ -6,6 +6,7 @@ const { internalServerError, notFoundError, successfulOperation, badRequestError
 const { Order, Material, Customer, ProductionLine, Shift, OrderParameterSchema, PageParameterSchema } = require("../models");
 const { getProductionLine } = require("./production-lines");
 const { getMaterial } = require("./materials");
+const { getCurrentShift } = require("./shifts");
 
 
 async function getCurrentOrders(res, next) {
@@ -119,20 +120,6 @@ async function createNewOrder(req, res) {
         logError("Error in createNewOrder", error);
         return internalServerError(`Internal server error`, res);
     }
-}
-
-async function getCurrentShift(dateTime, productionLine) {
-
-    const fractionalHours = dateTime.getHours() + (dateTime.getMinutes() / 60);
-    const shifts = await Shift.findAll({
-        through: {
-            where: { productionLineId: productionLine.id },
-            attributes: []
-        },
-        attributes: ['id', 'shiftStart', 'shiftEnd']
-    });
-    const shift = shifts.find(s => fractionalHours >= s.shiftStart && fractionalHours <= s.shiftEnd);
-    return shift;
 }
 
 function generateOrderIdentifier(dateTime, productionLine) {
