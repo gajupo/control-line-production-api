@@ -16,7 +16,8 @@ const Supplier = require("./supplier");
 const Material = require("./material");
 const ValidationResult = require("./validation-result");
 
-const { ReportParameterSchema, PageParameterSchema, OrderParameterSchema, validateModelId } = require("./schemas");
+const { ReportParameterSchema, PageParameterSchema, OrderParameterSchema, validateModelId,
+    validateOrderParameters } = require("./schemas");
 const stopCauseLog = require('./stop-cause-log');
 const stopCause = require('./stop-cause');
 
@@ -194,3 +195,4 @@ module.exports.ReportParameterSchema = ReportParameterSchema;
 module.exports.PageParameterSchema = PageParameterSchema;
 module.exports.OrderParameterSchema = OrderParameterSchema;
 module.exports.validateModelId = validateModelId;
+module.exports.validateOrderParameters = validateOrderParameters;

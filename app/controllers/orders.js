@@ -3,8 +3,7 @@
 const { format } = require('date-fns');
 const { logError } = require('../helpers/logger');
 const { internalServerError, notFoundError, successfulOperation, badRequestError } = require("./core");
-const { Order, Material, Customer, ProductionLine, Shift, OrderParameterSchema, 
-    PageParameterSchema, validateModelId } = require("../models");
+const { Order, Material, Customer, ProductionLine, Shift, validateModelId, validateOrderParameters } = require("../models");
 const { getProductionLine } = require("./production-lines");
 const { getMaterial } = require("./materials");
 const { getCurrentShift } = require("./shifts");
@@ -124,25 +123,6 @@ async function createNewOrder(req, res) {
 function generateOrderIdentifier(dateTime, productionLine) {
 
     return `${format(dateTime, 'ddMMyyHHmmss')}${productionLine.OperatingStation.stationIdentifier}-${productionLine.OperatingStation.id}`;
-}
-
-function validateOrderParameters(payload) {
-
-    var returned = {
-        isValid: true,
-        errorList: []
-    };
-    const {error} = OrderParameterSchema.validate({
-        productionLineId: payload.productionLineId,
-        materialId: payload.materialId,
-        shift: payload.shiftId,
-        goal: payload.goal
-    });
-    if (error) {
-        returned.isValid = false;
-        returned.errorList = error.details.map(e => e.message);
-    }
-    return returned;
 }
 
 module.exports.getCurrentOrders = getCurrentOrders;
