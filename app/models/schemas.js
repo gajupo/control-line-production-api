@@ -10,7 +10,7 @@ module.exports.ReportParameterSchema = Joi.object ({
     })
 }).or('pasPN', 'scanDate');
 
-module.exports.PageParameterSchema = Joi.object ({
+const PageParameterSchema = Joi.object ({
     page: Joi.number().integer().positive().required()
 });
 

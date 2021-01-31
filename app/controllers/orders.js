@@ -7,7 +7,6 @@ const { Order, Material, Customer, ProductionLine, Shift, validateModelId,
     validateOrderParameters } = require("../models");
 const { getProductionLine } = require("./production-lines");
 const { getMaterial } = require("./materials");
-const { getCurrentShift } = require("./shifts");
 
 
 async function getCurrentOrders(res, next) {
@@ -43,7 +42,7 @@ async function getCustomerOrders(req, res) {
     try {
         const modelId = validateModelId(req.params.id);
         if (!modelId.isValid) {
-            return badRequestError(`The customer ID ${req.params.id} is not valid`, res, modelId.errorList);
+            return badRequestError(`Invalid customer ID: ${id}`, res, modelId.errorList);
         }
         const orders = await Order.findAll({
             attributes: ['id', 'orderIdentifier', 'materialScanned', 'orderGoal', 'isIncomplete'],

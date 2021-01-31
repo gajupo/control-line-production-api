@@ -1,6 +1,6 @@
 'use strict';
 
-const { Material, PageParameterSchema } = require("../models");
+const { Material, validateModelId } = require("../models");
 const { notFoundError, internalServerError, badRequestError } = require("./core");
 const { logError } = require('../helpers/logger');
 
@@ -27,9 +27,9 @@ async function getMaterialList(res) {
 async function getMaterialListPerCustomer(req, res) {
 
     try {
-        const id = req.params.id;
-        if(!isValidCustomerID(id)) {
-            return badRequestError(`Invalid customer ID: ${id}`, res);
+        const modelId = validateModelId(req.params.id);
+        if (!modelId.isValid) {
+            return badRequestError(`Invalid customer ID: ${id}`, res, modelId.errorList);
         }
         const materials = await Material.findAll({
             where: { CustomerId: req.params.id },
@@ -50,15 +50,6 @@ async function getMaterial(materialId) {
         attributes: ['id', 'pasPN']
     });
     return material;
-}
-
-function isValidCustomerID(id) {
-
-    const {error} = PageParameterSchema.validate({ page: id });
-    if (error) {
-        return false;
-    }
-    return true;
 }
 
 module.exports.getMaterialList = getMaterialList;
