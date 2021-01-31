@@ -21,4 +21,18 @@ async function getProductionLines(res) {
     }
 }
 
+async function getProductionLine(lineId) {
+    
+    var productionLine = await ProductionLine.findOne({
+        where: { id: lineId },
+        include: [{
+            model: OperatingStation,
+            attributes: ['id', 'stationIdentifier']
+        }],
+        attributes: ['id']
+    });
+    return productionLine;
+}
+
 module.exports.getProductionLines = getProductionLines;
+module.exports.getProductionLine = getProductionLine;

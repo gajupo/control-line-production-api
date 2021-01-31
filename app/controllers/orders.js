@@ -3,7 +3,9 @@
 const { format } = require('date-fns');
 const { logError } = require('../helpers/logger');
 const { internalServerError, notFoundError, successfulOperation, badRequestError } = require("./core");
-const { Order, Material, Customer, ProductionLine, Shift, OperatingStation, OrderParameterSchema, PageParameterSchema } = require("../models");
+const { Order, Material, Customer, ProductionLine, Shift, OrderParameterSchema, PageParameterSchema } = require("../models");
+const { getProductionLine } = require("./production-lines");
+
 
 async function getCurrentOrders(res, next) {
 
@@ -116,19 +118,6 @@ async function createNewOrder(req, res) {
         logError("Error in createNewOrder", error);
         return internalServerError(`Internal server error`, res);
     }
-}
-
-async function getProductionLine(lineId) {
-    
-    var productionLine = await ProductionLine.findOne({
-        where: { id: lineId },
-        include: [{
-            model: OperatingStation,
-            attributes: ['id', 'stationIdentifier']
-        }],
-        attributes: ['id']
-    });
-    return productionLine;
 }
 
 async function getMaterial(materialId) {
