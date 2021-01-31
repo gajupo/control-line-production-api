@@ -3,7 +3,8 @@
 const { format } = require('date-fns');
 const { logError } = require('../helpers/logger');
 const { internalServerError, notFoundError, successfulOperation, badRequestError } = require("./core");
-const { Order, Material, Customer, ProductionLine, Shift, validateModelId, validateOrderParameters } = require("../models");
+const { Order, Material, Customer, ProductionLine, Shift, validateModelId,
+    validateOrderParameters } = require("../models");
 const { getProductionLine } = require("./production-lines");
 const { getMaterial } = require("./materials");
 const { getCurrentShift } = require("./shifts");
@@ -80,6 +81,8 @@ async function createNewOrder(req, res) {
         }
         const lineId = req.body.productionLineId;
         const materialId = req.body.materialId;
+        const shiftId = req.body.shiftId;
+        const goal = req.body.goal;
         const now = new Date();
 
         const productionLine = await getProductionLine(lineId);
@@ -90,10 +93,6 @@ async function createNewOrder(req, res) {
         if (material == null) {
             return notFoundError(`A material with the id ${materialId} was not found`, res);
         }
-        const shift = await getCurrentShift(now, productionLine);
-        if (shift == null) {
-            return notFoundError(`A shift for the ProductionLine with the id ${productionLine.id} was not found`, res);
-        }
         const orderIdentifier = generateOrderIdentifier(now, productionLine);
 
         const order = await Order.create({
@@ -103,10 +102,10 @@ async function createNewOrder(req, res) {
             createdAt: now,
             active: true,
             isIncomplete: true,
-            orderGoal: 0,
+            orderGoal: goal,
             stationIdentifier: productionLine.OperatingStation.stationIdentifier,
-            ShiftId: shift.id,
-            ProductionLineId: productionLine.id,
+            ShiftId: shiftId,
+            ProductionLineId: lineId,
             MaterialId: materialId
         });
         if (order) {
