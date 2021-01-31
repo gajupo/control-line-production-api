@@ -10,6 +10,7 @@ const { getPaginatedReportList } = require("./app/controllers/reports");
 const { getActiveStopCauseLogs, getStopCauseLogsRecord, unblockLine } = require("./app/controllers/stop-cause-log");
 const { getMaterialList, getMaterialListPerCustomer } = require("./app/controllers/materials");
 const { getProductionLines } = require("./app/controllers/production-lines");
+const { getShiftsPerProductionLine } = require("./app/controllers/shifts");
 
 const app = express();
 const port = 3001;
@@ -106,6 +107,13 @@ app.get('/materials/client/:id', async (req, res, next) => {
  */
 app.get('/productionlines', async(req, res, next) => {
     await getProductionLines(res);
+});
+
+/**
+ * GET /shifts/line/2
+ */
+app.get('/shifts/line/:productionLineId', async(req, res, next) => {
+    await getShiftsPerProductionLine(req, res);
 });
 
 app.listen(port, () => {
