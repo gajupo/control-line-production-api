@@ -15,7 +15,12 @@ const sequelize = new Sequelize(
     config.get("database.password"), {
     dialect: 'mssql',
     host: config.get("database.host"),
-    port: config.get("database.port")
+    port: config.get("database.port"),
+    dialectOptions: {
+        "options": {
+            validateBulkLoadParameters: true
+        }
+    }
 });
 
 module.exports.sequelize = sequelize;
