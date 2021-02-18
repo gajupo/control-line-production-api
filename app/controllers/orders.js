@@ -3,8 +3,8 @@
 const { format } = require('date-fns');
 const { logError } = require('../helpers/logger');
 const { internalServerError, notFoundError, successfulOperation, badRequestError } = require("./core");
-const { Order, Material, Customer, ProductionLine, Shift, validateModelId,
-    validateOrderParameters } = require("../models");
+const { Order, Material, Customer, ProductionLine, Shift, validateModelId, 
+        validateOrderParameters, StopCauseLog} = require("../models");
 const { getProductionLine } = require("./production-lines");
 const { getMaterial } = require("./materials");
 
@@ -61,6 +61,11 @@ async function getCustomerOrders(req, res) {
             }, {
                 model: Shift,
                 attributes: ['id', 'shiftDescription']
+            }, {
+                model: StopCauseLog,
+                required: false,
+                attributes: ['id', 'status'],
+                where: { status: true }
             }]
         });
         res.json(orders);
