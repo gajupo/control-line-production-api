@@ -8,7 +8,7 @@ const { getCustomerList } = require("./app/controllers/customer");
 const { getCurrentOrders, createNewOrder, getCustomerOrders } = require("./app/controllers/orders");
 const { getPaginatedReportList } = require("./app/controllers/reports");
 const { getActiveStopCauseLogs, getStopCauseLogsRecord, unblockLine, 
-    getActiveStopCauseLogsByCustomer } = require("./app/controllers/stop-cause-log");
+    getActiveStopCauseLogsByCustomer, getStopCauseLogsRecordByCustomer } = require("./app/controllers/stop-cause-log");
 const { getMaterialList, getMaterialListPerCustomer } = require("./app/controllers/materials");
 const { getProductionLines } = require("./app/controllers/production-lines");
 const { getShiftsPerProductionLine } = require("./app/controllers/shifts");
@@ -59,6 +59,13 @@ app.get('/stopcauselogs/:customerId', async (req, res) => {
  */
 app.get('/stopcauselogs/historical', async (req, res, next) => {
     await getStopCauseLogsRecord(res, next);
+});
+
+/**
+ * GET /stopcauselogs/historical/6
+ */
+app.get('/stopcauselogs/historical:customerId', async (req, res) => {
+    await getStopCauseLogsRecordByCustomer(req, res);
 });
 
 /**
