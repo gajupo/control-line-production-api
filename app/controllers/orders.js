@@ -40,9 +40,9 @@ async function getCurrentOrders(res, next) {
 async function getCustomerOrders(req, res) {
 
     try {
-        const modelId = validateModelId(req.params.id);
-        if (!modelId.isValid) {
-            return badRequestError(`Invalid customer ID: ${id}`, res, modelId.errorList);
+        const customer = validateModelId(req.params.id);
+        if (!customer.isValid) {
+            return badRequestError(`Invalid customer ID: ${customer.id}`, res, customer.errorList);
         }
         const orders = await Order.findAll({
             attributes: ['id', 'orderIdentifier', 'materialScanned', 'orderGoal', 'isIncomplete'],
@@ -53,7 +53,7 @@ async function getCustomerOrders(req, res) {
                 include: [{
                     model: Customer,
                     attributes: ['id', 'customerName'],
-                    where: { id: req.params.id }
+                    where: { id: customer.id }
                 }]
             }, {
                 model: ProductionLine,

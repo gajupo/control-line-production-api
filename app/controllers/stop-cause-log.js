@@ -4,8 +4,10 @@ const Hoek = require('@hapi/hoek');
 
 const {sequelize} = require("../helpers/sequelize");
 const { logError, logMessage } = require('../helpers/logger');
-const { StopCauseLog, Order, OperatingStation, Shift, StopCause, ProductionLine, Material, Customer } = require("../models");
-const { notFoundError, successfulOperation, internalServerError } = require("./core");
+const { StopCauseLog, Order, OperatingStation, Shift, StopCause, ProductionLine, Material,
+    Customer, validateModelId} = require("../models");
+const { notFoundError, successfulOperation, internalServerError, 
+    badRequestError } = require("./core");
 
 async function getActiveStopCauseLogs(res, next) {
     try {
@@ -46,6 +48,56 @@ async function getActiveStopCauseLogs(res, next) {
     }
     catch(error) {
         logError("Error in getActiveStopCauseLogs", error);
+        return internalServerError(`Internal server error`);
+    }
+}
+
+async function getActiveStopCauseLogsByCustomer(req, res) {
+
+    const customer = validateModelId(req.params.customerId);
+    if (!customer.isValid) {
+        return badRequestError(`getActiveStopCauseLogsByCustomer: Invalid customer ID: ${customer.id}`,
+            res, customer.errorList);
+    }
+    try {
+        const stopCauseLogs = await StopCauseLog.findAll({
+            where: { status: true },
+            attributes: ['id', 'status', 'createdDate'],
+            include: [{
+                model: Order,
+                required: true,
+                attributes: ['orderIdentifier', 'pasPN'],
+                include: [{
+                    model: Shift,
+                    attributes: ['shiftDescription']
+                }, {
+                    model: Material,
+                    include: [{
+                        model: Customer,
+                        attributes: ['customerName'],
+                        where: { id: customer.id }
+                    }],
+                    attributes: ['id']
+                }]
+            }, {
+                model: StopCause,
+                attributes: ['description']
+            }, {
+                model: OperatingStation,
+                attributes: ['id', 'stationIdentifier'],
+                include: [{
+                    model: ProductionLine,
+                    attributes: ['lineName']
+                    }]
+            }]
+        });
+        const payload = stopCauseLogs.map(p => p.dataValues);
+
+        logMessage("getActiveStopCauseLogsByCustomer consumed", payload);
+        res.json(stopCauseLogs);
+    }
+    catch(error) {
+        logError("Error in getActiveStopCauseLogsByCustomer", error);
         return internalServerError(`Internal server error`);
     }
 }
@@ -124,5 +176,6 @@ async function updateStoppedLine(stopCauseLogId) {
 }
 
 module.exports.getActiveStopCauseLogs = getActiveStopCauseLogs;
+module.exports.getActiveStopCauseLogsByCustomer = getActiveStopCauseLogsByCustomer;
 module.exports.getStopCauseLogsRecord = getStopCauseLogsRecord;
 module.exports.unblockLine = unblockLine;

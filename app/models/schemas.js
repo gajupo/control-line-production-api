@@ -32,7 +32,8 @@ module.exports.validateModelId = function validateModelId(id) {
     
     var returned = {
         isValid: true,
-        errorList: []
+        errorList: [],
+        id: id
     };
     const {error} = PageParameterSchema.validate({ page: id });
     if (error) {
