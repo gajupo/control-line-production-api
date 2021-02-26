@@ -134,6 +134,52 @@ async function getStopCauseLogsRecord(res, next) {
     }
 }
 
+async function getStopCauseLogsRecordByCustomer(req, res) {
+
+    const customer = validateModelId(req.params.customerId);
+    if (!customer.isValid) {
+        return badRequestError(`getStopCauseLogsRecordByCustomer: Invalid customer ID: ${customer.id}`,
+            res, customer.errorList);
+    }
+    try {
+        const recordCauseLog = await StopCauseLog.findAll({
+            where: { status: false },
+            limit: 10,
+            attributes: ['id', 'createdDate'],
+            include: [{
+                model: Order,
+                required: true,
+                attributes: ['orderIdentifier', 'pasPN'],
+                include: [{
+                    model: Shift,
+                    attributes: ['shiftDescription']
+                }, {
+                    model: Material,
+                    include: [{
+                        model: Customer,
+                        attributes: ['customerName'],
+                        where: { id: customer.id }
+                    }],
+                    attributes: ['id'],
+                    required: true
+                }]
+            }, {
+                    model: StopCause,
+                    attributes: ['description']
+                }],
+            order: [['createdDate', 'DESC']]
+        });
+        const payload = recordCauseLog.map(p => p.dataValues);
+
+        logMessage("getStopCauseLogsRecordByCustomer consumed", payload);
+        res.json(recordCauseLog);
+    }
+    catch(error) {
+        logError("Error in getStopCauseLogsRecordByCustomer", error);
+        return internalServerError(`Internal server error`);
+    }
+}
+
 async function unblockLine(req, res, next) {
     try {
         const stationIdentifier = Hoek.escapeHtml(req.params.stationIdentifier);
@@ -179,4 +225,5 @@ async function updateStoppedLine(stopCauseLogId) {
 module.exports.getActiveStopCauseLogs = getActiveStopCauseLogs;
 module.exports.getActiveStopCauseLogsByCustomer = getActiveStopCauseLogsByCustomer;
 module.exports.getStopCauseLogsRecord = getStopCauseLogsRecord;
+module.exports.getStopCauseLogsRecordByCustomer = getStopCauseLogsRecordByCustomer;
 module.exports.unblockLine = unblockLine;
