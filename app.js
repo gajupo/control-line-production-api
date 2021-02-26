@@ -64,7 +64,7 @@ app.get('/stopcauselogs/historical', async (req, res, next) => {
 /**
  * GET /stopcauselogs/historical/6
  */
-app.get('/stopcauselogs/historical:customerId', async (req, res) => {
+app.get('/stopcauselogs/historical/:customerId', async (req, res) => {
     await getStopCauseLogsRecordByCustomer(req, res);
 });
 
