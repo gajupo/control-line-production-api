@@ -77,7 +77,8 @@ async function getActiveStopCauseLogsByCustomer(req, res) {
                         attributes: ['customerName'],
                         where: { id: customer.id }
                     }],
-                    attributes: ['id']
+                    attributes: ['id'],
+                    required: true
                 }]
             }, {
                 model: StopCause,
