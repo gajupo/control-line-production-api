@@ -17,8 +17,6 @@ const Material = require("./material");
 const ValidationResult = require("./validation-result");
 
 const { ReportParameterSchema, validateModelId, validateOrderParameters } = require("./schemas");
-const stopCauseLog = require('./stop-cause-log');
-const stopCause = require('./stop-cause');
 
 ProductionLine.hasOne(OperatingStation, {
     foreignKey: 'LineId'
@@ -160,7 +158,7 @@ Shift.belongsToMany(ProductionLine, {
 StopCause.hasMany(StopCauseLog, {
     foreignKey: 'StopCausesKeys'
 });
-stopCauseLog.belongsTo(stopCause, {
+StopCauseLog.belongsTo(StopCause, {
     foreignKey: 'StopCausesKeys'
 });
 
