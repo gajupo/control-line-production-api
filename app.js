@@ -14,6 +14,8 @@ const { getProductionLines } = require("./app/controllers/production-lines");
 const { getShiftsPerProductionLine } = require("./app/controllers/shifts");
 
 const app = express();
+const http = require('http').Server(app);
+const io = require('socket.io')(http);
 const port = 3001;
 
 app.use(bodyParser.json());
@@ -131,6 +133,10 @@ app.get('/shifts/line/:productionLineId', async(req, res, next) => {
     await getShiftsPerProductionLine(req, res);
 });
 
-app.listen(port, () => {
+io.on('connection', (socket) => {
+    console.log('User connected...');
+});
+
+http.listen(port, () => {
     console.log(`SIMPL Dashboard API listening at http://localhost:${port}`);
 })
