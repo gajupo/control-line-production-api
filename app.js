@@ -102,7 +102,7 @@ app.post('/reportlist/:page', async (req, res, next) => {
  * }
  */
 app.post('/orders/new', async (req, res, next) => {
-    await createNewOrder(req, res);
+    await createNewOrder(req, res, io);
 });
 
 /**

@@ -76,7 +76,7 @@ async function getCustomerOrders(req, res) {
     }
 }
 
-async function createNewOrder(req, res) {
+async function createNewOrder(req, res, io) {
     
     try {
         const params = validateOrderParameters(req.body);
@@ -113,6 +113,29 @@ async function createNewOrder(req, res) {
             MaterialId: materialId
         });
         if (order) {
+            const fullOrder = await order.reload({
+                include: [{
+                    model: Material,
+                    attributes: ['id', 'pasPN'],
+                    required: true,
+                    include: [{
+                        model: Customer,
+                        attributes: ['id', 'customerName']
+                    }]
+                }, {
+                    model: ProductionLine,
+                    attributes: ['id', 'lineName']
+                }, {
+                    model: Shift,
+                    attributes: ['id', 'shiftDescription']
+                }, {
+                    model: StopCauseLog,
+                    required: false,
+                    attributes: ['id', 'status'],
+                    where: { status: true }
+                }]
+            });
+            io.emit('order-created', fullOrder);
             return successfulOperation(`The order with the identifier ${orderIdentifier} was created succesfully.`, res, 'order', order);
         }
         return internalServerError(`There was an error saving the new Order`, res);
