@@ -77,7 +77,7 @@ async function getCustomerOrders(req, res) {
 }
 
 async function createNewOrder(req, res, io) {
-    
+
     try {
         const params = validateOrderParameters(req.body);
         if (!params.isValid) {
@@ -113,6 +113,7 @@ async function createNewOrder(req, res, io) {
             MaterialId: materialId
         });
         if (order) {
+            // TODO: Optimizar enviando todos los datos requeridos
             const fullOrder = await order.reload({
                 include: [{
                     model: Material,
