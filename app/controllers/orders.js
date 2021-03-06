@@ -1,6 +1,7 @@
 'use strict';
 
 const { format } = require('date-fns');
+const { Sequelize } = require('sequelize');
 const { logError } = require('../helpers/logger');
 const { internalServerError, notFoundError, successfulOperation, badRequestError } = require("./core");
 const { Order, Material, Customer, ProductionLine, Shift, validateModelId, 
@@ -152,6 +153,21 @@ function generateOrderIdentifier(dateTime, productionLine) {
     return `${format(dateTime, 'ddMMyyHHmmss')}${productionLine.OperatingStation.stationIdentifier}-${productionLine.OperatingStation.id}`;
 }
 
+async function scanOrderProduct(req, res, io) {
+
+    const order = validateModelId(req.params.orderId);
+    if (!order.isValid) {
+        return badRequestError(`Invalid customer ID: ${order.id}`, res, order.errorList);
+    }
+    const updated = await Order.update({ 
+        materialScanned: Sequelize.literal('MaterialScanned + 1') }, {
+        where: { id: order.id }
+    });
+    io.emit('order-scanned', { orderId: order.id });
+    res.json({ orderId: order.id });
+}
+
 module.exports.getCurrentOrders = getCurrentOrders;
 module.exports.createNewOrder = createNewOrder;
 module.exports.getCustomerOrders = getCustomerOrders;
+module.exports.scanOrderProduct = scanOrderProduct;
