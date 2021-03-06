@@ -183,17 +183,20 @@ async function unblockLine(req, res, io) {
     try {
         const stationIdentifier = Hoek.escapeHtml(req.params.stationIdentifier);
         const stoppedLine = await StopCauseLog.findOne({
-            include: {
+            include: [{
                 model: OperatingStation,
                 where: { stationIdentifier: stationIdentifier }
-            },
+            }, {
+                model: Order,
+                attributes: ['id']
+            }],
             where: { status: true }
         });
         if (stoppedLine) {
             var actualizados = await updateStoppedLine(stoppedLine.id);
             if (actualizados) {
                 logMessage("unblockLine consumed", stoppedLine.dataValues);
-                io.emit('line-unblocked', { lineId: stoppedLine.id });
+                io.emit('line-unblocked', { id: stoppedLine.Order.id });
 
                 successfulOperation(`The operating station ${stationIdentifier} was unblocked succesfully`, res);
             }
