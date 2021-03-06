@@ -79,8 +79,8 @@ app.get('/stopcauselogs/historical/:customerId', async (req, res) => {
 /**
  * PUT /unblock/STATION01
  */
-app.put('/unblock/:stationIdentifier', async (req, res, next) => {
-    await unblockLine(req, res, next);
+app.put('/unblock/:stationIdentifier', async (req, res) => {
+    await unblockLine(req, res, io);
 });
 
 /**

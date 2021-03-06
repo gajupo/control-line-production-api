@@ -138,8 +138,7 @@ async function getStopCauseLogsRecordByCustomer(req, res) {
 
     const customer = validateModelId(req.params.customerId);
     if (!customer.isValid) {
-        return badRequestError(`getStopCauseLogsRecordByCustomer: Invalid customer ID: ${customer.id}`,
-            res, customer.errorList);
+        req.params.customerId = 1;
     }
     try {
         const recordCauseLog = await StopCauseLog.findAll({
@@ -180,7 +179,7 @@ async function getStopCauseLogsRecordByCustomer(req, res) {
     }
 }
 
-async function unblockLine(req, res, next) {
+async function unblockLine(req, res, io) {
     try {
         const stationIdentifier = Hoek.escapeHtml(req.params.stationIdentifier);
         const stoppedLine = await StopCauseLog.findOne({
@@ -194,6 +193,8 @@ async function unblockLine(req, res, next) {
             var actualizados = await updateStoppedLine(stoppedLine.id);
             if (actualizados) {
                 logMessage("unblockLine consumed", stoppedLine.dataValues);
+                io.emit('line-unblocked', { lineId: stoppedLine.id });
+
                 successfulOperation(`The operating station ${stationIdentifier} was unblocked succesfully`, res);
             }
             else {
