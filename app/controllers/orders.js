@@ -155,16 +155,24 @@ function generateOrderIdentifier(dateTime, productionLine) {
 
 async function scanOrderProduct(req, res, io) {
 
-    const order = validateModelId(req.params.orderId);
-    if (!order.isValid) {
-        return badRequestError(`Invalid customer ID: ${order.id}`, res, order.errorList);
+    try {
+        const order = validateModelId(req.params.orderId);
+        if (!order.isValid) {
+            return badRequestError(`Invalid customer ID: ${order.id}`, res, order.errorList);
+        }
+        const updated = await Order.update({ 
+            materialScanned: Sequelize.literal('MaterialScanned + 1') }, {
+            where: { id: order.id }
+        });
+        if (updated[0] > 0) {
+            io.emit('order-scanned', { orderId: order.id });
+            res.json({ orderId: order.id });
+        }
     }
-    const updated = await Order.update({ 
-        materialScanned: Sequelize.literal('MaterialScanned + 1') }, {
-        where: { id: order.id }
-    });
-    io.emit('order-scanned', { orderId: order.id });
-    res.json({ orderId: order.id });
+    catch (error) {
+        logError("Error in scanOrderProduct", error);
+        return internalServerError(`Internal server error`, res);    
+    }
 }
 
 module.exports.getCurrentOrders = getCurrentOrders;

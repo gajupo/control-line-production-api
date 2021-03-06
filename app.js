@@ -8,7 +8,7 @@ const { getCurrentOrders, createNewOrder, getCustomerOrders,
     scanOrderProduct } = require("./app/controllers/orders");
 const { getPaginatedReportList } = require("./app/controllers/reports");
 const { getActiveStopCauseLogs, getStopCauseLogsRecord, unblockLine, 
-    getActiveStopCauseLogsByCustomer, getStopCauseLogsRecordByCustomer } = require("./app/controllers/stop-cause-log");
+    getActiveStopCauseLogsByCustomer, getStopCauseLogsRecordByCustomer }= require("./app/controllers/stop-cause-log");
 const { getMaterialList, getMaterialListPerCustomer } = require("./app/controllers/materials");
 const { getProductionLines } = require("./app/controllers/production-lines");
 const { getShiftsPerProductionLine } = require("./app/controllers/shifts");
