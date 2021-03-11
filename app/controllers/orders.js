@@ -67,7 +67,8 @@ async function getCustomerOrders(req, res) {
                 required: false,
                 attributes: ['id', 'status'],
                 where: { status: true }
-            }]
+            }],
+            where: { isIncomplete: true }
         });
         res.json(orders);
     }
