@@ -5,7 +5,7 @@ const cors = require('cors');
 
 const { getCustomerList } = require("./app/controllers/customer");
 const { getCurrentOrders, createNewOrder, getCustomerOrders,
-    scanOrderProduct } = require("./app/controllers/orders");
+    scanOrderProduct, closeOrder } = require("./app/controllers/orders");
 const { getPaginatedReportList } = require("./app/controllers/reports");
 const { getActiveStopCauseLogs, getStopCauseLogsRecord, unblockLine, 
     getActiveStopCauseLogsByCustomer, getStopCauseLogsRecordByCustomer }= require("./app/controllers/stop-cause-log");
@@ -39,6 +39,13 @@ app.get('/orders', async (req, res, next) => {
  */
 app.put('/order/scan/:orderId', async (req, res) => {
     await scanOrderProduct(req, res, io);
+});
+
+/**
+ * PUT /order/close/22
+ */
+ app.put('/order/close/:orderId', async (req, res) => {
+    await closeOrder(req, res, io);
 });
 
 /**

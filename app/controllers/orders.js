@@ -176,7 +176,38 @@ async function scanOrderProduct(req, res, io) {
     }
 }
 
+async function closeOrder(req, res, io) {
+    try {
+        const model = validateModelId(req.params.orderId);
+        if (!model.isValid) {
+            return badRequestError(`Invalid order ID: ${model.id}`, res, model.errorList);
+        }
+        const order = await Order.findOne({
+            attributes: ['id', 'isIncomplete'],
+            where: {
+                id: model.id,
+                isIncomplete: true
+            }
+        });
+        if (order) {
+            order.isIncomplete = false;
+            order.save();
+
+            io.emit('order-complete', order);
+            res.json(order);
+        }
+        else {
+            res.json( { message: `The order with the ID ${model.id} was not found`});
+        }
+    }
+    catch(error) {
+        logError("Error in closeOrder", error);
+        return internalServerError(`Internal server error`, res);
+    }   
+}
+
 module.exports.getCurrentOrders = getCurrentOrders;
 module.exports.createNewOrder = createNewOrder;
 module.exports.getCustomerOrders = getCustomerOrders;
 module.exports.scanOrderProduct = scanOrderProduct;
+module.exports.closeOrder = closeOrder;
