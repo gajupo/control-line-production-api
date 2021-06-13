@@ -42,12 +42,12 @@ async function getProductionLinesPerCustomer(req, res) {
             attributes: ['id', 'lineName'],
             include: [{
                 model: Order,
-                attributes: ['id', 'pasPN', 'materialScanned'],
+                attributes: ['id', 'pasPN', 'materialScanned', 'createdAt'],
                 required: true,
                 include: [{
                     model: Material,
                     required: true,
-                    attributes: ['id', 'pasPN'],
+                    attributes: ['id', 'pasPN', 'productionRate'],
                     include: [{
                         model: Customer,
                         required: true,
