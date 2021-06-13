@@ -38,11 +38,6 @@ module.exports = sequelize.define('Order', {
         allowNull: true,
         field: 'IsIncomplete'
     },
-    orderGoal: {
-        type: DataTypes.INTEGER,
-        allowNull: false,
-        field: 'OrderGoal'
-    },
     stationIdentifier: {
         type: DataTypes.STRING,
         allowNull:true,
