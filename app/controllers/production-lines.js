@@ -2,7 +2,8 @@
 
 const { logError } = require('../helpers/logger');
 const { internalServerError } = require("./core");
-const { ProductionLine, OperatingStation, Order, Material, Customer } = require('../models');
+const { ProductionLine, OperatingStation, Order, Material, Customer,
+    validateModelId } = require('../models');
 
 async function getProductionLines(res) {
     try {
@@ -34,8 +35,9 @@ async function getProductionLine(lineId) {
     return productionLine;
 }
 
-async function getProductionLinesPerCustomer(customerId) {
+async function getProductionLinesPerCustomer(req, res) {
     try {
+        const customer = validateModelId(req.params.customerId);
         const productionlines = await ProductionLine.findAll({
             include: [{
                 model: Order,
@@ -43,7 +45,7 @@ async function getProductionLinesPerCustomer(customerId) {
                     model: Material,
                     include: [{
                         model: Customer,
-                        where: { id: customerId }
+                        where: { id: customer.id }
                     }]
                 }]
             }]
