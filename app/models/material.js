@@ -33,6 +33,11 @@ module.exports = sequelize.define('Material', {
         type: DataTypes.BOOLEAN,
         allowNull: false,
         field: 'Status'
+    },
+    productionRate: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        field: 'ProductionRate'
     }
 }, {
     tableName: 'Materials',
