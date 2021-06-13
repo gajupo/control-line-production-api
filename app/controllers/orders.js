@@ -14,10 +14,10 @@ async function getCurrentOrders(res, next) {
 
     try {
         const orders = await Order.findAll({
-            attributes: ['id', 'orderIdentifier', 'materialScanned', 'orderGoal', 'isIncomplete'],
+            attributes: ['id', 'orderIdentifier', 'materialScanned', 'isIncomplete'],
             include: [{
                 model: Material,
-                attributes: ['id', 'pasPN'],
+                attributes: ['id', 'pasPN', 'productionRate'],
                 include: [{
                     model: Customer,
                     attributes: ['id', 'customerName']
@@ -46,10 +46,10 @@ async function getCustomerOrders(req, res) {
             return badRequestError(`Invalid customer ID: ${customer.id}`, res, customer.errorList);
         }
         const orders = await Order.findAll({
-            attributes: ['id', 'orderIdentifier', 'materialScanned', 'orderGoal', 'isIncomplete'],
+            attributes: ['id', 'orderIdentifier', 'materialScanned', 'isIncomplete'],
             include: [{
                 model: Material,
-                attributes: ['id', 'pasPN'],
+                attributes: ['id', 'pasPN', 'productionRate'],
                 required: true,
                 include: [{
                     model: Customer,
@@ -88,7 +88,6 @@ async function createNewOrder(req, res, io) {
         const lineId = req.body.productionLineId;
         const materialId = req.body.materialId;
         const shiftId = req.body.shiftId;
-        const goal = req.body.goal;
         const now = new Date();
 
         const productionLine = await getProductionLine(lineId);
@@ -108,7 +107,6 @@ async function createNewOrder(req, res, io) {
             createdAt: now,
             active: true,
             isIncomplete: true,
-            orderGoal: goal,
             stationIdentifier: productionLine.OperatingStation.stationIdentifier,
             ShiftId: shiftId,
             ProductionLineId: lineId,
