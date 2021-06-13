@@ -39,15 +39,19 @@ async function getProductionLinesPerCustomer(req, res) {
     try {
         const customer = validateModelId(req.params.customerId);
         const productionlines = await ProductionLine.findAll({
+            attributes: ['id', 'lineName'],
             include: [{
                 model: Order,
+                attributes: ['id', 'pasPN', 'materialScanned'],
                 required: true,
                 include: [{
                     model: Material,
                     required: true,
+                    attributes: ['id', 'pasPN'],
                     include: [{
                         model: Customer,
                         required: true,
+                        attributes: ['id', 'customerName'],
                         where: { id: customer.id }
                     }]
                 }]
