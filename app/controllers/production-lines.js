@@ -3,7 +3,7 @@
 const { logError } = require('../helpers/logger');
 const { internalServerError } = require("./core");
 const { ProductionLine, OperatingStation, Order, Material, Customer,
-    validateModelId } = require('../models');
+    validateModelId, Shift} = require('../models');
 
 async function getProductionLines(res) {
     try {
@@ -54,6 +54,10 @@ async function getProductionLinesPerCustomer(req, res) {
                         attributes: ['id', 'customerName'],
                         where: { id: customer.id }
                     }]
+                }, {
+                    model: Shift,
+                    attributes: ['id', 'shiftDescription', 'shiftStart', 'shiftEnd'],
+                    required: true
                 }]
             }]
         });
