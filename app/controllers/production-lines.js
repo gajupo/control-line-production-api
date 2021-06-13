@@ -41,10 +41,13 @@ async function getProductionLinesPerCustomer(req, res) {
         const productionlines = await ProductionLine.findAll({
             include: [{
                 model: Order,
+                required: true,
                 include: [{
                     model: Material,
+                    required: true,
                     include: [{
                         model: Customer,
+                        required: true,
                         where: { id: customer.id }
                     }]
                 }]
