@@ -2,8 +2,9 @@
 
 const { logError } = require('../helpers/logger');
 const { internalServerError } = require("./core");
-const { ProductionLine, OperatingStation, Order, Material, Customer,
-    validateModelId, Shift} = require('../models');
+const { Sequelize } = require('sequelize');
+const { ProductionLine, OperatingStation, validateModelId, Customer,
+    ValidationResult } = require('../models');
 
 async function getProductionLines(res) {
     try {
@@ -38,35 +39,36 @@ async function getProductionLine(lineId) {
 async function getProductionLinesPerCustomer(req, res) {
     try {
         const customer = validateModelId(req.params.customerId);
-        const productionlines = await ProductionLine.findAll({
-            attributes: ['id', 'lineName'],
+        if (!customer.isValid) {
+            return badRequestError(`Invalid Customer ID: ${customer.id}`, res, customer.errorList);
+        }
+        const validationResults = await ValidationResult.findAll({
+            attributes: [[Sequelize.fn('count', Sequelize.col('ScanDate')), 'total']],
+            group: ['ValidationResult.StationId', 'Customer.Id', 'Customer.customerName', 
+                'OperatingStation.Id', 'OperatingStation.stationIdentifier',
+                'OperatingStation->ProductionLine.id', 'OperatingStation->ProductionLine.lineName'],
             include: [{
-                model: Order,
-                attributes: ['id', 'pasPN', 'materialScanned', 'createdAt'],
+                model: Customer,
                 required: true,
+                attributes: ['id', 'customerName'],
+                where: { id: customer.id }
+            }, {
+                model: OperatingStation,
+                required: true,
+                attributes: ['id', 'stationIdentifier'],
                 include: [{
-                    model: Material,
+                    model: ProductionLine,
                     required: true,
-                    attributes: ['id', 'pasPN', 'productionRate'],
-                    include: [{
-                        model: Customer,
-                        required: true,
-                        attributes: ['id', 'customerName'],
-                        where: { id: customer.id }
-                    }]
-                }, {
-                    model: Shift,
-                    attributes: ['id', 'shiftDescription', 'shiftStart', 'shiftEnd'],
-                    required: true
+                    attributes: ['id', 'lineName']
                 }]
-            }]
+            }],
+            raw: true
         });
-        res.json(productionlines);
-    }
-    catch (error) {
+        res.json(validationResults);
+    } catch (error) {
         logError("Error in getProductionLinesPerCustomer", error);
         return internalServerError(`Internal server error`, res);
-    }   
+    }
 }
 
 module.exports.getProductionLines = getProductionLines;
