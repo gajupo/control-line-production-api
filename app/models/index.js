@@ -32,6 +32,13 @@ Order.belongsTo(ProductionLine, {
     foreignKey: 'ProductionLineId'
 });
 
+Customer.hasOne(ProductionLine, {
+    foreignKey: 'CustomerId'
+});
+ProductionLine.belongsTo(Customer, {
+    foreignKey: 'CustomerId'
+});
+
 Shift.hasMany(Order, {
     foreignKey: 'ShiftId'
 })
