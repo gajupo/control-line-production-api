@@ -44,15 +44,11 @@ async function getProductionLinesPerCustomer(req, res) {
         }
         const validationResults = await ValidationResult.findAll({
             attributes: [[Sequelize.fn('count', Sequelize.col('ScanDate')), 'validationResultCount']],
-            group: ['Order.id', 'Order.orderIdentifier', 'Customer.Id', 'Customer.customerName',
+            group: ['Customer.Id', 'Customer.customerName',
                 'OperatingStation.id', 'OperatingStation.stationIdentifier',
                 'OperatingStation->ProductionLine.id', 'OperatingStation->ProductionLine.lineName',
                 'Material.id', 'Material.pasPN', 'Material.productionRate'],
             include: [{
-                model: Order,
-                required: true,
-                attributes: ['id', 'orderIdentifier']
-            }, {
                 model: Customer,
                 required: true,
                 attributes: ['id', 'customerName'],
@@ -72,12 +68,31 @@ async function getProductionLinesPerCustomer(req, res) {
                 attributes: ['id', 'pasPN', 'productionRate'],
             }]
         });
+        const result = transformValidationResult(validationResults);
         res.json(validationResults);
     }
     catch (error) {
         logError("Error in getProductionLinesPerCustomer", error);
         return internalServerError(`Internal server error`, res);
     }
+}
+
+function transformValidationResult(validationResults) {
+    var productionLines = [];
+
+    validationResults.forEach((validation) => {
+
+    });
+
+    return productionLines;
+}
+
+function consolidateValidationResult(productionLines, validationResult) {
+    productionLines.forEach((line) => {
+        if (validationResult.hasOwnProperty('OperatingStation')) {
+            const station = validationResult['OperatingStation'];
+        }
+    });
 }
 
 module.exports.getProductionLines = getProductionLines;
