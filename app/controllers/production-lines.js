@@ -4,7 +4,7 @@ const { logError } = require('../helpers/logger');
 const { internalServerError } = require("./core");
 const { Sequelize } = require('sequelize');
 const { ProductionLine, OperatingStation, validateModelId, Customer,
-    ValidationResult } = require('../models');
+    ValidationResult, Order, StopCauseLog, Material } = require('../models');
 
 async function getProductionLines(res) {
     try {
@@ -43,11 +43,16 @@ async function getProductionLinesPerCustomer(req, res) {
             return badRequestError(`Invalid Customer ID: ${customer.id}`, res, customer.errorList);
         }
         const validationResults = await ValidationResult.findAll({
-            attributes: [[Sequelize.fn('count', Sequelize.col('ScanDate')), 'total']],
-            group: ['ValidationResult.StationId', 'Customer.Id', 'Customer.customerName', 
-                'OperatingStation.Id', 'OperatingStation.stationIdentifier',
-                'OperatingStation->ProductionLine.id', 'OperatingStation->ProductionLine.lineName'],
+            attributes: [[Sequelize.fn('count', Sequelize.col('ScanDate')), 'validationResultCount']],
+            group: ['Order.id', 'Order.orderIdentifier', 'Customer.Id', 'Customer.customerName',
+                'OperatingStation.id', 'OperatingStation.stationIdentifier',
+                'OperatingStation->ProductionLine.id', 'OperatingStation->ProductionLine.lineName',
+                'Material.id', 'Material.pasPN', 'Material.productionRate'],
             include: [{
+                model: Order,
+                required: true,
+                attributes: ['id', 'orderIdentifier']
+            }, {
                 model: Customer,
                 required: true,
                 attributes: ['id', 'customerName'],
@@ -61,11 +66,15 @@ async function getProductionLinesPerCustomer(req, res) {
                     required: true,
                     attributes: ['id', 'lineName']
                 }]
-            }],
-            raw: true
+            }, {
+                model: Material,
+                required: true,
+                attributes: ['id', 'pasPN', 'productionRate'],
+            }]
         });
         res.json(validationResults);
-    } catch (error) {
+    }
+    catch (error) {
         logError("Error in getProductionLinesPerCustomer", error);
         return internalServerError(`Internal server error`, res);
     }
