@@ -4,7 +4,7 @@ const { logError } = require('../helpers/logger');
 const { internalServerError } = require("./core");
 const { Sequelize } = require('sequelize');
 const { ProductionLine, OperatingStation, validateModelId, Customer,
-    ValidationResult, Order, StopCauseLog, Material } = require('../models');
+    ValidationResult, Order, StopCauseLog, Material, Shift } = require('../models');
 
 async function getProductionLines(res) {
     try {
@@ -47,7 +47,9 @@ async function getProductionLinesPerCustomer(req, res) {
             group: ['Customer.Id', 'Customer.customerName',
                 'OperatingStation.id', 'OperatingStation.stationIdentifier',
                 'OperatingStation->ProductionLine.id', 'OperatingStation->ProductionLine.lineName',
-                'Material.id', 'Material.pasPN', 'Material.productionRate'],
+                'Order.id', 'Order.orderIdentifier', 'Order->Shift.id',
+                'Order->Material.id', 'Order->Material.pasPN', 'Order->Material.productionRate',
+                'Order->Shift.shiftDescription', 'Order->Shift.shiftStart', 'Order->Shift.shiftEnd'],
             include: [{
                 model: Customer,
                 required: true,
@@ -63,13 +65,22 @@ async function getProductionLinesPerCustomer(req, res) {
                     attributes: ['id', 'lineName']
                 }]
             }, {
-                model: Material,
+                model: Order,
                 required: true,
-                attributes: ['id', 'pasPN', 'productionRate'],
+                attributes: ['id', 'orderIdentifier'],
+                include: [{
+                    model: Shift,
+                    required: true,
+                    attributes: ['id', 'shiftDescription', 'shiftStart', 'shiftEnd'],
+                }, {
+                    model: Material,
+                    required: true,
+                    attributes: ['id', 'pasPN', 'productionRate'],
+                }]
             }]
         });
         const result = transformValidationResult(validationResults);
-        res.json(validationResults);
+        res.json(result);
     }
     catch (error) {
         logError("Error in getProductionLinesPerCustomer", error);
@@ -81,19 +92,59 @@ function transformValidationResult(validationResults) {
     var productionLines = [];
 
     validationResults.forEach((validation) => {
-
+        consolidateValidationResult(productionLines, validation.dataValues);
     });
 
     return productionLines;
 }
 
 function consolidateValidationResult(productionLines, validationResult) {
-    productionLines.forEach((line) => {
-        if (validationResult.hasOwnProperty('OperatingStation')) {
-            const station = validationResult['OperatingStation'];
+    if (validationResult.hasOwnProperty('OperatingStation')) {
+        const station = validationResult.OperatingStation;
+        if (station.hasOwnProperty('ProductionLine')) {
+            const line = productionLines.find(element => {
+                return element.id == station.ProductionLine.id;
+            });
+            const material = validationResult.Order.Material;
+            const shift = validationResult.Order.Shift;
+            const productionRate = material.productionRate * getHoursPerShift(shift);
+            if (line == null) {
+                productionLines.push( {
+                    id: station.ProductionLine.id,
+                    lineName: station.ProductionLine.lineName,
+                    validationResultCount: validationResult.validationResultCount,
+                    goal: productionRate,
+                    operatingStations: [{
+                        id: station.id,
+                        stationIdentifier: station.stationIdentifier
+                    }]
+                } );
+            }
+            else {
+                line.validationResultCount += validationResult.validationResultCount;
+                if (line.hasOwnProperty('operatingStations')) {
+                    if (!line.operatingStations.some((element) => element.id == station.id)) {
+                        line.operatingStations.push({
+                            id: station.id,
+                            stationIdentifier: station.stationIdentifier
+                        });
+                    }
+                }
+                if (line.hasOwnProperty('goal')) {
+                    line.goal += productionRate;
+                }
+            }
         }
-    });
+    }
 }
+
+function getHoursPerShift(shift) {
+    if (shift === undefined) {
+        return 0;
+    }
+    return Math.ceil(shift.shiftEnd - shift.shiftStart);
+}
+
 
 module.exports.getProductionLines = getProductionLines;
 module.exports.getProductionLine = getProductionLine;
