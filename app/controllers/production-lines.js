@@ -114,6 +114,7 @@ function consolidateValidationResult(productionLines, validationResult) {
                     lineName: station.ProductionLine.lineName,
                     validationResultCount: validationResult.validationResultCount,
                     goal: productionRate,
+                    rate: Math.ceil((validationResult.validationResultCount / productionRate) * 100),
                     operatingStations: [{
                         id: station.id,
                         stationIdentifier: station.stationIdentifier
@@ -132,6 +133,9 @@ function consolidateValidationResult(productionLines, validationResult) {
                 }
                 if (line.hasOwnProperty('goal')) {
                     line.goal += productionRate;
+                }
+                if (line.hasOwnProperty('rate')) {
+                    line.rate = Math.ceil((line.validationResultCount / line.goal) * 100);
                 }
             }
         }
