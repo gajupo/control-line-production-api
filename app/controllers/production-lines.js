@@ -118,7 +118,8 @@ function consolidateValidationResult(productionLines, validationResult) {
                     operatingStations: [{
                         id: station.id,
                         stationIdentifier: station.stationIdentifier
-                    }]
+                    }],
+                    customer: validationResult.Customer
                 } );
             }
             else {
