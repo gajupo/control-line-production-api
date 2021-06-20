@@ -150,6 +150,24 @@ function getHoursPerShift(shift) {
     return Math.ceil(shift.shiftEnd - shift.shiftStart);
 }
 
+async function getBlockedLinesPerClient(customer) {
+    const blockedLines = await ProductionLine.findAll({
+        include: [{
+            model: Order,
+            required: true,
+            include: [{
+                model: StopCauseLog,
+                required: true
+            }, {
+                model: OperatingStation,
+                required: true
+            }]
+        }],
+        where: { id: customer.id }
+    });
+    return blockedLines;
+}
+
 
 module.exports.getProductionLines = getProductionLines;
 module.exports.getProductionLine = getProductionLine;

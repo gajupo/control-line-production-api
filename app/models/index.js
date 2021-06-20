@@ -83,13 +83,6 @@ StopCauseLog.belongsTo(Order, {
     foreignKey: 'OrderId'
 });
 
-OperatingStation.hasMany(StopCauseLog, {
-    foreignKey: 'StationId'
-});
-StopCauseLog.belongsTo(OperatingStation, {
-    foreignKey: 'StationId'
-});
-
 Supplier.hasMany(Material, {
     foreignKey: 'SupplierId'
 });
