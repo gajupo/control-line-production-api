@@ -3,6 +3,7 @@
 const { logError } = require('../helpers/logger');
 const { internalServerError } = require("./core");
 const { Sequelize } = require('sequelize');
+const { sequelize } = require("../helpers/sequelize");
 const { ProductionLine, OperatingStation, validateModelId, Customer,
     ValidationResult, Order, StopCauseLog, Material, Shift } = require('../models');
 
@@ -62,7 +63,10 @@ async function getProductionLinesPerCustomer(req, res) {
                 include: [{
                     model: ProductionLine,
                     required: true,
-                    attributes: ['id', 'lineName']
+                    attributes: ['id', 'lineName', [sequelize.literal(`(select count(sc.id) as statiosblocked from StopCauseLogs sc inner join OperatingStations op on sc.StationId = op.Id inner join ProductionLines lp
+                    on lp.Id = sc.StationId inner join Customers ct on ct.Id = lp.CustomerId where sc.status = 1 and ct.Id = '${customer.id}')`), 'stationsBlocked'],
+                        [sequelize.literal(`(select count(op.id) as totalstations from Customers ct inner join ProductionLines pl on pl.CustomerId = ct.Id
+                        inner join OperatingStations op on op.LineId = pl.Id where ct.Id = '${customer.id}' group by pl.id,pl.LineName)`), 'totalStations']]
                 }]
             }, {
                 model: Order,
@@ -148,24 +152,6 @@ function getHoursPerShift(shift) {
         return 0;
     }
     return Math.ceil(shift.shiftEnd - shift.shiftStart);
-}
-
-async function getBlockedLinesPerClient(customer) {
-    const blockedLines = await ProductionLine.findAll({
-        include: [{
-            model: Order,
-            required: true,
-            include: [{
-                model: StopCauseLog,
-                required: true
-            }, {
-                model: OperatingStation,
-                required: true
-            }]
-        }],
-        where: { id: customer.id }
-    });
-    return blockedLines;
 }
 
 
