@@ -106,19 +106,22 @@ function consolidateValidationResult(productionLines, validationResult) {
     if (validationResult.hasOwnProperty('OperatingStation')) {
         const station = validationResult.OperatingStation;
         if (station.hasOwnProperty('ProductionLine')) {
-            const line = productionLines.find(element => {
+            let line = productionLines.find(element => {
                 return element.id == station.ProductionLine.id;
             });
             const material = validationResult.Order.Material;
             const shift = validationResult.Order.Shift;
             const productionRate = material.productionRate * getHoursPerShift(shift);
             if (line == null) {
+                line = station.ProductionLine.dataValues;
                 productionLines.push( {
-                    id: station.ProductionLine.id,
-                    lineName: station.ProductionLine.lineName,
+                    id: line.id,
+                    lineName: line.lineName,
                     validationResultCount: validationResult.validationResultCount,
                     goal: productionRate,
                     rate: Math.ceil((validationResult.validationResultCount / productionRate) * 100),
+                    stationsBlocked: line.stationsBlocked,
+                    totalStations: line.totalStations,
                     operatingStations: [{
                         id: station.id,
                         stationIdentifier: station.stationIdentifier
