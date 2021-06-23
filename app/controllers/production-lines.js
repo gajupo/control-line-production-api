@@ -5,7 +5,7 @@ const { internalServerError } = require("./core");
 const { Sequelize } = require('sequelize');
 const { sequelize } = require("../helpers/sequelize");
 const { ProductionLine, OperatingStation, validateModelId, Customer,
-    ValidationResult, Order, StopCauseLog, Material, Shift } = require('../models');
+    ValidationResult, Order, Material, Shift } = require('../models');
 
 async function getProductionLines(res) {
     try {
