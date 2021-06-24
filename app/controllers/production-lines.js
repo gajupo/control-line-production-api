@@ -63,10 +63,9 @@ async function getProductionLinesPerCustomer(req, res) {
                 include: [{
                     model: ProductionLine,
                     required: true,
-                    attributes: ['id', 'lineName', [sequelize.literal(`(select count(sc.id) as statiosblocked from StopCauseLogs sc inner join OperatingStations op on sc.StationId = op.Id inner join ProductionLines lp
-                    on lp.Id = sc.StationId inner join Customers ct on ct.Id = lp.CustomerId where sc.status = 1 and ct.Id = '${customer.id}')`), 'stationsBlocked'],
-                        [sequelize.literal(`(select count(op.id) as totalstations from Customers ct inner join ProductionLines pl on pl.CustomerId = ct.Id
-                        inner join OperatingStations op on op.LineId = pl.Id where ct.Id = '${customer.id}' group by pl.id,pl.LineName)`), 'totalStations']]
+                    attributes: ['id', 'lineName',
+                        [sequelize.literal(blockedStationsQuery(customer)), 'stationsBlocked'],
+                        [sequelize.literal(totalStationsQuery(customer)), 'totalStations']]
                 }]
             }, {
                 model: Order,
@@ -155,6 +154,18 @@ function getHoursPerShift(shift) {
         return 0;
     }
     return Math.ceil(shift.shiftEnd - shift.shiftStart);
+}
+
+function blockedStationsQuery(customer) {
+    return `(SELECT COUNT(sc.id) AS stationsBlocked FROM StopCauseLogs sc INNER JOIN OperatingStations op ON
+        sc.StationId = op.Id INNER JOIN ProductionLines lp ON lp.Id = sc.StationId INNER JOIN Customers ct ON
+        ct.Id = lp.CustomerId WHERE sc.status = 1 AND ct.Id = '${customer.id}')`
+}
+
+function totalStationsQuery(customer) {
+    return `(SELECT COUNT(op.id) AS totalStations FROM Customers ct INNER JOIN ProductionLines pl
+        ON pl.CustomerId = ct.Id INNER JOIN OperatingStations op ON op.LineId = pl.Id
+        WHERE ct.Id = '${customer.id}' GROUP BY pl.id, pl.LineName)`;
 }
 
 
