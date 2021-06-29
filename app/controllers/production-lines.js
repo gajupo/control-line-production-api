@@ -43,47 +43,78 @@ async function getProductionLinesPerCustomer(req, res) {
         if (!customer.isValid) {
             return badRequestError(`Invalid Customer ID: ${customer.id}`, res, customer.errorList);
         }
-        const validationResults = await ValidationResult.findAll({
-            attributes: [[Sequelize.fn('count', Sequelize.col('ScanDate')), 'validationResultCount']],
-            group: ['Customer.Id', 'Customer.customerName',
-                'OperatingStation.id', 'OperatingStation.stationIdentifier',
-                'OperatingStation->ProductionLine.id', 'OperatingStation->ProductionLine.lineName',
-                'Order.id', 'Order.orderIdentifier', 'Order->Shift.id',
-                'Order->Material.id', 'Order->Material.pasPN', 'Order->Material.productionRate',
-                'Order->Shift.shiftDescription', 'Order->Shift.shiftStart', 'Order->Shift.shiftEnd'],
+        // const validationResults = await ValidationResult.findAll({
+        //     attributes: [[Sequelize.fn('count', Sequelize.col('ScanDate')), 'validationResultCount']],
+        //     group: ['Customer.Id', 'Customer.customerName',
+        //         'OperatingStation.id', 'OperatingStation.stationIdentifier',
+        //         'OperatingStation->ProductionLine.id', 'OperatingStation->ProductionLine.lineName',
+        //         'Order.id', 'Order.orderIdentifier', 'Order->Shift.id',
+        //         'Order->Material.id', 'Order->Material.pasPN', 'Order->Material.productionRate',
+        //         'Order->Shift.shiftDescription', 'Order->Shift.shiftStart', 'Order->Shift.shiftEnd'],
+        //     include: [{
+        //         model: Customer,
+        //         required: true,
+        //         attributes: ['id', 'customerName'],
+        //         where: { id: customer.id }
+        //     }, {
+        //         model: OperatingStation,
+        //         required: true,
+        //         attributes: ['id', 'stationIdentifier'],
+        //         include: [{
+        //             model: ProductionLine,
+        //             required: true,
+        //             attributes: ['id', 'lineName',
+        //                 [sequelize.literal(blockedStationsQuery(customer)), 'stationsBlocked'],
+        //                 [sequelize.literal(totalStationsQuery(customer)), 'totalStations']]
+        //         }]
+        //     }, {
+        //         model: Order,
+        //         required: true,
+        //         attributes: ['id', 'orderIdentifier'],
+        //         include: [{
+        //             model: Shift,
+        //             required: true,
+        //             attributes: ['id', 'shiftDescription', 'shiftStart', 'shiftEnd'],
+        //         }, {
+        //             model: Material,
+        //             required: true,
+        //             attributes: ['id', 'pasPN', 'productionRate'],
+        //         }]
+        //     }]
+        // });
+        const validationResults = await ProductionLine.findAll({
+            attributes: ['id', 'lineName'],
             include: [{
-                model: Customer,
-                required: true,
-                attributes: ['id', 'customerName'],
-                where: { id: customer.id }
-            }, {
                 model: OperatingStation,
-                required: true,
-                attributes: ['id', 'stationIdentifier'],
-                include: [{
-                    model: ProductionLine,
-                    required: true,
-                    attributes: ['id', 'lineName',
-                        [sequelize.literal(blockedStationsQuery(customer)), 'stationsBlocked'],
-                        [sequelize.literal(totalStationsQuery(customer)), 'totalStations']]
-                }]
+                attributes: [
+                    'id',
+                    'stationIdentifier',
+                    [Sequelize.fn('count', Sequelize.col('Orders.ValidationResults.Id')), 'validationResultCount']],
             }, {
                 model: Order,
-                required: true,
-                attributes: ['id', 'orderIdentifier'],
+                attributes: ['id'],
+                required: false,
                 include: [{
-                    model: Shift,
-                    required: true,
-                    attributes: ['id', 'shiftDescription', 'shiftStart', 'shiftEnd'],
-                }, {
                     model: Material,
-                    required: true,
-                    attributes: ['id', 'pasPN', 'productionRate'],
+                    attributes: ['id', 'productionRate'],
+                    required: false
+                }, {
+                    model: Shift,
+                    attributes: ['id', 'shiftStart', 'shiftEnd'],
+                }, {
+                    model: ValidationResult,
+                    attributes: [],
+                    required: false
                 }]
-            }]
+            }],
+            where: { customerId: customer.id },
+            group: ['ProductionLine.id', 'ProductionLine.lineName', 'OperatingStation.id',
+                'OperatingStation.stationIdentifier', 'Orders.Material.id', 'Orders.Material.productionRate',
+                'Orders.Shift.id', 'Orders.Shift.shiftStart', 'Orders.Shift.shiftEnd', 'Orders.id'],
         });
         const result = transformValidationResult(validationResults);
-        res.json(result);
+        res.json(validationResults);
+        //res.json(result);
     }
     catch (error) {
         logError("Error in getProductionLinesPerCustomer", error);
@@ -168,6 +199,10 @@ function totalStationsQuery(customer) {
         WHERE ct.Id = '${customer.id}' GROUP BY pl.id, pl.LineName)`;
 }
 
+function validationResultsCountQuery(customer) {
+    return `(SELECT COUNT([id]) AS validationResultCount FROM [PASSIMPLEDB_DEV.MDF].[dbo].[ValidationResults]
+        WHERE [CustomerId] = ${customer.id})`;
+}
 
 module.exports.getProductionLines = getProductionLines;
 module.exports.getProductionLine = getProductionLine;
