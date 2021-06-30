@@ -108,7 +108,7 @@ function consolidateValidationResult(productionLines, validationResult) {
         const customer = line.Customer;
         const stations = line.OperatingStations;
         let active = false;
-        let productionRate = 0;
+        let goal = 0;
         let validationResultCount = 0;
 
         stations.forEach(station => {
@@ -119,9 +119,9 @@ function consolidateValidationResult(productionLines, validationResult) {
             orders.forEach(order => {
                 const material = order.Material;
                 const shiftHours = getHoursPerShift(order.Shift);
-                const rate = shiftHours * material.productionRate;
+                const orderGoal = shiftHours * material.productionRate;
 
-                productionRate += rate;
+                goal += orderGoal;
             });
             active = orders.length > 0;
         }
@@ -133,8 +133,8 @@ function consolidateValidationResult(productionLines, validationResult) {
             customerId: customer.id,
             customerName: customer.customerName,
             validationResultCount: validationResultCount,
-            productionRate: productionRate,
-            rate: getProductionRate(validationResultCount, productionRate)
+            goal: goal,
+            rate: getProductionRate(validationResultCount, goal)
         });
     }
 
