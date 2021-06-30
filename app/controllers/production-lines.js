@@ -5,7 +5,7 @@ const { internalServerError } = require("./core");
 const { Sequelize } = require('sequelize');
 const { sequelize } = require("../helpers/sequelize");
 const { ProductionLine, OperatingStation, validateModelId, Customer,
-    ValidationResult, Order, Material, Shift } = require('../models');
+    ValidationResult, Order, Material, Shift, StopCauseLog } = require('../models');
 
 async function getProductionLines(res) {
     try {
@@ -94,7 +94,14 @@ async function getProductionLinesPerCustomer(req, res) {
                 attributes: [
                     'id',
                     'stationIdentifier',
-                    [Sequelize.fn('count', Sequelize.col('Orders.ValidationResults.Id')), 'validationResultCount']],
+                    [Sequelize.fn('count', Sequelize.col('Orders.ValidationResults.Id')), 'validationResultCount']
+                ],
+                include: [{
+                    model: StopCauseLog,
+                    required: false,
+                    where: { status: true },
+                    attributes: ['id']
+                }]
             }, {
                 model: Order,
                 attributes: ['id'],
@@ -115,7 +122,7 @@ async function getProductionLinesPerCustomer(req, res) {
             group: ['ProductionLine.id', 'ProductionLine.lineName', 'OperatingStations.id',
                 'OperatingStations.stationIdentifier', 'Orders.Material.id', 'Orders.Material.productionRate',
                 'Orders.Shift.id', 'Orders.Shift.shiftStart', 'Orders.Shift.shiftEnd', 'Orders.id',
-                'Customer.id', 'Customer.customerName'],
+                'Customer.id', 'Customer.customerName', 'OperatingStations.StopCauseLogs.id'],
         });
         const result = transformValidationResult(validationResults);
         // res.json(validationResults);
@@ -133,7 +140,6 @@ function transformValidationResult(validationResults) {
     validationResults.forEach((validation) => {
         consolidateValidationResult(productionLines, validation.dataValues);
     });
-
     return productionLines;
 }
 
@@ -164,12 +170,11 @@ function consolidateValidationResult(productionLines, validationResult) {
             id: line.id,
             lineName: line.lineName,
             active: active,
+            blocked: checkIfLineIsBlocked(stations),
             customerId: customer.id,
             customerName: customer.customerName,
             validationResultCount: validationResultCount,
             productionRate: productionRate,
-            stationCount: stations.length,
-            stoppedStations: 0,
             rate: getProductionRate(validationResultCount, productionRate)
         });
     }
@@ -232,6 +237,10 @@ function getProductionRate(validationResultCount, productionRate) {
         return 0;
     }
     return Math.ceil((validationResultCount / productionRate) * 100);
+}
+
+function checkIfLineIsBlocked(stations) {
+    return stations.every(station => station.StopCauseLogs.length > 0);
 }
 
 function blockedStationsQuery(customer) {
