@@ -85,6 +85,11 @@ async function getProductionLinesPerCustomer(req, res) {
         const validationResults = await ProductionLine.findAll({
             attributes: ['id', 'lineName'],
             include: [{
+                model: Customer,
+                required: true,
+                attributes: ['id', 'customerName'],
+                where: { id: customer.id }
+            }, {
                 model: OperatingStation,
                 attributes: [
                     'id',
@@ -107,14 +112,14 @@ async function getProductionLinesPerCustomer(req, res) {
                     required: false
                 }]
             }],
-            where: { customerId: customer.id },
             group: ['ProductionLine.id', 'ProductionLine.lineName', 'OperatingStation.id',
                 'OperatingStation.stationIdentifier', 'Orders.Material.id', 'Orders.Material.productionRate',
-                'Orders.Shift.id', 'Orders.Shift.shiftStart', 'Orders.Shift.shiftEnd', 'Orders.id'],
+                'Orders.Shift.id', 'Orders.Shift.shiftStart', 'Orders.Shift.shiftEnd', 'Orders.id',
+                'Customer.id', 'Customer.customerName'],
         });
         const result = transformValidationResult(validationResults);
-        res.json(validationResults);
-        //res.json(result);
+        //res.json(validationResults);
+        res.json(result);
     }
     catch (error) {
         logError("Error in getProductionLinesPerCustomer", error);
@@ -133,51 +138,89 @@ function transformValidationResult(validationResults) {
 }
 
 function consolidateValidationResult(productionLines, validationResult) {
-    if (validationResult.hasOwnProperty('OperatingStation')) {
-        const station = validationResult.OperatingStation;
-        if (station.hasOwnProperty('ProductionLine')) {
-            let line = productionLines.find(element => {
-                return element.id == station.ProductionLine.id;
-            });
-            const material = validationResult.Order.Material;
-            const shift = validationResult.Order.Shift;
-            const productionRate = material.productionRate * getHoursPerShift(shift);
-            if (line == null) {
-                line = station.ProductionLine.dataValues;
+    if (validationResult.hasOwnProperty('id'))
+    {
+        let line = productionLines.find(element => {
+            return element.id == validationResult.id;
+        });
+        if (line == null) {
+            line = validationResult;
+
+            if (line.hasOwnProperty('OperatingStation')) {
+                const station = line.OperatingStation.dataValues;
+                const customer = line.Customer;
+
+                let productionRate = 0;
+
+                if (line.hasOwnProperty('Orders')) {
+                    const orders = line.Orders;
+                    orders.forEach(order => {
+                        const material = order.Material;
+                        const shift = order.Shift;
+                        const shiftHours = Math.ceil(shift.shiftEnd - shift.shiftStart);
+                        const rate = shiftHours * material.productionRate;
+
+                        productionRate += rate;
+                    });
+                }
                 productionLines.push( {
                     id: line.id,
                     lineName: line.lineName,
-                    validationResultCount: validationResult.validationResultCount,
-                    goal: productionRate,
-                    rate: Math.ceil((validationResult.validationResultCount / productionRate) * 100),
-                    stationsBlocked: line.stationsBlocked,
-                    totalStations: line.totalStations,
-                    operatingStations: [{
-                        id: station.id,
-                        stationIdentifier: station.stationIdentifier
-                    }],
-                    customer: validationResult.Customer
-                } );
-            }
-            else {
-                line.validationResultCount += validationResult.validationResultCount;
-                if (line.hasOwnProperty('operatingStations')) {
-                    if (!line.operatingStations.some((element) => element.id == station.id)) {
-                        line.operatingStations.push({
-                            id: station.id,
-                            stationIdentifier: station.stationIdentifier
-                        });
-                    }
-                }
-                if (line.hasOwnProperty('goal')) {
-                    line.goal += productionRate;
-                }
-                if (line.hasOwnProperty('rate')) {
-                    line.rate = Math.ceil((line.validationResultCount / line.goal) * 100);
-                }
+                    customerId: customer.id,
+                    customerName: customer.customerName,
+                    validationResultCount: station.validationResultCount,
+                    productionRate: productionRate,
+                    stationCount: 0,
+                    stoppedStations: 0
+                });
             }
         }
     }
+    // if (validationResult.hasOwnProperty('OperatingStation')) {
+    //     const station = validationResult.OperatingStation;
+    //     if (station.hasOwnProperty('ProductionLine')) {
+    //         let line = productionLines.find(element => {
+    //             return element.id == station.ProductionLine.id;
+    //         });
+    //         const material = validationResult.Order.Material;
+    //         const shift = validationResult.Order.Shift;
+    //         const productionRate = material.productionRate * getHoursPerShift(shift);
+    //         if (line == null) {
+    //             line = station.ProductionLine.dataValues;
+    //             productionLines.push( {
+    //                 id: line.id,
+    //                 lineName: line.lineName,
+    //                 validationResultCount: validationResult.validationResultCount,
+    //                 goal: productionRate,
+    //                 rate: Math.ceil((validationResult.validationResultCount / productionRate) * 100),
+    //                 stationsBlocked: line.stationsBlocked,
+    //                 totalStations: line.totalStations,
+    //                 operatingStations: [{
+    //                     id: station.id,
+    //                     stationIdentifier: station.stationIdentifier
+    //                 }],
+    //                 customer: validationResult.Customer
+    //             } );
+    //         }
+    //         else {
+    //             line.validationResultCount += validationResult.validationResultCount;
+    //             if (line.hasOwnProperty('operatingStations')) {
+    //                 if (!line.operatingStations.some((element) => element.id == station.id)) {
+    //                     line.operatingStations.push({
+    //                         id: station.id,
+    //                         stationIdentifier: station.stationIdentifier
+    //                     });
+    //                 }
+    //             }
+    //             if (line.hasOwnProperty('goal')) {
+    //                 line.goal += productionRate;
+    //             }
+    //             if (line.hasOwnProperty('rate')) {
+    //                 line.rate = Math.ceil((line.validationResultCount / line.goal) * 100);
+    //             }
+    //         }
+    //     }
+    // }
 }
 
 function getHoursPerShift(shift) {
