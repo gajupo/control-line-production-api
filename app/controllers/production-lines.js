@@ -112,13 +112,13 @@ async function getProductionLinesPerCustomer(req, res) {
                     required: false
                 }]
             }],
-            group: ['ProductionLine.id', 'ProductionLine.lineName', 'OperatingStation.id',
-                'OperatingStation.stationIdentifier', 'Orders.Material.id', 'Orders.Material.productionRate',
+            group: ['ProductionLine.id', 'ProductionLine.lineName', 'OperatingStations.id',
+                'OperatingStations.stationIdentifier', 'Orders.Material.id', 'Orders.Material.productionRate',
                 'Orders.Shift.id', 'Orders.Shift.shiftStart', 'Orders.Shift.shiftEnd', 'Orders.id',
                 'Customer.id', 'Customer.customerName'],
         });
         const result = transformValidationResult(validationResults);
-        //res.json(validationResults);
+        // res.json(validationResults);
         res.json(result);
     }
     catch (error) {
@@ -138,43 +138,40 @@ function transformValidationResult(validationResults) {
 }
 
 function consolidateValidationResult(productionLines, validationResult) {
-    if (validationResult.hasOwnProperty('id'))
-    {
-        let line = productionLines.find(element => {
-            return element.id == validationResult.id;
+    const line = validationResult;
+    if (line.hasOwnProperty('OperatingStations')) {
+        const customer = line.Customer;
+        const stations = line.OperatingStations;
+        let active = false;
+        let productionRate = 0;
+        let validationResultCount = 0;
+
+        stations.forEach(station => {
+            validationResultCount += station.dataValues.validationResultCount;
         });
-        if (line == null) {
-            line = validationResult;
+        if (line.hasOwnProperty('Orders')) {
+            const orders = line.Orders;
+            orders.forEach(order => {
+                const material = order.Material;
+                const shiftHours = getHoursPerShift(order.Shift);
+                const rate = shiftHours * material.productionRate;
 
-            if (line.hasOwnProperty('OperatingStation')) {
-                const station = line.OperatingStation.dataValues;
-                const customer = line.Customer;
-
-                let productionRate = 0;
-
-                if (line.hasOwnProperty('Orders')) {
-                    const orders = line.Orders;
-                    orders.forEach(order => {
-                        const material = order.Material;
-                        const shift = order.Shift;
-                        const shiftHours = Math.ceil(shift.shiftEnd - shift.shiftStart);
-                        const rate = shiftHours * material.productionRate;
-
-                        productionRate += rate;
-                    });
-                }
-                productionLines.push( {
-                    id: line.id,
-                    lineName: line.lineName,
-                    customerId: customer.id,
-                    customerName: customer.customerName,
-                    validationResultCount: station.validationResultCount,
-                    productionRate: productionRate,
-                    stationCount: 0,
-                    stoppedStations: 0
-                });
-            }
+                productionRate += rate;
+            });
+            active = orders.length > 0;
         }
+        productionLines.push( {
+            id: line.id,
+            lineName: line.lineName,
+            active: active,
+            customerId: customer.id,
+            customerName: customer.customerName,
+            validationResultCount: validationResultCount,
+            productionRate: productionRate,
+            stationCount: stations.length,
+            stoppedStations: 0,
+            rate: getProductionRate(validationResultCount, productionRate)
+        });
     }
     // if (validationResult.hasOwnProperty('OperatingStation')) {
     //     const station = validationResult.OperatingStation;
@@ -228,6 +225,13 @@ function getHoursPerShift(shift) {
         return 0;
     }
     return Math.ceil(shift.shiftEnd - shift.shiftStart);
+}
+
+function getProductionRate(validationResultCount, productionRate) {
+    if (productionRate == 0) {
+        return 0;
+    }
+    return Math.ceil((validationResultCount / productionRate) * 100);
 }
 
 function blockedStationsQuery(customer) {

@@ -18,7 +18,7 @@ const ValidationResult = require("./validation-result");
 
 const { ReportParameterSchema, validateModelId, validateOrderParameters } = require("./schemas");
 
-ProductionLine.hasOne(OperatingStation, {
+ProductionLine.hasMany(OperatingStation, {
     foreignKey: 'LineId'
 });
 OperatingStation.belongsTo(ProductionLine, {
