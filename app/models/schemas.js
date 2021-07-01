@@ -41,10 +41,7 @@ module.exports.validateModelId = function validateModelId(id) {
         id: id
     };
     const {error} = PageParameterSchema.validate({ page: id });
-    if (error) {
-        returned.isValid = false;
-        returned.errorList = error.details.map(e => e.message);
-    }
+    addMessageErrorIfNotValid(returned, error);
     return returned;
 }
 
@@ -68,10 +65,7 @@ module.exports.validateOrderParameters = function validateOrderParameters(payloa
         shiftId: payload.shiftId,
         goal: payload.goal
     });
-    if (error) {
-        returned.isValid = false;
-        returned.errorList = error.details.map(e => e.message);
-    }
+    addMessageErrorIfNotValid(returned, error);
     return returned;
 }
 
@@ -86,9 +80,13 @@ module.exports.validateProductionLineParameters = function validateProductionLin
         customerId: payload.params.customerId,
         productionDate: payload.body
     });
+    addMessageErrorIfNotValid(returned, error);
+    return returned;
+}
+
+function addMessageErrorIfNotValid(returned, error) {
     if (error) {
         returned.isValid = false;
         returned.errorList = error.details.map(e => e.message);
     }
-    return returned;
 }
