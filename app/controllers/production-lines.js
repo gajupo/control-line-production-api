@@ -43,7 +43,7 @@ async function getProductionLinesPerCustomer(req, res) {
             return badRequestError(`Invalid Customer ID: ${customer.id}`, res, customer.errorList);
         }
         const hours = new Date().getHours();
-        const validationResults = await ProductionLine.findAll({
+        const productionLines = await ProductionLine.findAll({
             attributes: ['id', 'lineName'],
             include: [{
                 model: Customer,
@@ -97,7 +97,7 @@ async function getProductionLinesPerCustomer(req, res) {
                 'Orders.Material.productionRate', 'Orders.id', 'Customer.id',
                 'Customer.customerName', 'Shifts.id', 'Shifts.shiftStart', 'Shifts.shiftEnd'],
         });
-        const result = transformValidationResult(validationResults);
+        const result = transformProductionLines(productionLines);
         res.json(result);
     }
     catch (error) {
@@ -106,17 +106,16 @@ async function getProductionLinesPerCustomer(req, res) {
     }
 }
 
-function transformValidationResult(validationResults) {
-    var productionLines = [];
+function transformProductionLines(productionLines) {
+    var lines = [];
 
-    validationResults.forEach((validation) => {
-        consolidateValidationResult(productionLines, validation.dataValues);
+    productionLines.forEach((line) => {
+        transformProductionLine(lines, line.dataValues);
     });
-    return productionLines;
+    return lines;
 }
 
-function consolidateValidationResult(productionLines, validationResult) {
-    const line = validationResult;
+function transformProductionLine(productionLines, line) {
     if (line.hasOwnProperty('OperatingStations')) {
         const customer = line.Customer;
         const stations = line.OperatingStations;
