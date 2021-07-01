@@ -2,14 +2,6 @@
 
 const Joi = require('joi');
 
-module.exports.ReportParameterSchema = Joi.object ({
-    pasPN: Joi.string().min(8).alphanum(),
-    scanDate: Joi.object({
-        from: Joi.date().iso().required(),
-        to: Joi.date().iso().required()
-    })
-}).or('pasPN', 'scanDate');
-
 const PageParameterSchema = Joi.object ({
     page: Joi.number().integer().positive().required()
 });
@@ -25,6 +17,21 @@ const ProductonLineParameterSchema = Joi.object({
     customerId: Joi.number().integer().positive().required(),
     productionDate: Joi.date().iso().required()
 });
+
+function addMessageErrorIfNotValid(returned, error) {
+    if (error) {
+        returned.isValid = false;
+        returned.errorList = error.details.map(e => e.message);
+    }
+}
+
+module.exports.ReportParameterSchema = Joi.object ({
+    pasPN: Joi.string().min(8).alphanum(),
+    scanDate: Joi.object({
+        from: Joi.date().iso().required(),
+        to: Joi.date().iso().required()
+    })
+}).or('pasPN', 'scanDate');
 
 /**
  * Validates that the given id is  a number, integer and positive.
@@ -82,11 +89,4 @@ module.exports.validateProductionLineParameters = function validateProductionLin
     });
     addMessageErrorIfNotValid(returned, error);
     return returned;
-}
-
-function addMessageErrorIfNotValid(returned, error) {
-    if (error) {
-        returned.isValid = false;
-        returned.errorList = error.details.map(e => e.message);
-    }
 }
