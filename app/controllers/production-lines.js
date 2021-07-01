@@ -86,19 +86,16 @@ async function getProductionLinesPerCustomer(req, res) {
                     attributes: ['id', 'productionRate'],
                     required: false
                 }, {
-                    model: Shift,
-                    attributes: ['id', 'shiftStart', 'shiftEnd'],
-                }, {
                     model: ValidationResult,
                     attributes: [],
                     required: false
                 }]
             }],
-            group: ['ProductionLine.id', 'ProductionLine.lineName', 'OperatingStations.id',
-                'OperatingStations.stationIdentifier', 'Orders.Material.id', 'Orders.Material.productionRate',
-                'Orders.Shift.id', 'Orders.Shift.shiftStart', 'Orders.Shift.shiftEnd', 'Orders.id',
-                'Customer.id', 'Customer.customerName', 'OperatingStations.StopCauseLogs.id',
-                'Shifts.id', 'Shifts.shiftStart', 'Shifts.shiftEnd'],
+            group: ['ProductionLine.id', 'ProductionLine.lineName', 
+                'OperatingStations.id','OperatingStations.stationIdentifier',
+                'OperatingStations.StopCauseLogs.id', 'Orders.Material.id',
+                'Orders.Material.productionRate', 'Orders.id', 'Customer.id',
+                'Customer.customerName', 'Shifts.id', 'Shifts.shiftStart', 'Shifts.shiftEnd'],
         });
         const result = transformValidationResult(validationResults);
         res.json(result);
@@ -123,23 +120,14 @@ function consolidateValidationResult(productionLines, validationResult) {
     if (line.hasOwnProperty('OperatingStations')) {
         const customer = line.Customer;
         const stations = line.OperatingStations;
-        let active = false;
-        let goal = 0;
         let validationResultCount = 0;
+        let goal = 0;
 
-        stations.forEach(station => {
-            validationResultCount += station.dataValues.validationResultCount;
-        });
-        if (line.hasOwnProperty('Orders')) {
-            const orders = line.Orders;
-            orders.forEach(order => {
-                const material = order.Material;
-                const shiftHours = getHoursPerShift(order.Shift);
-                const orderGoal = shiftHours * material.productionRate;
-
-                goal += orderGoal;
-            });
-            active = orders.length > 0;
+        const active = checkIfLineIsActive(line);
+        if (active) {
+            const shiftHours = getHoursPerShift(line);
+            goal = getProductionGoal(line, shiftHours);
+            validationResultCount = getValidationResultCount(stations);
         }
         productionLines.push( {
             id: line.id,
@@ -153,14 +141,44 @@ function consolidateValidationResult(productionLines, validationResult) {
             rate: getProductionRate(validationResultCount, goal)
         });
     }
-
 }
 
-function getHoursPerShift(shift) {
-    if (shift === undefined) {
-        return 0;
+function getHoursPerShift(line) {
+    if (line.hasOwnProperty('Shifts') && line.Shifts.length > 0) {
+        const shift = line.Shifts[0];
+        return Math.ceil(shift.shiftEnd - shift.shiftStart);
     }
-    return Math.ceil(shift.shiftEnd - shift.shiftStart);
+    return 0;
+}
+
+function getProductionGoal(line, shiftHours) {
+    let goal = 0;
+    if (line.hasOwnProperty('Orders')) {
+        const orders = line.Orders;
+        orders.forEach(order => {
+            const material = order.Material;
+            const orderGoal = shiftHours * material.productionRate;
+
+            goal += orderGoal;
+        });
+    }
+    return goal;
+}
+
+function getValidationResultCount(stations) {
+    let count = 0;
+    stations.forEach(station => {
+        count += station.dataValues.validationResultCount;
+    });
+    return count;
+}
+
+function checkIfLineIsActive(line) {
+    if (line.hasOwnProperty('Orders')) {
+        const orders = line.Orders;
+        return orders.length > 0;
+    }
+    return false;
 }
 
 function getProductionRate(validationResultCount, productionRate) {
@@ -173,6 +191,7 @@ function getProductionRate(validationResultCount, productionRate) {
 function checkIfLineIsBlocked(stations) {
     return stations.every(station => station.StopCauseLogs.length > 0);
 }
+
 
 module.exports.getProductionLines = getProductionLines;
 module.exports.getProductionLine = getProductionLine;
