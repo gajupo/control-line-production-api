@@ -84,8 +84,8 @@ module.exports.validateProductionLineParameters = function validateProductionLin
         errorList: []
     };
     const {error} = ProductonLineParameterSchema.validate({
-        customerId: payload.params.customerId,
-        productionDate: payload.body
+        customerId: params.customerId,
+        productionDate: body.productionDate
     });
     addMessageErrorIfNotValid(returned, error);
     return returned;

@@ -1,7 +1,6 @@
 'use strict';
 
 function successfulOperation(message, res, propName = undefined, value = undefined ) {
-
     var response = {
         statusCode: 200,
         message: message
@@ -9,26 +8,22 @@ function successfulOperation(message, res, propName = undefined, value = undefin
     if (propName) {
         response[propName] = value;
     }
-    res.status(200).send(JSON.stringify(response, null, 2));
+    res.status(200).json(response);
 }
 
 function notFoundError(message, res) {
-
     errorMessage(message, 'Not found', 404, res);
 }
 
 function internalServerError(message, res) {
-
     errorMessage(message, 'Internal server error', 500, res);
 }
 
 function badRequestError(message, res, errorList = undefined) {
-
     errorMessage(message, 'Bad request error', 400, res, errorList);
 }
 
 function errorMessage(message, description, statusCode, res, errorList = undefined) {
-    
     var response = {
         statusCode: statusCode,
         error: description,
@@ -37,7 +32,7 @@ function errorMessage(message, description, statusCode, res, errorList = undefin
     if (errorList) {
         response.errorList = errorList;
     }
-    res.status(statusCode).send(JSON.stringify(response, null, 2));
+    res.status(statusCode).json(response);
 }
 
 module.exports.notFoundError = notFoundError;

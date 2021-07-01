@@ -1,9 +1,9 @@
 'use strict';
 
 const { logError } = require('../helpers/logger');
-const { internalServerError } = require("./core");
+const { internalServerError, badRequestError } = require("./core");
 const { Sequelize, Op } = require('sequelize');
-const { ProductionLine, OperatingStation, validateModelId, Customer,
+const { ProductionLine, OperatingStation, validateProductionLineParameters, Customer,
     ValidationResult, Order, Material, Shift, StopCauseLog } = require('../models');
 
 async function getProductionLines(res) {
@@ -38,9 +38,10 @@ async function getProductionLine(lineId) {
 
 async function getProductionLinesPerCustomer(req, res) {
     try {
-        const customer = validateModelId(req.params.customerId);
-        if (!customer.isValid) {
-            return badRequestError(`Invalid Customer ID: ${customer.id}`, res, customer.errorList);
+        console.log(req.body);
+        const params = validateProductionLineParameters(req.params, req.body);
+        if (!params.isValid) {
+            return badRequestError("Invalid parameters passed", res, params.errorList);
         }
         const hours = new Date().getHours();
         const productionLines = await ProductionLine.findAll({
@@ -49,7 +50,7 @@ async function getProductionLinesPerCustomer(req, res) {
                 model: Customer,
                 required: true,
                 attributes: ['id', 'customerName'],
-                where: { id: customer.id }
+                where: { id: params.customerId }
             }, {
                 model: Shift,
                 attributes: ['id', 'shiftStart', 'shiftEnd'],
