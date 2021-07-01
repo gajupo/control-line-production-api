@@ -2,7 +2,7 @@
 
 const { logError } = require('../helpers/logger');
 const { internalServerError } = require("./core");
-const { Sequelize } = require('sequelize');
+const { Sequelize, Op } = require('sequelize');
 const { ProductionLine, OperatingStation, validateModelId, Customer,
     ValidationResult, Order, Material, Shift, StopCauseLog } = require('../models');
 
@@ -42,6 +42,7 @@ async function getProductionLinesPerCustomer(req, res) {
         if (!customer.isValid) {
             return badRequestError(`Invalid Customer ID: ${customer.id}`, res, customer.errorList);
         }
+        const hours = new Date().getHours();
         const validationResults = await ProductionLine.findAll({
             attributes: ['id', 'lineName'],
             include: [{
@@ -49,6 +50,20 @@ async function getProductionLinesPerCustomer(req, res) {
                 required: true,
                 attributes: ['id', 'customerName'],
                 where: { id: customer.id }
+            }, {
+                model: Shift,
+                attributes: ['id', 'shiftStart', 'shiftEnd'],
+                through: { attributes: [] },
+                required: false,
+                where: {
+                    active: true,
+                    shiftStart: {
+                        [Op.lte]: hours
+                    },
+                    shiftEnd: {
+                        [Op.gte]: hours
+                    }
+                }
             }, {
                 model: OperatingStation,
                 attributes: [
@@ -82,7 +97,8 @@ async function getProductionLinesPerCustomer(req, res) {
             group: ['ProductionLine.id', 'ProductionLine.lineName', 'OperatingStations.id',
                 'OperatingStations.stationIdentifier', 'Orders.Material.id', 'Orders.Material.productionRate',
                 'Orders.Shift.id', 'Orders.Shift.shiftStart', 'Orders.Shift.shiftEnd', 'Orders.id',
-                'Customer.id', 'Customer.customerName', 'OperatingStations.StopCauseLogs.id'],
+                'Customer.id', 'Customer.customerName', 'OperatingStations.StopCauseLogs.id',
+                'Shifts.id', 'Shifts.shiftStart', 'Shifts.shiftEnd'],
         });
         const result = transformValidationResult(validationResults);
         res.json(result);
