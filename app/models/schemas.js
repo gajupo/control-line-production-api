@@ -21,6 +21,11 @@ const OrderParameterSchema = Joi.object ({
     goal: Joi.number().integer().positive().required()
 });
 
+const ProductonLineParameterSchema = Joi.object({
+    customerId: Joi.number().integer().positive().required(),
+    productionDate: Joi.date().iso().required()
+});
+
 /**
  * Validates that the given id is  a number, integer and positive.
  * 
@@ -62,6 +67,24 @@ module.exports.validateOrderParameters = function validateOrderParameters(payloa
         materialId: payload.materialId,
         shiftId: payload.shiftId,
         goal: payload.goal
+    });
+    if (error) {
+        returned.isValid = false;
+        returned.errorList = error.details.map(e => e.message);
+    }
+    return returned;
+}
+
+module.exports.validateProductionLineParameters = function validateProductionLineParameters(params, body) {
+    var returned = {
+        customerId: params.customerId,
+        productionDate: body,
+        isValid: true,
+        errorList: []
+    };
+    const {error} = ProductonLineParameterSchema.validate({
+        customerId: payload.params.customerId,
+        productionDate: payload.body
     });
     if (error) {
         returned.isValid = false;
