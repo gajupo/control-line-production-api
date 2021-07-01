@@ -38,7 +38,6 @@ async function getProductionLine(lineId) {
 
 async function getProductionLinesPerCustomer(req, res) {
     try {
-        console.log(req.body);
         const params = validateProductionLineParameters(req.params, req.body);
         if (!params.isValid) {
             return badRequestError("Invalid parameters passed", res, params.errorList);
@@ -174,11 +173,16 @@ function getValidationResultCount(stations) {
 }
 
 function checkIfLineIsActive(line) {
+    let hasOrders = false, hasShifts = false;
     if (line.hasOwnProperty('Orders')) {
         const orders = line.Orders;
-        return orders.length > 0;
+        hasOrders = orders.length > 0;
     }
-    return false;
+    if (line.hasOwnProperty('Shifts')) {
+        const shifts = line.Shifts;
+        hasShifts = shifts.length > 0;
+    }
+    return hasOrders && hasShifts;
 }
 
 function getProductionRate(validationResultCount, productionRate) {
