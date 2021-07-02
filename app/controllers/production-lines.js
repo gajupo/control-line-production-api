@@ -3,6 +3,7 @@
 const { logError } = require('../helpers/logger');
 const { internalServerError, badRequestError } = require("./core");
 const { Sequelize, Op } = require('sequelize');
+const { parseISO } = require('date-fns');
 const { ProductionLine, OperatingStation, validateProductionLineParameters, Customer,
     ValidationResult, Order, Material, Shift, StopCauseLog } = require('../models');
 
@@ -42,7 +43,7 @@ async function getProductionLinesPerCustomer(req, res) {
         if (!params.isValid) {
             return badRequestError("Invalid parameters passed", res, params.errorList);
         }
-        const hours = new Date().getHours();
+        const today = parseISO(params.productionDate);
         const productionLines = await ProductionLine.findAll({
             attributes: ['id', 'lineName'],
             include: [{
@@ -58,10 +59,10 @@ async function getProductionLinesPerCustomer(req, res) {
                 where: {
                     active: true,
                     shiftStart: {
-                        [Op.lte]: hours
+                        [Op.lte]: today.getHours()
                     },
                     shiftEnd: {
-                        [Op.gte]: hours
+                        [Op.gte]: today.getHours()
                     }
                 }
             }, {
@@ -69,13 +70,18 @@ async function getProductionLinesPerCustomer(req, res) {
                 attributes: [
                     'id',
                     'stationIdentifier',
-                    [Sequelize.fn('count', Sequelize.col('Orders.ValidationResults.Id')), 'validationResultCount']
+                    [Sequelize.fn('count', Sequelize.col('OperatingStations.ValidationResults.Id')), 'validationResultCount']
                 ],
                 include: [{
                     model: StopCauseLog,
                     required: false,
                     where: { status: true },
                     attributes: ['id']
+                }, {
+                    model: ValidationResult,
+                    attributes: [],
+                    required: false,
+                    where: Sequelize.where(Sequelize.fn('CONVERT', Sequelize.literal('date'), Sequelize.col('OperatingStations.ValidationResults.ScanDate')), '=', today)
                 }]
             }, {
                 model: Order,
@@ -85,12 +91,15 @@ async function getProductionLinesPerCustomer(req, res) {
                     model: Material,
                     attributes: ['id', 'productionRate'],
                     required: false
-                }, {
-                    model: ValidationResult,
-                    attributes: [],
-                    required: false
-                }]
+                }],
+                where: {
+                    [Op.and]: [
+                        Sequelize.where(Sequelize.col('Orders.Active'), '=', true),
+                        Sequelize.where(Sequelize.fn('CONVERT', Sequelize.literal('date'), Sequelize.col('Orders.CreatedAt')), '=', today)
+                    ]
+                }
             }],
+
             group: ['ProductionLine.id', 'ProductionLine.lineName', 
                 'OperatingStations.id','OperatingStations.stationIdentifier',
                 'OperatingStations.StopCauseLogs.id', 'Orders.Material.id',
@@ -98,7 +107,7 @@ async function getProductionLinesPerCustomer(req, res) {
                 'Customer.customerName', 'Shifts.id', 'Shifts.shiftStart', 'Shifts.shiftEnd'],
         });
         const result = transformProductionLines(productionLines);
-        res.json(result);
+        res.json(productionLines);
     }
     catch (error) {
         logError("Error in getProductionLinesPerCustomer", error);

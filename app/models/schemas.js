@@ -79,7 +79,7 @@ module.exports.validateOrderParameters = function validateOrderParameters(payloa
 module.exports.validateProductionLineParameters = function validateProductionLineParameters(params, body) {
     var returned = {
         customerId: params.customerId,
-        productionDate: body,
+        productionDate: body.productionDate,
         isValid: true,
         errorList: []
     };
