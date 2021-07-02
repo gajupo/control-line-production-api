@@ -92,7 +92,7 @@ app.put('/unblock/:stationIdentifier', async (req, res) => {
 });
 
 /**
- * GET /reportlist/1
+ * POST /reportlist/1
  * 
  * {
  *     "pasPN": "290D2851G001",
@@ -148,9 +148,13 @@ app.get('/shifts/line/:productionLineId', async(req, res, next) => {
 });
 
 /**
- * GET /productionlines/customer/15
+ * POST /productionlines/customer/15
+ * 
+ * {
+ *      "productionDate": "2021-02-12T20:29:26.364Z"
+ * }
  */
-app.get('/productionlines/customer/:customerId', async(req, res) => {
+app.post('/productionlines/customer/:customerId', async(req, res) => {
     await getProductionLinesPerCustomer(req, res);
 });
 
