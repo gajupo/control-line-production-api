@@ -81,7 +81,7 @@ async function getProductionLinesPerCustomer(req, res) {
                     model: ValidationResult,
                     attributes: [],
                     required: false,
-                    where: Sequelize.where(Sequelize.fn('CONVERT', Sequelize.literal('date'), Sequelize.col('OperatingStations.ValidationResults.ScanDate')), '=', today)
+                    where: Sequelize.where(getDatePartConversion('OperatingStations.ValidationResults.ScanDate'), '=', today)
                 }]
             }, {
                 model: Order,
@@ -95,7 +95,7 @@ async function getProductionLinesPerCustomer(req, res) {
                 where: {
                     [Op.and]: [
                         Sequelize.where(Sequelize.col('Orders.Active'), '=', true),
-                        Sequelize.where(Sequelize.fn('CONVERT', Sequelize.literal('date'), Sequelize.col('Orders.CreatedAt')), '=', today)
+                        Sequelize.where(getDatePartConversion('Orders.CreatedAt'), '=', today)
                     ]
                 }
             }],
@@ -107,7 +107,7 @@ async function getProductionLinesPerCustomer(req, res) {
                 'Customer.customerName', 'Shifts.id', 'Shifts.shiftStart', 'Shifts.shiftEnd'],
         });
         const result = transformProductionLines(productionLines);
-        res.json(productionLines);
+        res.json(result);
     }
     catch (error) {
         logError("Error in getProductionLinesPerCustomer", error);
@@ -203,6 +203,10 @@ function getProductionRate(validationResultCount, productionRate) {
 
 function checkIfLineIsBlocked(stations) {
     return stations.every(station => station.StopCauseLogs.length > 0);
+}
+
+function getDatePartConversion(column) {
+    return Sequelize.fn('CONVERT', Sequelize.literal('date'), Sequelize.col(`${column}`));
 }
 
 
