@@ -16,7 +16,8 @@ const { getShiftsPerProductionLine } = require("./app/controllers/shifts");
 const app = express();
 const http = require('http').Server(app);
 const io = require('socket.io')(http);
-const port = 3001;
+const PORT = process.env.PORT || 3000;
+const HOST = process.env.SERVER_HOST || '0.0.0.0';
 
 app.use(express.json());
 app.use(cors());
@@ -162,6 +163,6 @@ io.on('connection', (socket) => {
     console.log('User connected...');
 });
 
-http.listen(port, () => {
-    console.log(`SIMPL Dashboard API listening at http://localhost:${port}`);
+http.listen(PORT, HOST, () => {
+    console.log(`SIMPL Dashboard API listening at http://localhost:${PORT}`);
 })
