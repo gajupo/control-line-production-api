@@ -25,70 +25,70 @@ app.use(cors());
 /**
  * GET /customers
  */
-app.get('/customers', async (req, res, next) => {
+app.get('/api/customers', async (req, res, next) => {
     await getCustomerList(res, next);
 });
 
 /**
  * GET /orders
  */
-app.get('/orders', async (req, res, next) => {
+app.get('/api/orders', async (req, res, next) => {
     await getCurrentOrders(res, next);
 });
 
 /**
  * PUT /order/scan/15
  */
-app.put('/order/scan/:orderId', async (req, res) => {
+app.put('/api/order/scan/:orderId', async (req, res) => {
     await scanOrderProduct(req, res, io);
 });
 
 /**
  * PUT /order/close/22
  */
- app.put('/order/close/:orderId', async (req, res) => {
+ app.put('/api/order/close/:orderId', async (req, res) => {
     await closeOrder(req, res, io);
 });
 
 /**
  * GET /customers/id
  */
-app.get('/orders/:id', async (req, res) => {
+app.get('/api/orders/:id', async (req, res) => {
     await getCustomerOrders(req, res);
 });
 
 /**
  * GET /stopcauselogs
  */
-app.get('/stopcauselogs', async (req, res, next) => {
+app.get('/api/stopcauselogs', async (req, res, next) => {
     await getActiveStopCauseLogs(res, next);
 });
 
 /**
  * GET /stopcauselogs/6
  */
-app.get('/stopcauselogs/:customerId', async (req, res) => {
+app.get('/api/stopcauselogs/:customerId', async (req, res) => {
     await getActiveStopCauseLogsByCustomer(req, res);
 });
 
 /**
  * GET /stopcauselogs/historical
  */
-app.get('/stopcauselogs/historical', async (req, res, next) => {
+app.get('/api/stopcauselogs/historical', async (req, res, next) => {
     await getStopCauseLogsRecord(res, next);
 });
 
 /**
  * GET /stopcauselogs/historical/6
  */
-app.get('/stopcauselogs/historical/:customerId', async (req, res) => {
+app.get('/api/stopcauselogs/historical/:customerId', async (req, res) => {
     await getStopCauseLogsRecordByCustomer(req, res);
 });
 
 /**
  * PUT /unblock/STATION01
  */
-app.put('/unblock/:stationIdentifier', async (req, res) => {
+app.put('/api/unblock/:stationIdentifier', async (req, res) => {
     await unblockLine(req, res, io);
 });
 
@@ -104,7 +104,7 @@ app.put('/unblock/:stationIdentifier', async (req, res) => {
  *     }
  * }
  */
-app.post('/reportlist/:page', async (req, res, next) => {
+app.post('/api/reportlist/:page', async (req, res, next) => {
     await getPaginatedReportList(req, res, next);
 });
 
@@ -116,35 +116,35 @@ app.post('/reportlist/:page', async (req, res, next) => {
  *      "materialId": 5
  * }
  */
-app.post('/orders/new', async (req, res, next) => {
+app.post('/api/orders/new', async (req, res, next) => {
     await createNewOrder(req, res, io);
 });
 
 /**
  * GET /materials
  */
-app.get('/materials', async (req, res, next) => {
+app.get('/api/materials', async (req, res, next) => {
     await getMaterialList(res);
 });
 
 /**
  * GET /materials/client/6
  */
-app.get('/materials/client/:id', async (req, res, next) => {
+app.get('/api/materials/client/:id', async (req, res, next) => {
     await getMaterialListPerCustomer(req, res);
 });
 
 /**
  * GET /productionlines
  */
-app.get('/productionlines', async(req, res, next) => {
+app.get('/api/productionlines', async(req, res, next) => {
     await getProductionLines(res);
 });
 
 /**
  * GET /shifts/line/2
  */
-app.get('/shifts/line/:productionLineId', async(req, res, next) => {
+app.get('/api/shifts/line/:productionLineId', async(req, res, next) => {
     await getShiftsPerProductionLine(req, res);
 });
 
@@ -155,14 +155,14 @@ app.get('/shifts/line/:productionLineId', async(req, res, next) => {
  *      "productionDate": "2021-02-12T20:29:26.364Z"
  * }
  */
-app.post('/productionlines/customer/:customerId', async(req, res) => {
+app.post('/api/productionlines/customer/:customerId', async(req, res) => {
     await getProductionLinesPerCustomer(req, res);
 });
 
 /**
  * GET /line-dashboard/productionlines/customer/6
  */
- app.get('/line-dashboard/productionlines/customer/:customerId', async(req, res) => {
+ app.get('/api/line-dashboard/productionlines/customer/:customerId', async(req, res) => {
     await getProductionLines(req, res);
 });
 
