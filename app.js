@@ -159,9 +159,9 @@ app.post('/productionlines/customer/:customerId', async(req, res) => {
 });
 
 /**
- * GET /line-dashboard/line/productionlines/customer/6
+ * GET /line-dashboard/productionlines/customer/6
  */
- app.post('/line-dashboard/productionlines/customer/:customerId', async(req, res) => {
+ app.get('/line-dashboard/productionlines/customer/:customerId', async(req, res) => {
     await getProductionLines(req, res);
 });
 
