@@ -159,6 +159,13 @@ app.post('/productionlines/customer/:customerId', async(req, res) => {
     await getProductionLinesPerCustomer(req, res);
 });
 
+/**
+ * GET /line-dashboard/productionlines/customer/6
+ */
+ app.get('/line-dashboard/productionlines/customer/:customerId', async(req, res) => {
+    await getProductionLines(req, res);
+});
+
 io.on('connection', (socket) => {
     console.log('User connected...');
 });
