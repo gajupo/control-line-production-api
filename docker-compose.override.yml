@@ -1,0 +1,15 @@
+# this file will override some docker-compose.yml values  when running the command, docker-compose up -d
+# this config will be used for development environment
+version: '3'
+
+services:
+    line-dashboard:
+        build: .
+        entrypoint: ["npm", "run", "dev"]
+        ports:
+        - ${PORT_SERVICE}:3000
+        volumes:
+        - .:/home/node/app
+        environment:
+        - SERVER_HOST=0.0.0.0
+        - PORT=${PORT_NODE}
