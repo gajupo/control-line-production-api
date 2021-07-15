@@ -1,5 +1,7 @@
 # Tell Docker to use the "node" Docker Image at version "lts-slim"
 FROM node:14-slim
+#install curl for dev tasks
+RUN apt-get update && apt-get install -y curl
 # Create our containers WORKDIR and "node_modules" directory.
 # Give the user:group "node" ownership of all files/directories in our containers WORKDIR
 RUN mkdir -p /home/node/app/node_modules && chown -R node:node /home/node/app
