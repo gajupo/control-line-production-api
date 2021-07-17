@@ -61,9 +61,13 @@ async function getProductionLine(lineId) {
 
 async function getProductionLine(req, res) {
     try {
+        const line = validateModelId(req.params.lineId);
+        if (!line.isValid) {
+            return badRequestError(`Invalid parameter ${line.id}`, res, line.errorList);
+        }
         var productionLine = await ProductionLine.findOne({
-            where: { id: lineId },
-            attributes: ['id', 'productionLine']
+            where: { id: line.id },
+            attributes: ['id', 'lineName']
         });
         res.json(productionLine);
     }
