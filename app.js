@@ -170,7 +170,7 @@ app.post('/api/productionlines/customer/:customerId', async(req, res) => {
 /**
  * GET /api/line-dashboard/productionline/1
  */
- app.get('/api/line-dashboard/productionline/:lineId', async(req, res) => {
+ app.post('/api/line-dashboard/productionline/:lineId', async(req, res) => {
     await getProductionLine(req, res);
 });
 

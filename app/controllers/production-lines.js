@@ -218,7 +218,7 @@ async function getProductionLine(req, res) {
         }
         const today = parseISO(line.productionDate);
         var productionLine = await ProductionLine.findOne({
-            where: { id: line.id },
+            where: { id: line.lineId },
             attributes: ['id', 'lineName'],
             include: [{
                 model: Customer,
