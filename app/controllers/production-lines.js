@@ -48,7 +48,6 @@ async function getProductionLines(req, res) {
 }
 
 async function getProductionLine(lineId) {
-    
     var productionLine = await ProductionLine.findOne({
         where: { id: lineId },
         include: [{
@@ -58,6 +57,20 @@ async function getProductionLine(lineId) {
         attributes: ['id']
     });
     return productionLine;
+}
+
+async function getProductionLine(req, res) {
+    try {
+        var productionLine = await ProductionLine.findOne({
+            where: { id: lineId },
+            attributes: ['id', 'productionLine']
+        });
+        res.json(productionLine);
+    }
+    catch (error) {
+        logError("Error in getProductionLine", error);
+        return internalServerError(`Internal server error`, res);  
+    }
 }
 
 async function getProductionLinesPerCustomer(req, res) {
