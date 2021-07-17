@@ -76,7 +76,7 @@ module.exports.validateOrderParameters = function validateOrderParameters(payloa
     return returned;
 }
 
-module.exports.validateProductionLineParameters = function validateProductionLineParameters(params, body) {
+module.exports.validateLinePerCustomerParameters = function validateLinePerCustomerParameters(params, body) {
     var returned = {
         customerId: params.customerId,
         productionDate: body.productionDate,

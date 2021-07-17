@@ -4,7 +4,7 @@ const { logError } = require('../helpers/logger');
 const { internalServerError, badRequestError } = require("./core");
 const { Sequelize, Op } = require('sequelize');
 const { parseISO } = require('date-fns');
-const { ProductionLine, OperatingStation, validateProductionLineParameters, Customer,
+const { ProductionLine, OperatingStation, validateLinePerCustomerParameters, Customer,
     ValidationResult, Order, Material, Shift, StopCauseLog, validateModelId } = require('../models');
 
 async function getProductionLines(res) {
@@ -38,7 +38,7 @@ async function getProductionLine(lineId) {
 
 async function getProductionLinesPerCustomer(req, res) {
     try {
-        const params = validateProductionLineParameters(req.params, req.body);
+        const params = validateLinePerCustomerParameters(req.params, req.body);
         if (!params.isValid) {
             return badRequestError("Invalid parameters passed", res, params.errorList);
         }
