@@ -211,10 +211,11 @@ function getDatePartConversion(column) {
 
 async function getProductionLine(req, res) {
     try {
-        const line = validateModelId(req.params.lineId);
+        const line = validateProductionLineParameters(req.params, req.body);
         if (!line.isValid) {
-            return badRequestError(`Invalid parameter ${line.id}`, res, line.errorList);
+            return badRequestError("Invalid parameters passed", res, line.errorList);
         }
+        const today = parseISO(line.productionDate);
         var productionLine = await ProductionLine.findOne({
             where: { id: line.id },
             attributes: ['id', 'lineName'],
@@ -222,6 +223,20 @@ async function getProductionLine(req, res) {
                 model: Customer,
                 attributes: ['id', 'customerName'],
                 required: true
+            }, {
+                model: Shift,
+                attributes: ['id', 'shiftStart', 'shiftEnd'],
+                through: { attributes: [] },
+                required: false,
+                where: {
+                    active: true,
+                    shiftStart: {
+                        [Op.lte]: today.getHours()
+                    },
+                    shiftEnd: {
+                        [Op.gte]: today.getHours()
+                    }
+                }
             }]
         });
         res.json(productionLine);
