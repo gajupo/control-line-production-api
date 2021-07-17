@@ -17,7 +17,7 @@ const Material = require("./material");
 const ValidationResult = require("./validation-result");
 
 const { ReportParameterSchema, validateModelId, validateOrderParameters,
-    validateProductionLineParameters } = require("./schemas");
+    validateLineParameters, validateLinePerCustomerParameters } = require("./schemas");
 
 ProductionLine.hasMany(OperatingStation, {
     foreignKey: 'LineId'
@@ -193,4 +193,5 @@ module.exports.ReportParameterSchema = ReportParameterSchema;
 module.exports.validateModelId = validateModelId;
 module.exports.validatePaginationPage = validateModelId;
 module.exports.validateOrderParameters = validateOrderParameters;
-module.exports.validateProductionLineParameters = validateProductionLineParameters;
+module.exports.validateLineParameters = validateLineParameters;
+module.exports.validateLinePerCustomerParameters = validateLinePerCustomerParameters;
