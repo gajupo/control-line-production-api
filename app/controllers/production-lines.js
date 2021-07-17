@@ -226,9 +226,9 @@ async function getProductionLine(req, res) {
                 required: true
             }, {
                 model: Shift,
-                attributes: ['id', 'shiftStart', 'shiftEnd'],
+                attributes: ['id', 'shiftDescription', 'shiftStart', 'shiftEnd'],
                 through: { attributes: [] },
-                required: false,
+                required: true,
                 where: {
                     active: true,
                     shiftStart: {
