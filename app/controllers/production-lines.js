@@ -24,29 +24,6 @@ async function getProductionLines(res) {
     }
 }
 
-async function getProductionLines(req, res) {
-    try {
-        const customer = validateModelId(req.params.customerId);
-        if (!customer.isValid) {
-            return badRequestError("Invalid parameter", res, customer.errorList);
-        }
-        const productionlines = await ProductionLine.findAll({
-            attributes: ['id', 'lineName'],
-            include: [{
-                model: Customer,
-                required: true,
-                attributes: [],
-                where: { id: customer.id }
-            }]
-        });
-        res.json(productionlines);
-    }
-    catch (error) {
-        logError("Error in getProductionLines", error);
-        return internalServerError(`Internal server error`, res);
-    }
-}
-
 async function getProductionLine(lineId) {
     var productionLine = await ProductionLine.findOne({
         where: { id: lineId },
@@ -57,24 +34,6 @@ async function getProductionLine(lineId) {
         attributes: ['id']
     });
     return productionLine;
-}
-
-async function getProductionLine(req, res) {
-    try {
-        const line = validateModelId(req.params.lineId);
-        if (!line.isValid) {
-            return badRequestError(`Invalid parameter ${line.id}`, res, line.errorList);
-        }
-        var productionLine = await ProductionLine.findOne({
-            where: { id: line.id },
-            attributes: ['id', 'lineName']
-        });
-        res.json(productionLine);
-    }
-    catch (error) {
-        logError("Error in getProductionLine", error);
-        return internalServerError(`Internal server error`, res);  
-    }
 }
 
 async function getProductionLinesPerCustomer(req, res) {
@@ -247,6 +206,53 @@ function checkIfLineIsBlocked(stations) {
 
 function getDatePartConversion(column) {
     return Sequelize.fn('CONVERT', Sequelize.literal('date'), Sequelize.col(`${column}`));
+}
+
+
+async function getProductionLine(req, res) {
+    try {
+        const line = validateModelId(req.params.lineId);
+        if (!line.isValid) {
+            return badRequestError(`Invalid parameter ${line.id}`, res, line.errorList);
+        }
+        var productionLine = await ProductionLine.findOne({
+            where: { id: line.id },
+            attributes: ['id', 'lineName'],
+            include: [{
+                model: Customer,
+                attributes: ['id', 'customerName'],
+                required: true
+            }]
+        });
+        res.json(productionLine);
+    }
+    catch (error) {
+        logError("Error in getProductionLine", error);
+        return internalServerError(`Internal server error`, res);  
+    }
+}
+
+async function getProductionLines(req, res) {
+    try {
+        const customer = validateModelId(req.params.customerId);
+        if (!customer.isValid) {
+            return badRequestError("Invalid parameter", res, customer.errorList);
+        }
+        const productionlines = await ProductionLine.findAll({
+            attributes: ['id', 'lineName'],
+            include: [{
+                model: Customer,
+                required: true,
+                attributes: [],
+                where: { id: customer.id }
+            }]
+        });
+        res.json(productionlines);
+    }
+    catch (error) {
+        logError("Error in getProductionLines", error);
+        return internalServerError(`Internal server error`, res);
+    }
 }
 
 
