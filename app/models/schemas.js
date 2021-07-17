@@ -13,8 +13,13 @@ const OrderParameterSchema = Joi.object ({
     goal: Joi.number().integer().positive().required()
 });
 
-const ProductonLineParameterSchema = Joi.object({
+const LinePerCustomerParameterSchema = Joi.object({
     customerId: Joi.number().integer().positive().required(),
+    productionDate: Joi.date().iso().required()
+});
+
+const LineParameterSchema = Joi.object({
+    lineId: Joi.number().integer().positive().required(),
     productionDate: Joi.date().iso().required()
 });
 
@@ -83,8 +88,23 @@ module.exports.validateLinePerCustomerParameters = function validateLinePerCusto
         isValid: true,
         errorList: []
     };
-    const {error} = ProductonLineParameterSchema.validate({
+    const {error} = LinePerCustomerParameterSchema.validate({
         customerId: params.customerId,
+        productionDate: body.productionDate
+    });
+    addMessageErrorIfNotValid(returned, error);
+    return returned;
+}
+
+module.exports.validateLineParameters = function validateLineParameters(params, body) {
+    var returned = {
+        lineId: params.lineId,
+        productionDate: body.productionDate,
+        isValid: true,
+        errorList: []
+    };
+    const {error} = LineParameterSchema.validate({
+        lineId: params.lineId,
         productionDate: body.productionDate
     });
     addMessageErrorIfNotValid(returned, error);
