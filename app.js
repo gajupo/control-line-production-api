@@ -23,77 +23,77 @@ app.use(express.json());
 app.use(cors());
 
 /**
- * GET /customers
+ * GET /api/customers
  */
 app.get('/api/customers', async (req, res, next) => {
     await getCustomerList(res, next);
 });
 
 /**
- * GET /orders
+ * GET /api/orders
  */
 app.get('/api/orders', async (req, res, next) => {
     await getCurrentOrders(res, next);
 });
 
 /**
- * PUT /order/scan/15
+ * PUT /api/order/scan/15
  */
 app.put('/api/order/scan/:orderId', async (req, res) => {
     await scanOrderProduct(req, res, io);
 });
 
 /**
- * PUT /order/close/22
+ * PUT /api/order/close/22
  */
  app.put('/api/order/close/:orderId', async (req, res) => {
     await closeOrder(req, res, io);
 });
 
 /**
- * GET /customers/id
+ * GET /api/customers/id
  */
 app.get('/api/orders/:id', async (req, res) => {
     await getCustomerOrders(req, res);
 });
 
 /**
- * GET /stopcauselogs
+ * GET /api/stopcauselogs
  */
 app.get('/api/stopcauselogs', async (req, res, next) => {
     await getActiveStopCauseLogs(res, next);
 });
 
 /**
- * GET /stopcauselogs/6
+ * GET /api/stopcauselogs/6
  */
 app.get('/api/stopcauselogs/:customerId', async (req, res) => {
     await getActiveStopCauseLogsByCustomer(req, res);
 });
 
 /**
- * GET /stopcauselogs/historical
+ * GET /api/stopcauselogs/historical
  */
 app.get('/api/stopcauselogs/historical', async (req, res, next) => {
     await getStopCauseLogsRecord(res, next);
 });
 
 /**
- * GET /stopcauselogs/historical/6
+ * GET /api/stopcauselogs/historical/6
  */
 app.get('/api/stopcauselogs/historical/:customerId', async (req, res) => {
     await getStopCauseLogsRecordByCustomer(req, res);
 });
 
 /**
- * PUT /unblock/STATION01
+ * PUT /api/unblock/STATION01
  */
 app.put('/api/unblock/:stationIdentifier', async (req, res) => {
     await unblockLine(req, res, io);
 });
 
 /**
- * POST /reportlist/1
+ * POST /api/reportlist/1
  * 
  * {
  *     "pasPN": "290D2851G001",
@@ -109,7 +109,7 @@ app.post('/api/reportlist/:page', async (req, res, next) => {
 });
 
 /**
- * POST /orders/new
+ * POST /api/orders/new
  * 
  * {
  *      "productionLineId": 1,
@@ -121,35 +121,35 @@ app.post('/api/orders/new', async (req, res, next) => {
 });
 
 /**
- * GET /materials
+ * GET /api/materials
  */
 app.get('/api/materials', async (req, res, next) => {
     await getMaterialList(res);
 });
 
 /**
- * GET /materials/client/6
+ * GET /api/materials/client/6
  */
 app.get('/api/materials/client/:id', async (req, res, next) => {
     await getMaterialListPerCustomer(req, res);
 });
 
 /**
- * GET /productionlines
+ * GET /api/productionlines
  */
 app.get('/api/productionlines', async(req, res, next) => {
     await getProductionLines(res);
 });
 
 /**
- * GET /shifts/line/2
+ * GET /api/shifts/line/2
  */
 app.get('/api/shifts/line/:productionLineId', async(req, res, next) => {
     await getShiftsPerProductionLine(req, res);
 });
 
 /**
- * POST /productionlines/customer/15
+ * POST /api/productionlines/customer/15
  * 
  * {
  *      "productionDate": "2021-02-12T20:29:26.364Z"
@@ -160,7 +160,7 @@ app.post('/api/productionlines/customer/:customerId', async(req, res) => {
 });
 
 /**
- * GET /line-dashboard/productionlines/customer/6
+ * GET /api/line-dashboard/productionlines/customer/6
  */
  app.get('/api/line-dashboard/productionlines/customer/:customerId', async(req, res) => {
     await getProductionLines(req, res);
