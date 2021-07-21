@@ -6,7 +6,7 @@ const { Sequelize, Op } = require('sequelize');
 const { parseISO } = require('date-fns');
 const { ProductionLine, OperatingStation, validateLinePerCustomerParameters,
     validateLineParameters, Customer, ValidationResult, Order, Material, Shift,
-    StopCauseLog, validateModelId } = require('../models');
+    StopCauseLog } = require('../models');
 
 async function getProductionLines(res) {
     try {
@@ -240,12 +240,26 @@ async function getProductionLine(req, res) {
                 }
             }]
         });
-        res.json(productionLine);
+        const transformed = transformLine(productionLine);
+        res.json(transformed);
     }
     catch (error) {
         logError("Error in getProductionLine", error);
         return internalServerError(`Internal server error`, res);  
     }
+}
+
+function transformLine(productionLine) {
+    var line = {
+        id: productionLine.id,
+        lineName: productionLine.lineName
+    };
+    if (productionLine.hasOwnProperty('Shifts') && productionLine.Shifts.length > 0) {
+        const shift = productionLine.Shifts[0];
+        line.shiftId = shift.id;
+        line.shiftDescription = shift.shiftDescription;
+    }
+    return line;
 }
 
 async function getProductionLines(req, res) {
@@ -285,7 +299,6 @@ async function getProductionLines(req, res) {
         return internalServerError(`Internal server error`, res);
     }
 }
-
 
 module.exports.getProductionLines = getProductionLines;
 module.exports.getProductionLine = getProductionLine;
