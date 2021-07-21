@@ -250,17 +250,32 @@ async function getProductionLine(req, res) {
 
 async function getProductionLines(req, res) {
     try {
-        const customer = validateModelId(req.params.customerId);
+        const customer = validateLinePerCustomerParameters(req.params, req.body);
         if (!customer.isValid) {
             return badRequestError("Invalid parameter", res, customer.errorList);
         }
+        const today = parseISO(customer.productionDate);
         const productionlines = await ProductionLine.findAll({
             attributes: ['id', 'lineName'],
             include: [{
                 model: Customer,
                 required: true,
                 attributes: [],
-                where: { id: customer.id }
+                where: { id: customer.customerId }
+            }, {
+                model: Shift,
+                attributes: ['id', 'shiftDescription', 'shiftStart', 'shiftEnd'],
+                through: { attributes: [] },
+                required: true,
+                where: {
+                    active: true,
+                    shiftStart: {
+                        [Op.lte]: today.getHours()
+                    },
+                    shiftEnd: {
+                        [Op.gte]: today.getHours()
+                    }
+                }
             }]
         });
         res.json(productionlines);
