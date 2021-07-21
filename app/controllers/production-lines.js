@@ -220,10 +220,6 @@ async function getProductionLine(req, res) {
             where: { id: line.lineId },
             attributes: ['id', 'lineName'],
             include: [{
-                model: Customer,
-                attributes: ['id', 'customerName'],
-                required: true
-            }, {
                 model: Shift,
                 attributes: ['id', 'shiftDescription', 'shiftStart', 'shiftEnd'],
                 through: { attributes: [] },
@@ -259,13 +255,13 @@ async function getProductionLine(req, res) {
             group: ['ProductionLine.id', 'ProductionLine.lineName', 
                 'OperatingStations.id','OperatingStations.stationIdentifier',
                 'OperatingStations.StopCauseLogs.id', //'Orders.Material.id',
-                /*'Orders.Material.productionRate', 'Orders.id',*/ 'Customer.id',
-                'Customer.customerName', 'Shifts.id', 'Shifts.shiftStart', 'Shifts.shiftEnd',
+                /*'Orders.Material.productionRate', 'Orders.id', 'Customer.id',
+                'Customer.customerName',*/ 'Shifts.id', 'Shifts.shiftStart', 'Shifts.shiftEnd',
                 'Shifts.shiftDescription']
         });
-        const transformed = transformLine(productionLine);
-        res.json(transformed);
-        // res.json(productionLine);
+        //const transformed = transformLine(productionLine);
+        // res.json(transformed);
+        res.json(productionLine);
     }
     catch (error) {
         logError("Error in getProductionLine", error);
