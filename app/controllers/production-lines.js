@@ -94,7 +94,7 @@ async function getProductionLinesPerCustomer(req, res) {
                 }],
                 where: {
                     [Op.and]: [
-                        Sequelize.where(Sequelize.col('Orders.Active'), '=', true),
+                        Sequelize.where(Sequelize.col('Orders.IsIncomplete'), '=', true),
                         Sequelize.where(getDatePartConversion('Orders.CreatedAt'), '=', today)
                     ]
                 }
@@ -226,12 +226,12 @@ async function getProductionLine(req, res) {
                 required: true,
                 where: {
                     active: true,
-                    shiftStart: {
-                        [Op.lte]: today.getHours()
-                    },
-                    shiftEnd: {
-                        [Op.gte]: today.getHours()
-                    }
+                    // shiftStart: {
+                    //     [Op.lte]: today.getHours()
+                    // },
+                    // shiftEnd: {
+                    //     [Op.gte]: today.getHours()
+                    // }
                 }
             }, {
                 model: OperatingStation,
@@ -259,9 +259,9 @@ async function getProductionLine(req, res) {
                 'Customer.customerName',*/ 'Shifts.id', 'Shifts.shiftStart', 'Shifts.shiftEnd',
                 'Shifts.shiftDescription']
         });
-        //const transformed = transformLine(productionLine);
-        // res.json(transformed);
-        res.json(productionLine);
+        const transformed = transformLine(productionLine);
+        res.json(transformed);
+        // res.json(productionLine);
     }
     catch (error) {
         logError("Error in getProductionLine", error);
@@ -281,7 +281,8 @@ function transformLine(productionLine) {
     }
     if (productionLine.hasOwnProperty('OperatingStations') && productionLine.OperatingStations.length > 0) {
         var stations = [];
-        productionLine.OperatingStations.forEach(station => {
+        productionLine.OperatingStations.forEach(e => {
+            const station = e.dataValues;
             stations.push({
                 id: station.id,
                 identifier: station.stationIdentifier,
@@ -315,12 +316,12 @@ async function getProductionLines(req, res) {
                 required: true,
                 where: {
                     active: true,
-                    shiftStart: {
-                        [Op.lte]: today.getHours()
-                    },
-                    shiftEnd: {
-                        [Op.gte]: today.getHours()
-                    }
+                    // shiftStart: {
+                    //     [Op.lte]: today.getHours()
+                    // },
+                    // shiftEnd: {
+                    //     [Op.gte]: today.getHours()
+                    // }
                 }
             }]
         });
