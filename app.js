@@ -161,9 +161,12 @@ app.post('/api/productionlines/customer/:customerId', async(req, res) => {
 });
 
 /**
- * GET /api/line-dashboard/productionlines/customer/6
+ * POST /api/line-dashboard/productionlines/customer/6
+ * {
+ *      "productionDate": "2021-02-12T20:29:26.364Z"
+ * }
  */
- app.get('/api/line-dashboard/productionlines/customer/:customerId', async(req, res) => {
+ app.post('/api/line-dashboard/productionlines/customer/:customerId', async(req, res) => {
     await getProductionLines(req, res);
 });
 
