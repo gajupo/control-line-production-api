@@ -172,6 +172,9 @@ app.post('/api/productionlines/customer/:customerId', async(req, res) => {
 
 /**
  * GET /api/line-dashboard/productionline/1
+ * {
+ *      "productionDate": "2021-02-12T20:29:26.364Z"
+ * }
  */
  app.post('/api/line-dashboard/productionline/:lineId', async(req, res) => {
     await getProductionLine(req, res);
