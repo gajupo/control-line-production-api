@@ -99,7 +99,6 @@ async function getProductionLinesPerCustomer(req, res) {
                     ]
                 }
             }],
-
             group: ['ProductionLine.id', 'ProductionLine.lineName', 
                 'OperatingStations.id','OperatingStations.stationIdentifier',
                 'OperatingStations.StopCauseLogs.id', 'Orders.Material.id',
@@ -238,10 +237,35 @@ async function getProductionLine(req, res) {
                         [Op.gte]: today.getHours()
                     }
                 }
-            }]
+            }, {
+                model: OperatingStation,
+                attributes: [
+                    'id',
+                    'stationIdentifier',
+                    [Sequelize.fn('count', Sequelize.col('OperatingStations.ValidationResults.Id')), 'validationResultCount']
+                ],
+                include: [{
+                    model: StopCauseLog,
+                    required: false,
+                    where: { status: true },
+                    attributes: ['id']
+                }, {
+                    model: ValidationResult,
+                    attributes: [],
+                    required: false,
+                    where: Sequelize.where(getDatePartConversion('OperatingStations.ValidationResults.ScanDate'), '=', today)
+                }]
+            }],
+            group: ['ProductionLine.id', 'ProductionLine.lineName', 
+                'OperatingStations.id','OperatingStations.stationIdentifier',
+                'OperatingStations.StopCauseLogs.id', //'Orders.Material.id',
+                /*'Orders.Material.productionRate', 'Orders.id',*/ 'Customer.id',
+                'Customer.customerName', 'Shifts.id', 'Shifts.shiftStart', 'Shifts.shiftEnd',
+                'Shifts.shiftDescription']
         });
         const transformed = transformLine(productionLine);
         res.json(transformed);
+        // res.json(productionLine);
     }
     catch (error) {
         logError("Error in getProductionLine", error);
@@ -258,6 +282,18 @@ function transformLine(productionLine) {
         const shift = productionLine.Shifts[0];
         line.shiftId = shift.id;
         line.shiftDescription = shift.shiftDescription;
+    }
+    if (productionLine.hasOwnProperty('OperatingStations') && productionLine.OperatingStations.length > 0) {
+        var stations = [];
+        productionLine.OperatingStations.forEach(station => {
+            stations.push({
+                id: station.id,
+                identifier: station.stationIdentifier,
+                validationResultCount: station.validationResultCount,
+                blocked: station.StopCauseLogs.length > 0
+            });
+        });
+        line.stations = stations;
     }
     return line;
 }
