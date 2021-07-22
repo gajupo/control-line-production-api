@@ -11,5 +11,5 @@ services:
         volumes:
         - .:/home/node/app
         environment:
-        - SERVER_HOST=0.0.0.0
+        - SERVER_HOST=${SERVER_HOST}
         - PORT=${PORT_NODE}

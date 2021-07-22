@@ -1,10 +1,10 @@
 {
     "name": "simpl dashboard api - development",
     "database": {
-        "host": "192.168.0.104",
-        "port": "55948",
-        "name": "PASSIMPLEDB_DEV.MDF",
-        "user": "virtualis",
-        "password": "a@V]eH38/z"
+        "host": "192.168.0.141",
+        "port": "1433",
+        "name": "SimplProd",
+        "user": "sa",
+        "password":"sysadmin1"
     }
 }
