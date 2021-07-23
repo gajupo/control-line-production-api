@@ -150,13 +150,9 @@ app.get('/api/shifts/line/:productionLineId', async(req, res, next) => {
 });
 
 /**
- * POST /api/productionlines/customer/15
- * 
- * {
- *      "productionDate": "2021-02-12T20:29:26.364Z"
- * }
+ * GET /api/productionlines/customer/15
  */
-app.post('/api/productionlines/customer/:customerId', async(req, res) => {
+app.get('/api/productionlines/customer/:customerId', async(req, res) => {
     await getProductionLinesPerCustomer(req, res);
 });
 
