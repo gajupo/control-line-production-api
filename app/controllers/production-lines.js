@@ -7,7 +7,7 @@ const { parseISO } = require('date-fns');
 const { utcToZonedTime } = require('date-fns-tz');
 const { ProductionLine, OperatingStation, validateLinePerCustomerParameters,
     validateLineParameters, Customer, ValidationResult, Order, Material, Shift,
-    StopCauseLog } = require('../models');
+    StopCauseLog, validateModelId } = require('../models');
 
 async function getProductionLines(res) {
     try {
@@ -40,9 +40,9 @@ async function getProductionLine(lineId) {
 
 async function getProductionLinesPerCustomer(req, res) {
     try {
-        const params = validateLinePerCustomerParameters(req.params, req.body);
-        if (!params.isValid) {
-            return badRequestError("Invalid parameters passed", res, params.errorList);
+        const customer = validateModelId(req.params.customerId);
+        if (!customer.isValid) {
+            return badRequestError("Invalid parameter passed", res, customer.errorList);
         }
         const today = utcToZonedTime(new Date(), "America/Mexico_City");
         const productionLines = await ProductionLine.findAll({
@@ -51,7 +51,7 @@ async function getProductionLinesPerCustomer(req, res) {
                 model: Customer,
                 required: true,
                 attributes: ['id', 'customerName'],
-                where: { id: params.customerId }
+                where: { id: customer.id }
             }, {
                 model: Shift,
                 attributes: ['id', 'shiftStart', 'shiftEnd'],
