@@ -4,6 +4,7 @@ const { logError } = require('../helpers/logger');
 const { internalServerError, badRequestError } = require("./core");
 const { Sequelize, Op } = require('sequelize');
 const { parseISO } = require('date-fns');
+const { utcToZonedTime } = require('date-fns-tz');
 const { ProductionLine, OperatingStation, validateLinePerCustomerParameters,
     validateLineParameters, Customer, ValidationResult, Order, Material, Shift,
     StopCauseLog } = require('../models');
@@ -43,7 +44,7 @@ async function getProductionLinesPerCustomer(req, res) {
         if (!params.isValid) {
             return badRequestError("Invalid parameters passed", res, params.errorList);
         }
-        const today = parseISO(params.productionDate);
+        const today = utcToZonedTime(new Date(), "America/Mexico_City");
         const productionLines = await ProductionLine.findAll({
             attributes: ['id', 'lineName'],
             include: [{
