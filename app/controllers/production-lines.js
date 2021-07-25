@@ -5,7 +5,7 @@ const { internalServerError, badRequestError } = require("./core");
 const { Sequelize, Op } = require('sequelize');
 const { utcToZonedTime } = require('date-fns-tz');
 const { ProductionLine, OperatingStation, Customer, ValidationResult, Order, 
-    Material, Shift, validateModelId } = require('../models');
+    Material, Shift, validateModelId, StopCauseLog } = require('../models');
 
 async function getProductionLines(res) {
     try {
