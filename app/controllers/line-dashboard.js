@@ -117,12 +117,12 @@ async function getProductionLines(req, res) {
                 required: true,
                 where: {
                     active: true,
-                    // shiftStart: {
-                    //     [Op.lte]: today.getHours()
-                    // },
-                    // shiftEnd: {
-                    //     [Op.gte]: today.getHours()
-                    // }
+                    shiftStart: {
+                        [Op.lte]: today.getHours()
+                    },
+                    shiftEnd: {
+                        [Op.gte]: today.getHours()
+                    }
                 }
             }]
         });
