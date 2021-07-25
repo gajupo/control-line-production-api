@@ -159,26 +159,20 @@ app.get('/api/productionlines/customer/:customerId', async(req, res) => {
 });
 
 /**
- * POST /api/line-dashboard/productionlines/customer/6
- * {
- *      "productionDate": "2021-02-12T20:29:26.364Z"
- * }
+ * GET /api/line-dashboard/productionlines/customer/6
  */
- app.post('/api/line-dashboard/productionlines/customer/:customerId', async(req, res) => {
+ app.get('/api/line-dashboard/productionlines/customer/:customerId', async(req, res) => {
     await ldGetProductionLines(req, res);
 });
 
 /**
  * GET /api/line-dashboard/productionline/1
- * {
- *      "productionDate": "2021-02-12T20:29:26.364Z"
- * }
  */
- app.post('/api/line-dashboard/productionline/:lineId', async(req, res) => {
+ app.get('/api/line-dashboard/productionline/:lineId', async(req, res) => {
     await ldGetProductionLine(req, res);
 });
 
-io.on('connection', (socket) => {
+io.on('connection', (_) => {
     console.log('User connected...');
 });
 
