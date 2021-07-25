@@ -1,24 +1,22 @@
 'use strict';
 
+const { utcToZonedTime } = require('date-fns-tz');
 const { logError } = require('../helpers/logger');
 const { getDatePartConversion } = require('../helpers/sequelize');
 const { internalServerError, badRequestError } = require("./core");
 const { Sequelize, Op } = require('sequelize');
-const { utcToZonedTime } = require('date-fns-tz');
-const { parseISO } = require('date-fns');
-
-const { ProductionLine, OperatingStation, validateLinePerCustomerParameters,
-    validateLineParameters, Customer, ValidationResult, Shift, StopCauseLog } = require('../models');
+const { ProductionLine, OperatingStation, Customer, ValidationResult,
+    Shift, StopCauseLog, validateModelId } = require('../models');
 
 async function getProductionLine(req, res) {
     try {
-        const line = validateLineParameters(req.params, req.body);
+        const line = validateModelId(req.params.lineId);
         if (!line.isValid) {
-            return badRequestError("Invalid parameters passed", res, line.errorList);
+            return badRequestError("Invalid parameter passed to getProductionLine", res, line.errorList);
         }
-        const today = parseISO(line.productionDate);
-        var productionLine = await ProductionLine.findOne({
-            where: { id: line.lineId },
+        const today = utcToZonedTime(new Date(), "America/Mexico_City");
+        const productionLine = await ProductionLine.findOne({
+            where: { id: line.id },
             attributes: ['id', 'lineName'],
             include: [{
                 model: Shift,
@@ -62,7 +60,6 @@ async function getProductionLine(req, res) {
         });
         const transformed = transformLine(productionLine);
         res.json(transformed);
-        // res.json(productionLine);
     }
     catch (error) {
         logError("Error in getProductionLine", error);
@@ -98,18 +95,18 @@ function transformLine(productionLine) {
 
 async function getProductionLines(req, res) {
     try {
-        const customer = validateLinePerCustomerParameters(req.params, req.body);
+        const customer = validateModelId(req.params.customerId);
         if (!customer.isValid) {
             return badRequestError("Invalid parameter", res, customer.errorList);
         }
-        const today = parseISO(customer.productionDate);
+        const today = utcToZonedTime(new Date(), "America/Mexico_City");
         const productionlines = await ProductionLine.findAll({
             attributes: ['id', 'lineName'],
             include: [{
                 model: Customer,
                 required: true,
                 attributes: [],
-                where: { id: customer.customerId }
+                where: { id: customer.id }
             }, {
                 model: Shift,
                 attributes: ['id', 'shiftDescription', 'shiftStart', 'shiftEnd'],
