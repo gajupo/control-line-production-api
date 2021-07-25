@@ -1,6 +1,7 @@
 'use strict';
 
 const { logError } = require('../helpers/logger');
+const { getDatePartConversion } = require('../helpers/sequelize');
 const { internalServerError, badRequestError } = require("./core");
 const { Sequelize, Op } = require('sequelize');
 const { utcToZonedTime } = require('date-fns-tz');
@@ -201,10 +202,6 @@ function getProductionRate(validationResultCount, productionRate) {
 
 function checkIfLineIsBlocked(stations) {
     return stations.every(station => station.StopCauseLogs.length > 0);
-}
-
-function getDatePartConversion(column) {
-    return Sequelize.fn('CONVERT', Sequelize.literal('date'), Sequelize.col(`${column}`));
 }
 
 module.exports.getProductionLinesPerCustomer = getProductionLinesPerCustomer;

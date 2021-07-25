@@ -1,7 +1,7 @@
 'use strict';
 
 const config = require('config');
-const {Sequelize} = require('sequelize');
+const { Sequelize } = require('sequelize');
 
 // TODO: Check regularly for an official fix to this issue
 // https://github.com/sequelize/sequelize/issues/7879
@@ -23,4 +23,9 @@ const sequelize = new Sequelize(
     }
 });
 
+function getDatePartConversion(column) {
+    return Sequelize.fn('CONVERT', Sequelize.literal('date'), Sequelize.col(`${column}`));
+}
+
 module.exports.sequelize = sequelize;
+module.exports.getDatePartConversion = getDatePartConversion;
