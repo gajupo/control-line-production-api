@@ -3,7 +3,7 @@
 const { logError } = require('../helpers/logger');
 const { getDatePartConversion } = require('../helpers/sequelize');
 const { internalServerError, badRequestError } = require("./core");
-const { Sequelize } = require('sequelize');
+const { Sequelize, Op } = require('sequelize');
 const { utcToZonedTime } = require('date-fns-tz');
 const { parseISO } = require('date-fns');
 
@@ -27,12 +27,12 @@ async function getProductionLine(req, res) {
                 required: true,
                 where: {
                     active: true,
-                    // shiftStart: {
-                    //     [Op.lte]: today.getHours()
-                    // },
-                    // shiftEnd: {
-                    //     [Op.gte]: today.getHours()
-                    // }
+                    shiftStart: {
+                        [Op.lte]: today.getHours()
+                    },
+                    shiftEnd: {
+                        [Op.gte]: today.getHours()
+                    }
                 }
             }, {
                 model: OperatingStation,
