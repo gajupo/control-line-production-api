@@ -10,9 +10,11 @@ const { getPaginatedReportList } = require("./app/controllers/reports");
 const { getActiveStopCauseLogs, getStopCauseLogsRecord, unblockLine, 
     getActiveStopCauseLogsByCustomer, getStopCauseLogsRecordByCustomer } = require("./app/controllers/stop-cause-log");
 const { getMaterialList, getMaterialListPerCustomer } = require("./app/controllers/materials");
-const { getProductionLines, getProductionLinesPerCustomer, 
-    getProductionLine } = require("./app/controllers/production-lines");
+const { getProductionLines, getProductionLinesPerCustomer } = require("./app/controllers/production-lines");
 const { getShiftsPerProductionLine } = require("./app/controllers/shifts");
+const { getProductionLines: ldGetProductionLines,  
+    getProductionLine: ldGetProductionLine } = require("./app/controllers/line-dashboard");
+
 
 const app = express();
 const http = require('http').Server(app);
@@ -163,7 +165,7 @@ app.get('/api/productionlines/customer/:customerId', async(req, res) => {
  * }
  */
  app.post('/api/line-dashboard/productionlines/customer/:customerId', async(req, res) => {
-    await getProductionLines(req, res);
+    await ldGetProductionLines(req, res);
 });
 
 /**
@@ -173,7 +175,7 @@ app.get('/api/productionlines/customer/:customerId', async(req, res) => {
  * }
  */
  app.post('/api/line-dashboard/productionline/:lineId', async(req, res) => {
-    await getProductionLine(req, res);
+    await ldGetProductionLine(req, res);
 });
 
 io.on('connection', (socket) => {
