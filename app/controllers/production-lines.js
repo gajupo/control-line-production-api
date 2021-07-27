@@ -2,7 +2,7 @@
 
 const { logError } = require('../helpers/logger');
 const { getDatePartConversion } = require('../helpers/sequelize');
-const { internalServerError, badRequestError } = require("./core");
+const { internalServerError, badRequestError, getHoursPerShift } = require("./core");
 const { Sequelize, Op } = require('sequelize');
 const { utcToZonedTime } = require('date-fns-tz');
 const { ProductionLine, OperatingStation, Customer, ValidationResult, Order, 
@@ -148,14 +148,6 @@ function transformProductionLine(productionLines, line) {
             rate: getProductionRate(validationResultCount, goal)
         });
     }
-}
-
-function getHoursPerShift(line) {
-    if (line.hasOwnProperty('Shifts') && line.Shifts.length > 0) {
-        const shift = line.Shifts[0];
-        return Math.ceil(shift.shiftEnd - shift.shiftStart);
-    }
-    return 0;
 }
 
 function getProductionGoal(line, shiftHours) {

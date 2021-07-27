@@ -35,7 +35,16 @@ function errorMessage(message, description, statusCode, res, errorList = undefin
     res.status(statusCode).json(response);
 }
 
+function getHoursPerShift(line) {
+    if (line.hasOwnProperty('Shifts') && line.Shifts.length == 0) {
+        const shift = line.Shifts[0];
+        return Math.ceil(shift.shiftEnd - shift.shiftStart);
+    }
+    return 0;
+}
+
 module.exports.notFoundError = notFoundError;
 module.exports.successfulOperation = successfulOperation;
 module.exports.internalServerError = internalServerError;
 module.exports.badRequestError = badRequestError;
+module.exports.getHoursPerShift = getHoursPerShift;
