@@ -74,9 +74,9 @@ async function getProductionLine(req, res) {
                 'Customer.customerName',*/ 'Shifts.id', 'Shifts.shiftStart', 'Shifts.shiftEnd',
                 'Shifts.shiftDescription']
         });
-        // const transformed = transformLine(productionLine);
-        // res.json(transformed);
-        res.json(productionLine);
+        const transformed = transformLine(productionLine);
+        res.json(transformed);
+        // res.json(productionLine);
     }
     catch (error) {
         logError("Error in getProductionLine", error);
@@ -96,8 +96,12 @@ function transformLine(productionLine) {
     }
     if (productionLine.hasOwnProperty('OperatingStations') && productionLine.OperatingStations.length > 0) {
         var stations = [];
+        var totalValidationResultCount = 0;
+
         productionLine.OperatingStations.forEach(e => {
             const station = e.dataValues;
+            totalValidationResultCount += station.validationResultCount;
+
             stations.push({
                 id: station.id,
                 identifier: station.stationIdentifier,
@@ -106,6 +110,7 @@ function transformLine(productionLine) {
             });
         });
         line.stations = stations;
+        line.validationResultCount = totalValidationResultCount;
     }
     const shiftHours = getHoursPerShift(productionLine);
     const productionGoal = getProductionGoal(productionLine, shiftHours);
