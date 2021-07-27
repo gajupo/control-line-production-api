@@ -48,7 +48,7 @@ async function getProductionLine(req, res) {
                 }, {
                     model: ValidationResult,
                     attributes: [],
-                    required: false,
+                    required: true,
                     where: Sequelize.where(getDatePartConversion('OperatingStations.ValidationResults.ScanDate'), '=', today)
                 }]
             }, {
