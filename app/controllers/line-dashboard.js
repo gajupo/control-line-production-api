@@ -166,10 +166,37 @@ async function getProductionCompliance(req, res) {
         if (!line.isValid) {
             return badRequestError("Invalid parameter passed", res, line.errorList);
         }
-        const today = utcToZonedTime("2021-07-21 19:21:05.217", "America/Mexico_City");
+        const today = utcToZonedTime("2021-07-21 19:21:05.217Z", "America/Mexico_City");
+        console.log(today);
         const validationResults = await ValidationResult.findAll({
-            attributes:['id', 'barcodeScanned', 'scanDate'],
-            where: Sequelize.where(getDatePartConversion('ValidationResult.ScanDate'), '=', today)
+            attributes:[
+                [Sequelize.fn('COUNT', Sequelize.col('ValidationResult.Id')), 'validationResultCount'],
+                [Sequelize.fn('DATEPART', Sequelize.literal('HOUR'), Sequelize.col('ValidationResult.ScanDate')), 'scanHour']],
+            include: [{
+                model: Order,
+                required: true,
+                attributes: [],
+                include: [{
+                    model: Shift,
+                    required: true,
+                    attributes: [],
+                    where: {
+                        active: true,
+                        shiftStart: {
+                            [Op.lte]: today.getHours()
+                        },
+                        shiftEnd: {
+                            [Op.gte]: today.getHours()
+                        }
+                    }
+                }]
+            }, {
+                model: Customer,
+                attributes: [],
+                where: { id: line.id }
+            }],
+            where: Sequelize.where(getDatePartConversion('ValidationResult.ScanDate'), '=', today),
+            group: [Sequelize.fn('DATEPART', Sequelize.literal('HOUR'), Sequelize.col('ValidationResult.ScanDate'))]
         });
         res.json(validationResults);
     }
