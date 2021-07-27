@@ -14,6 +14,8 @@ async function getProductionLine(req, res) {
     try {
         const today = utcToZonedTime("2021-07-21 19:21:05.217", "America/Mexico_City");
         const productionLine = await getProductionLineImpl(req, res, today);
+        const compliance = await getProductionCompliance(req, res);
+        productionLine.compliance = compliance;
 
         res.json(productionLine);
     }
@@ -209,7 +211,8 @@ async function getProductionCompliance(req, res) {
             where: Sequelize.where(getDatePartConversion('ValidationResult.ScanDate'), '=', today),
             group: [Sequelize.fn('DATEPART', Sequelize.literal('HOUR'), Sequelize.col('ValidationResult.ScanDate'))]
         });
-        res.json(validationResults);
+        // res.json(validationResults);
+        return validationResults;
     }
     catch (error) {
         logError("Error in getProductionCompliance", error);
