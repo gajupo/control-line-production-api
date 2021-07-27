@@ -18,7 +18,7 @@ async function getProductionLine(req, res) {
             return badRequestError("Invalid parameter passed to getProductionLineImpl", res, line.errorList);
         }
         const productionLine = await getProductionLineImpl(line, today);
-        const compliance = await getProductionComplianceImpl(req, res, today);
+        const compliance = await getProductionComplianceImpl(line, today);
         productionLine.compliance = compliance;
 
         res.json(productionLine);
@@ -181,16 +181,16 @@ async function getProductionCompliance(req, res) {
     }
 }
 
-async function getProductionComplianceImpl(req, res, today) {
-    const line = validateModelId(req.params.lineId);
-    if (!line.isValid) {
-        return badRequestError("Invalid parameter passed", res, line.errorList);
-    }
+async function getProductionComplianceImpl(line, today) {
     const validationResults = await ValidationResult.findAll({
         attributes:[
             [Sequelize.fn('COUNT', Sequelize.col('ValidationResult.Id')), 'validationResultCount'],
             [Sequelize.fn('DATEPART', Sequelize.literal('HOUR'), Sequelize.col('ValidationResult.ScanDate')), 'scanHour']],
         include: [{
+            model: Customer,
+            attributes: [],
+            where: { id: line.id }
+        }, {
             model: Order,
             required: true,
             attributes: [],
@@ -208,10 +208,6 @@ async function getProductionComplianceImpl(req, res, today) {
                     }
                 }
             }]
-        }, {
-            model: Customer,
-            attributes: [],
-            where: { id: line.id }
         }],
         where: Sequelize.where(getDatePartConversion('ValidationResult.ScanDate'), '=', today),
         group: [Sequelize.fn('DATEPART', Sequelize.literal('HOUR'), Sequelize.col('ValidationResult.ScanDate'))]
