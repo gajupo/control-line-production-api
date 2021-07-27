@@ -169,7 +169,7 @@ async function getProductionCompliance(req, res) {
         const today = utcToZonedTime("2021-07-21 19:21:05.217", "America/Mexico_City");
         const validationResults = await ValidationResult.findAll({
             attributes:['id', 'barcodeScanned', 'scanDate'],
-            where: Sequelize.where(getDatePartConversion('OperatingStations.ValidationResults.ScanDate'), '=', today)
+            where: Sequelize.where(getDatePartConversion('ValidationResult.ScanDate'), '=', today)
         });
         res.json(validationResults);
     }
