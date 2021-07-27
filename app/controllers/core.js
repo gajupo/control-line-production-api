@@ -43,8 +43,23 @@ function getHoursPerShift(line) {
     return 0;
 }
 
+function getProductionGoal(line, shiftHours) {
+    let goal = 0;
+    if (line.hasOwnProperty('Orders')) {
+        const orders = line.Orders;
+        orders.forEach(order => {
+            const material = order.Material;
+            const orderGoal = shiftHours * material.productionRate;
+
+            goal += orderGoal;
+        });
+    }
+    return goal;
+}
+
 module.exports.notFoundError = notFoundError;
 module.exports.successfulOperation = successfulOperation;
 module.exports.internalServerError = internalServerError;
 module.exports.badRequestError = badRequestError;
 module.exports.getHoursPerShift = getHoursPerShift;
+module.exports.getProductionGoal = getProductionGoal;
