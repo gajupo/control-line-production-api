@@ -160,5 +160,25 @@ async function getProductionLines(req, res) {
     }
 }
 
+async function getProductionCompliance(req, res) {
+    try {
+        const line = validateModelId(req.params.lineId);
+        if (!line.isValid) {
+            return badRequestError("Invalid parameter passed", res, line.errorList);
+        }
+        const today = utcToZonedTime("2021-07-21 19:21:05.217", "America/Mexico_City");
+        const validationResults = await ValidationResult.findAll({
+            attributes:['id', 'barcodeScanned', 'scanDate'],
+            where: Sequelize.where(getDatePartConversion('OperatingStations.ValidationResults.ScanDate'), '=', today)
+        });
+        res.json(validationResults);
+    }
+    catch (error) {
+        logError("Error in getProductionCompliance", error);
+        return internalServerError(`Internal server error`, res);
+    }
+}
+
 module.exports.getProductionLines = getProductionLines;
 module.exports.getProductionLine = getProductionLine;
+module.exports.getProductionCompliance = getProductionCompliance;
