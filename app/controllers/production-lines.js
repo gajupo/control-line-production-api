@@ -2,7 +2,8 @@
 
 const { logError } = require('../helpers/logger');
 const { getDatePartConversion } = require('../helpers/sequelize');
-const { internalServerError, badRequestError, getHoursPerShift, getProductionGoal } = require("./core");
+const { internalServerError, badRequestError, getHoursPerShift, 
+    getProductionGoal, getProductionRate } = require("./core");
 const { Sequelize, Op } = require('sequelize');
 const { utcToZonedTime } = require('date-fns-tz');
 const { ProductionLine, OperatingStation, Customer, ValidationResult, Order, 
@@ -169,13 +170,6 @@ function checkIfLineIsActive(line) {
         hasShifts = shifts.length > 0;
     }
     return hasOrders && hasShifts;
-}
-
-function getProductionRate(validationResultCount, productionRate) {
-    if (productionRate == 0) {
-        return 0;
-    }
-    return Math.ceil((validationResultCount / productionRate) * 100);
 }
 
 function checkIfLineIsBlocked(stations) {

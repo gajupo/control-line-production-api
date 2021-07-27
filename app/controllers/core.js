@@ -57,9 +57,17 @@ function getProductionGoal(line, shiftHours) {
     return goal;
 }
 
+function getProductionRate(validationResultCount, productionRate) {
+    if (productionRate == 0) {
+        return 0;
+    }
+    return Math.ceil((validationResultCount / productionRate) * 100);
+}
+
 module.exports.notFoundError = notFoundError;
 module.exports.successfulOperation = successfulOperation;
 module.exports.internalServerError = internalServerError;
 module.exports.badRequestError = badRequestError;
 module.exports.getHoursPerShift = getHoursPerShift;
 module.exports.getProductionGoal = getProductionGoal;
+module.exports.getProductionRate = getProductionRate;
