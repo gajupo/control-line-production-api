@@ -9,13 +9,26 @@ const { Sequelize, Op } = require('sequelize');
 const { ProductionLine, OperatingStation, Customer, ValidationResult,
     Shift, StopCauseLog, validateModelId, Order, Material } = require('../models');
 
+    
 async function getProductionLine(req, res) {
+    try {
+        const today = utcToZonedTime("2021-07-21 19:21:05.217", "America/Mexico_City");
+        const productionLine = await getProductionLineImpl(req, res, today);
+
+        res.json(productionLine);
+    }
+    catch (error) {
+        logError("Error in getProductionLine", error);
+        return internalServerError(`Internal server error`, res);  
+    }
+}
+
+async function getProductionLineImpl(req, res, today) {
     try {
         const line = validateModelId(req.params.lineId);
         if (!line.isValid) {
-            return badRequestError("Invalid parameter passed to getProductionLine", res, line.errorList);
+            return badRequestError("Invalid parameter passed to getProductionLineImpl", res, line.errorList);
         }
-        const today = utcToZonedTime("2021-07-21 19:21:05.217", "America/Mexico_City");
         const productionLine = await ProductionLine.findOne({
             where: { id: line.id },
             attributes: ['id', 'lineName'],
@@ -74,11 +87,10 @@ async function getProductionLine(req, res) {
                 'Shifts.shiftEnd', 'Shifts.shiftDescription']
         });
         const transformed = transformLine(productionLine);
-        res.json(transformed);
-        // res.json(productionLine);
+        return transformed;
     }
     catch (error) {
-        logError("Error in getProductionLine", error);
+        logError("Error in getProductionLineImpl", error);
         return internalServerError(`Internal server error`, res);  
     }
 }
@@ -167,7 +179,6 @@ async function getProductionCompliance(req, res) {
             return badRequestError("Invalid parameter passed", res, line.errorList);
         }
         const today = utcToZonedTime("2021-07-21 19:21:05.217Z", "America/Mexico_City");
-        console.log(today);
         const validationResults = await ValidationResult.findAll({
             attributes:[
                 [Sequelize.fn('COUNT', Sequelize.col('ValidationResult.Id')), 'validationResultCount'],
