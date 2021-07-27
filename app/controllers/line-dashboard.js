@@ -3,7 +3,8 @@
 const { utcToZonedTime } = require('date-fns-tz');
 const { logError } = require('../helpers/logger');
 const { getDatePartConversion } = require('../helpers/sequelize');
-const { internalServerError, badRequestError } = require("./core");
+const { internalServerError, badRequestError, getHoursPerShift, 
+    getProductionGoal } = require("./core");
 const { Sequelize, Op } = require('sequelize');
 const { ProductionLine, OperatingStation, Customer, ValidationResult,
     Shift, StopCauseLog, validateModelId, Order, Material } = require('../models');
@@ -14,7 +15,7 @@ async function getProductionLine(req, res) {
         if (!line.isValid) {
             return badRequestError("Invalid parameter passed to getProductionLine", res, line.errorList);
         }
-        const today = utcToZonedTime(new Date(), "America/Mexico_City");
+        const today = utcToZonedTime("2021-07-21 19:21:05.217", "America/Mexico_City");
         const productionLine = await ProductionLine.findOne({
             where: { id: line.id },
             attributes: ['id', 'lineName'],
@@ -57,7 +58,7 @@ async function getProductionLine(req, res) {
                 where: {
                     [Op.and]: [
                         Sequelize.where(Sequelize.col('Orders.IsIncomplete'), '=', true),
-                        Sequelize.where(getDatePartConversion('Orders.CreatedAt'), '<', today)
+                        Sequelize.where(getDatePartConversion('Orders.CreatedAt'), '<=', today)
                     ]
                 },
                 include: [{
@@ -106,6 +107,10 @@ function transformLine(productionLine) {
         });
         line.stations = stations;
     }
+    const shiftHours = getHoursPerShift(productionLine);
+    const productionGoal = getProductionGoal(productionLine, shiftHours);
+    line.productionGoal = productionGoal;
+
     return line;
 }
 
