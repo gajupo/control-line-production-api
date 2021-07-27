@@ -36,7 +36,7 @@ function errorMessage(message, description, statusCode, res, errorList = undefin
 }
 
 function getHoursPerShift(line) {
-    if (line.hasOwnProperty('Shifts') && line.Shifts.length == 0) {
+    if (line.hasOwnProperty('Shifts') && line.Shifts.length == 1) {
         const shift = line.Shifts[0];
         return Math.ceil(shift.shiftEnd - shift.shiftStart);
     }
