@@ -14,7 +14,7 @@ async function getProductionLine(req, res) {
     try {
         const today = utcToZonedTime("2021-07-21 19:21:05.217", "America/Mexico_City");
         const productionLine = await getProductionLineImpl(req, res, today);
-        const compliance = await getProductionCompliance(req, res);
+        const compliance = await getProductionComplianceImpl(req, res, today);
         productionLine.compliance = compliance;
 
         res.json(productionLine);
@@ -176,48 +176,53 @@ async function getProductionLines(req, res) {
 
 async function getProductionCompliance(req, res) {
     try {
-        const line = validateModelId(req.params.lineId);
-        if (!line.isValid) {
-            return badRequestError("Invalid parameter passed", res, line.errorList);
-        }
         const today = utcToZonedTime("2021-07-21 19:21:05.217Z", "America/Mexico_City");
-        const validationResults = await ValidationResult.findAll({
-            attributes:[
-                [Sequelize.fn('COUNT', Sequelize.col('ValidationResult.Id')), 'validationResultCount'],
-                [Sequelize.fn('DATEPART', Sequelize.literal('HOUR'), Sequelize.col('ValidationResult.ScanDate')), 'scanHour']],
-            include: [{
-                model: Order,
-                required: true,
-                attributes: [],
-                include: [{
-                    model: Shift,
-                    required: true,
-                    attributes: [],
-                    where: {
-                        active: true,
-                        shiftStart: {
-                            [Op.lte]: today.getHours()
-                        },
-                        shiftEnd: {
-                            [Op.gte]: today.getHours()
-                        }
-                    }
-                }]
-            }, {
-                model: Customer,
-                attributes: [],
-                where: { id: line.id }
-            }],
-            where: Sequelize.where(getDatePartConversion('ValidationResult.ScanDate'), '=', today),
-            group: [Sequelize.fn('DATEPART', Sequelize.literal('HOUR'), Sequelize.col('ValidationResult.ScanDate'))]
-        });
-        // res.json(validationResults);
-        return validationResults;
+        const validationResults = await getProductionComplianceImpl(req, res, today);
+        
+        res.json(validationResults);
     }
     catch (error) {
         logError("Error in getProductionCompliance", error);
         return internalServerError(`Internal server error`, res);
     }
+}
+
+async function getProductionComplianceImpl(req, res, today) {
+    const line = validateModelId(req.params.lineId);
+    if (!line.isValid) {
+        return badRequestError("Invalid parameter passed", res, line.errorList);
+    }
+    const validationResults = await ValidationResult.findAll({
+        attributes:[
+            [Sequelize.fn('COUNT', Sequelize.col('ValidationResult.Id')), 'validationResultCount'],
+            [Sequelize.fn('DATEPART', Sequelize.literal('HOUR'), Sequelize.col('ValidationResult.ScanDate')), 'scanHour']],
+        include: [{
+            model: Order,
+            required: true,
+            attributes: [],
+            include: [{
+                model: Shift,
+                required: true,
+                attributes: [],
+                where: {
+                    active: true,
+                    shiftStart: {
+                        [Op.lte]: today.getHours()
+                    },
+                    shiftEnd: {
+                        [Op.gte]: today.getHours()
+                    }
+                }
+            }]
+        }, {
+            model: Customer,
+            attributes: [],
+            where: { id: line.id }
+        }],
+        where: Sequelize.where(getDatePartConversion('ValidationResult.ScanDate'), '=', today),
+        group: [Sequelize.fn('DATEPART', Sequelize.literal('HOUR'), Sequelize.col('ValidationResult.ScanDate'))]
+    });
+    return validationResults;
 }
 
 module.exports.getProductionLines = getProductionLines;
