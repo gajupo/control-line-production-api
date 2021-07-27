@@ -70,9 +70,8 @@ async function getProductionLine(req, res) {
             group: ['ProductionLine.id', 'ProductionLine.lineName', 
                 'OperatingStations.id','OperatingStations.stationIdentifier',
                 'OperatingStations.StopCauseLogs.id', 'Orders.id', 'Orders.Material.id',
-                'Orders.Material.productionRate', /*'Customer.id',
-                'Customer.customerName',*/ 'Shifts.id', 'Shifts.shiftStart', 'Shifts.shiftEnd',
-                'Shifts.shiftDescription']
+                'Orders.Material.productionRate', 'Shifts.id', 'Shifts.shiftStart',
+                'Shifts.shiftEnd', 'Shifts.shiftDescription']
         });
         const transformed = transformLine(productionLine);
         res.json(transformed);
@@ -87,7 +86,9 @@ async function getProductionLine(req, res) {
 function transformLine(productionLine) {
     var line = {
         id: productionLine.id,
-        lineName: productionLine.lineName
+        lineName: productionLine.lineName,
+        stations: [],
+        validationResultCount: 0
     };
     if (productionLine.hasOwnProperty('Shifts') && productionLine.Shifts.length > 0) {
         const shift = productionLine.Shifts[0];
