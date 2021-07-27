@@ -13,7 +13,8 @@ const { getMaterialList, getMaterialListPerCustomer } = require("./app/controlle
 const { getProductionLines, getProductionLinesPerCustomer } = require("./app/controllers/production-lines");
 const { getShiftsPerProductionLine } = require("./app/controllers/shifts");
 const { getProductionLines: ldGetProductionLines,  
-    getProductionLine: ldGetProductionLine } = require("./app/controllers/line-dashboard");
+    getProductionLine: ldGetProductionLine, 
+    getProductionCompliance: ldGetProductionCompliance } = require("./app/controllers/line-dashboard");
 
 
 const app = express();
@@ -170,6 +171,13 @@ app.get('/api/productionlines/customer/:customerId', async(req, res) => {
  */
  app.get('/api/line-dashboard/productionline/:lineId', async(req, res) => {
     await ldGetProductionLine(req, res);
+});
+
+/**
+ * GET /api/line-dashboard/productioncompliance/1
+ */
+ app.get('/api/line-dashboard/productioncompliance/:lineId', async(req, res) => {
+    await ldGetProductionCompliance(req, res);
 });
 
 io.on('connection', (_) => {
