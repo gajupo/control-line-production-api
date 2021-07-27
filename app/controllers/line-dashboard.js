@@ -171,7 +171,11 @@ async function getProductionLines(req, res) {
 async function getProductionCompliance(req, res) {
     try {
         const today = utcToZonedTime("2021-07-21 19:21:05.217Z", "America/Mexico_City");
-        const validationResults = await getProductionComplianceImpl(req, res, today);
+        const line = validateModelId(req.params.lineId);
+        if (!line.isValid) {
+            return badRequestError("Invalid parameter", res, line.errorList);
+        }
+        const validationResults = await getProductionComplianceImpl(line, today);
         
         res.json(validationResults);
     }
@@ -187,10 +191,6 @@ async function getProductionComplianceImpl(line, today) {
             [Sequelize.fn('COUNT', Sequelize.col('ValidationResult.Id')), 'validationResultCount'],
             [Sequelize.fn('DATEPART', Sequelize.literal('HOUR'), Sequelize.col('ValidationResult.ScanDate')), 'scanHour']],
         include: [{
-            model: Customer,
-            attributes: [],
-            where: { id: line.id }
-        }, {
             model: Order,
             required: true,
             attributes: [],
@@ -207,7 +207,8 @@ async function getProductionComplianceImpl(line, today) {
                         [Op.gte]: today.getHours()
                     }
                 }
-            }]
+            }],
+            where: { productionLineId: line.id }
         }],
         where: Sequelize.where(getDatePartConversion('ValidationResult.ScanDate'), '=', today),
         group: [Sequelize.fn('DATEPART', Sequelize.literal('HOUR'), Sequelize.col('ValidationResult.ScanDate'))]
