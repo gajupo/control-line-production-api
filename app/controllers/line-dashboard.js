@@ -6,7 +6,7 @@ const { getDatePartConversion } = require('../helpers/sequelize');
 const { internalServerError, badRequestError } = require("./core");
 const { Sequelize, Op } = require('sequelize');
 const { ProductionLine, OperatingStation, Customer, ValidationResult,
-    Shift, StopCauseLog, validateModelId } = require('../models');
+    Shift, StopCauseLog, validateModelId, Order, Material } = require('../models');
 
 async function getProductionLine(req, res) {
     try {
@@ -50,16 +50,32 @@ async function getProductionLine(req, res) {
                     required: false,
                     where: Sequelize.where(getDatePartConversion('OperatingStations.ValidationResults.ScanDate'), '=', today)
                 }]
+            }, {
+                model: Order,
+                required: false,
+                attributes: ['id'],
+                where: {
+                    [Op.and]: [
+                        Sequelize.where(Sequelize.col('Orders.IsIncomplete'), '=', true),
+                        Sequelize.where(getDatePartConversion('Orders.CreatedAt'), '<', today)
+                    ]
+                },
+                include: [{
+                    model: Material,
+                    required: true,
+                    attributes: ['id', 'productionRate']
+                }]
             }],
             group: ['ProductionLine.id', 'ProductionLine.lineName', 
                 'OperatingStations.id','OperatingStations.stationIdentifier',
-                'OperatingStations.StopCauseLogs.id', //'Orders.Material.id',
-                /*'Orders.Material.productionRate', 'Orders.id', 'Customer.id',
+                'OperatingStations.StopCauseLogs.id', 'Orders.id', 'Orders.Material.id',
+                'Orders.Material.productionRate', /*'Customer.id',
                 'Customer.customerName',*/ 'Shifts.id', 'Shifts.shiftStart', 'Shifts.shiftEnd',
                 'Shifts.shiftDescription']
         });
-        const transformed = transformLine(productionLine);
-        res.json(transformed);
+        // const transformed = transformLine(productionLine);
+        // res.json(transformed);
+        res.json(productionLine);
     }
     catch (error) {
         logError("Error in getProductionLine", error);
