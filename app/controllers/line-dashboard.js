@@ -13,7 +13,11 @@ const { ProductionLine, OperatingStation, Customer, ValidationResult,
 async function getProductionLine(req, res) {
     try {
         const today = utcToZonedTime("2021-07-21 19:21:05.217", "America/Mexico_City");
-        const productionLine = await getProductionLineImpl(req, res, today);
+        const line = validateModelId(req.params.lineId);
+        if (!line.isValid) {
+            return badRequestError("Invalid parameter passed to getProductionLineImpl", res, line.errorList);
+        }
+        const productionLine = await getProductionLineImpl(line, today);
         const compliance = await getProductionComplianceImpl(req, res, today);
         productionLine.compliance = compliance;
 
@@ -25,76 +29,66 @@ async function getProductionLine(req, res) {
     }
 }
 
-async function getProductionLineImpl(req, res, today) {
-    try {
-        const line = validateModelId(req.params.lineId);
-        if (!line.isValid) {
-            return badRequestError("Invalid parameter passed to getProductionLineImpl", res, line.errorList);
-        }
-        const productionLine = await ProductionLine.findOne({
-            where: { id: line.id },
-            attributes: ['id', 'lineName'],
-            include: [{
-                model: Shift,
-                attributes: ['id', 'shiftDescription', 'shiftStart', 'shiftEnd'],
-                through: { attributes: [] },
-                required: true,
-                where: {
-                    active: true,
-                    shiftStart: {
-                        [Op.lte]: today.getHours()
-                    },
-                    shiftEnd: {
-                        [Op.gte]: today.getHours()
-                    }
-                }
-            }, {
-                model: OperatingStation,
-                attributes: [
-                    'id',
-                    'stationIdentifier',
-                    [Sequelize.fn('count', Sequelize.col('OperatingStations.ValidationResults.Id')), 'validationResultCount']
-                ],
-                include: [{
-                    model: StopCauseLog,
-                    required: false,
-                    where: { status: true },
-                    attributes: ['id']
-                }, {
-                    model: ValidationResult,
-                    attributes: [],
-                    required: true,
-                    where: Sequelize.where(getDatePartConversion('OperatingStations.ValidationResults.ScanDate'), '=', today)
-                }]
-            }, {
-                model: Order,
-                required: false,
-                attributes: ['id'],
-                where: {
-                    [Op.and]: [
-                        Sequelize.where(Sequelize.col('Orders.IsIncomplete'), '=', true),
-                        Sequelize.where(getDatePartConversion('Orders.CreatedAt'), '<=', today)
-                    ]
+async function getProductionLineImpl(line, today) {
+    const productionLine = await ProductionLine.findOne({
+        where: { id: line.id },
+        attributes: ['id', 'lineName'],
+        include: [{
+            model: Shift,
+            attributes: ['id', 'shiftDescription', 'shiftStart', 'shiftEnd'],
+            through: { attributes: [] },
+            required: true,
+            where: {
+                active: true,
+                shiftStart: {
+                    [Op.lte]: today.getHours()
                 },
-                include: [{
-                    model: Material,
-                    required: true,
-                    attributes: ['id', 'productionRate']
-                }]
-            }],
-            group: ['ProductionLine.id', 'ProductionLine.lineName', 
-                'OperatingStations.id','OperatingStations.stationIdentifier',
-                'OperatingStations.StopCauseLogs.id', 'Orders.id', 'Orders.Material.id',
-                'Orders.Material.productionRate', 'Shifts.id', 'Shifts.shiftStart',
-                'Shifts.shiftEnd', 'Shifts.shiftDescription']
-        });
-        const transformed = transformLine(productionLine);
-        return transformed;
-    }
-    catch (error) {
-        logError("Error in getProductionLineImpl", error);
-        return internalServerError(`Internal server error`, res);  
-    }
+                shiftEnd: {
+                    [Op.gte]: today.getHours()
+                }
+            }
+        }, {
+            model: OperatingStation,
+            attributes: [
+                'id',
+                'stationIdentifier',
+                [Sequelize.fn('count', Sequelize.col('OperatingStations.ValidationResults.Id')), 'validationResultCount']
+            ],
+            include: [{
+                model: StopCauseLog,
+                required: false,
+                where: { status: true },
+                attributes: ['id']
+            }, {
+                model: ValidationResult,
+                attributes: [],
+                required: true,
+                where: Sequelize.where(getDatePartConversion('OperatingStations.ValidationResults.ScanDate'), '=', today)
+            }]
+        }, {
+            model: Order,
+            required: false,
+            attributes: ['id'],
+            where: {
+                [Op.and]: [
+                    Sequelize.where(Sequelize.col('Orders.IsIncomplete'), '=', true),
+                    Sequelize.where(getDatePartConversion('Orders.CreatedAt'), '<=', today)
+                ]
+            },
+            include: [{
+                model: Material,
+                required: true,
+                attributes: ['id', 'productionRate']
+            }]
+        }],
+        group: ['ProductionLine.id', 'ProductionLine.lineName', 
+            'OperatingStations.id','OperatingStations.stationIdentifier',
+            'OperatingStations.StopCauseLogs.id', 'Orders.id', 'Orders.Material.id',
+            'Orders.Material.productionRate', 'Shifts.id', 'Shifts.shiftStart',
+            'Shifts.shiftEnd', 'Shifts.shiftDescription']
+    });
+    const transformed = transformLine(productionLine);
+    return transformed;
 }
 
 function transformLine(productionLine) {
