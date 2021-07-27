@@ -4,7 +4,7 @@ const { utcToZonedTime } = require('date-fns-tz');
 const { logError } = require('../helpers/logger');
 const { getDatePartConversion } = require('../helpers/sequelize');
 const { internalServerError, badRequestError, getHoursPerShift, 
-    getProductionGoal } = require("./core");
+    getProductionGoal, getProductionRate } = require("./core");
 const { Sequelize, Op } = require('sequelize');
 const { ProductionLine, OperatingStation, Customer, ValidationResult,
     Shift, StopCauseLog, validateModelId, Order, Material } = require('../models');
@@ -88,7 +88,9 @@ function transformLine(productionLine) {
         id: productionLine.id,
         lineName: productionLine.lineName,
         stations: [],
-        validationResultCount: 0
+        validationResultCount: 0,
+        goal: 0,
+        rate: 0
     };
     if (productionLine.hasOwnProperty('Shifts') && productionLine.Shifts.length > 0) {
         const shift = productionLine.Shifts[0];
@@ -114,8 +116,8 @@ function transformLine(productionLine) {
         line.validationResultCount = totalValidationResultCount;
     }
     const shiftHours = getHoursPerShift(productionLine);
-    const productionGoal = getProductionGoal(productionLine, shiftHours);
-    line.productionGoal = productionGoal;
+    line.goal = getProductionGoal(productionLine, shiftHours);
+    line.rate = getProductionRate(line.validationResultCount, line.goal);
 
     return line;
 }
