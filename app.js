@@ -160,6 +160,13 @@ app.get('/api/productionlines/shift/customer/:customerId', async(req, res) => {
 });
 
 /**
+ * GET /api/productionlines/customer/15
+ */
+ app.get('/api/productionlines/customer/:customerId', async(req, res) => {
+    await getProductionLinesPerCustomer(req, res);
+});
+
+/**
  * GET /api/line-dashboard/productionlines/customer/6
  */
  app.get('/api/line-dashboard/productionlines/customer/:customerId', async(req, res) => {
