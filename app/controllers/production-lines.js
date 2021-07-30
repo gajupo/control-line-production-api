@@ -38,6 +38,29 @@ async function getProductionLine(lineId) {
     return productionLine;
 }
 
+async function getProductionLinesPerCustomer(req, res) {
+    try {
+        const customer = validateModelId(req.params.customerId);
+        if (!customer.isValid) {
+            return badRequestError("Invalid parameter passed", res, customer.errorList);
+        }
+        const productionLines = await ProductionLine.findAll({
+            attributes: ['id', 'lineName'],
+            include: [{
+                model: Customer,
+                required: true,
+                attributes: [],
+                where: { id: customer.id }
+            }]
+        });
+        res.json(productionLines);
+    }
+    catch (error) {
+        logError("Error in getProductionLinesPerCustomer", error);
+        return internalServerError(`Internal server error`, res);
+    }
+}
+
 async function getProductionLinesPerCustomerCurrentShift(req, res) {
     try {
         const customer = validateModelId(req.params.customerId);
@@ -110,7 +133,7 @@ async function getProductionLinesPerCustomerCurrentShift(req, res) {
         res.json(result);
     }
     catch (error) {
-        logError("Error in getProductionLinesPerCustomer", error);
+        logError("Error in getProductionLinesPerCustomerCurrentShift", error);
         return internalServerError(`Internal server error`, res);
     }
 }
@@ -177,5 +200,6 @@ function checkIfLineIsBlocked(stations) {
 }
 
 module.exports.getProductionLinesPerCustomerCurrentShift = getProductionLinesPerCustomerCurrentShift;
+module.exports.getProductionLinesPerCustomer = getProductionLinesPerCustomer;
 module.exports.getProductionLines = getProductionLines;
 module.exports.getProductionLine = getProductionLine;
