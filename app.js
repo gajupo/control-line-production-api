@@ -147,9 +147,9 @@ app.get('/api/productionlines', async(req, res, next) => {
 });
 
 /**
- * GET /api/shifts/line/2
+ * GET /api/shifts/productionline/2
  */
-app.get('/api/shifts/line/:productionLineId', async(req, res, next) => {
+app.get('/api/shifts/productionline/:productionLineId', async(req, res) => {
     await getShiftsPerProductionLine(req, res);
 });
 

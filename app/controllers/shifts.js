@@ -10,13 +10,12 @@ const { internalServerError, badRequestError } = require("./core");
  */
 async function getShiftsPerProductionLine(req, res) {
     try {
-        const productionLineId = req.params.productionLineId;
-        const modelId = validateModelId(productionLineId);
+        const line = validateModelId(req.params.productionLineId);
 
-        if (!modelId.isValid) {
-            return badRequestError(`The production line ID ${productionLineId} is not valid`, res, modelId.errorList);
+        if (!line.isValid) {
+            return badRequestError(`The production line ID ${line.id} is not valid`, res, line.errorList);
         }
-        const shifts = await getShiftsPerProductionLineImpl(productionLineId);
+        const shifts = await getShiftsPerProductionLineImpl(line.id);
         res.json(shifts);
     }
     catch (error) {
