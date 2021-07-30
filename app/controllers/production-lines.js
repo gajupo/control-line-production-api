@@ -38,7 +38,7 @@ async function getProductionLine(lineId) {
     return productionLine;
 }
 
-async function getProductionLinesPerCustomer(req, res) {
+async function getProductionLinesPerCustomerCurrentShift(req, res) {
     try {
         const customer = validateModelId(req.params.customerId);
         if (!customer.isValid) {
@@ -176,6 +176,6 @@ function checkIfLineIsBlocked(stations) {
     return stations.every(station => station.StopCauseLogs.length > 0);
 }
 
-module.exports.getProductionLinesPerCustomer = getProductionLinesPerCustomer;
+module.exports.getProductionLinesPerCustomerCurrentShift = getProductionLinesPerCustomerCurrentShift;
 module.exports.getProductionLines = getProductionLines;
 module.exports.getProductionLine = getProductionLine;

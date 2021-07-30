@@ -10,7 +10,7 @@ const { getPaginatedReportList } = require("./app/controllers/reports");
 const { getActiveStopCauseLogs, getStopCauseLogsRecord, unblockLine, 
     getActiveStopCauseLogsByCustomer, getStopCauseLogsRecordByCustomer } = require("./app/controllers/stop-cause-log");
 const { getMaterialList, getMaterialListPerCustomer } = require("./app/controllers/materials");
-const { getProductionLines, getProductionLinesPerCustomer } = require("./app/controllers/production-lines");
+const { getProductionLines, getProductionLinesPerCustomerCurrentShift } = require("./app/controllers/production-lines");
 const { getShiftsPerProductionLine } = require("./app/controllers/shifts");
 const { getProductionLines: ldGetProductionLines,  
     getProductionLine: ldGetProductionLine, 
@@ -153,10 +153,10 @@ app.get('/api/shifts/line/:productionLineId', async(req, res, next) => {
 });
 
 /**
- * GET /api/productionlines/customer/15
+ * GET /api/productionlines/shift/customer/15
  */
-app.get('/api/productionlines/customer/:customerId', async(req, res) => {
-    await getProductionLinesPerCustomer(req, res);
+app.get('/api/productionlines/shift/customer/:customerId', async(req, res) => {
+    await getProductionLinesPerCustomerCurrentShift(req, res);
 });
 
 /**
