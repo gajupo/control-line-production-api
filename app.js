@@ -10,7 +10,8 @@ const { getPaginatedReportList } = require("./app/controllers/reports");
 const { getActiveStopCauseLogs, getStopCauseLogsRecord, unblockLine, 
     getActiveStopCauseLogsByCustomer, getStopCauseLogsRecordByCustomer } = require("./app/controllers/stop-cause-log");
 const { getMaterialList, getMaterialListPerCustomer } = require("./app/controllers/materials");
-const { getProductionLines, getProductionLinesPerCustomerCurrentShift } = require("./app/controllers/production-lines");
+const { getProductionLines, getProductionLinesPerCustomerCurrentShift, 
+    getProductionLinesPerCustomer } = require("./app/controllers/production-lines");
 const { getShiftsPerProductionLine } = require("./app/controllers/shifts");
 const { getProductionLines: ldGetProductionLines,  
     getProductionLine: ldGetProductionLine, 
