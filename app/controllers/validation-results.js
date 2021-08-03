@@ -10,10 +10,10 @@ const { ValidationResult, Order, Shift, Material } = require('../models');
 async function getValidationResultsPerHour(req, res) {
     try {
         const params = req.body;
-        const [validationResults, productionRates] = await Promise.all(
+        const [validationResults, productionRates] = await Promise.all([
             getValidationResultsPerHourImpl(params),
             getProductionRatePerHourImpl(params)
-        );
+        ]);
         const joined = joinValidationsAndProductionRate(
             validationResults,
             productionRates,
@@ -60,7 +60,8 @@ async function getValidationResultsPerHourImpl(params) {
                 Sequelize.where(getDatePartConversion('ValidationResult.ScanDate'), '=', today)
             ]
         },
-        group: [Sequelize.fn('DATEPART', Sequelize.literal('HOUR'), Sequelize.col('ValidationResult.ScanDate'))]
+        group: [Sequelize.fn('DATEPART', Sequelize.literal('HOUR'), Sequelize.col('ValidationResult.ScanDate'))],
+        raw: true
     });
     return validations;
 }
@@ -88,7 +89,8 @@ async function getProductionRatePerHourImpl(params) {
             Sequelize.fn('DATEPART', Sequelize.literal('HOUR'), Sequelize.col('Order.CreatedAt')),
             'Material.ID',
             'Material.ProductionRate'
-        ]
+        ],
+        raw: true
     });
     return productionRates;
 }
@@ -98,18 +100,21 @@ function joinValidationsAndProductionRate(validationResults, productionRates, sh
     const adjustedShiftEnd = Math.floor(shiftEnd);
     var joined = [];
 
-    for (i = adjustedShiftStart; i <= adjustedShiftEnd; i++) {
+    for (let i = adjustedShiftStart; i <= adjustedShiftEnd; i++) {
         var obj = {
             hour: i,
             validationResultsCount: 0,
             productionRatesSum: 0
         };
-        if (validationResults.find(result => result.hour == i)) {
-            obj.validationResultsCount = result.validationResultsCount;
+        const validation = validationResults.find(result => result.hour == i);
+        if (validation) {
+            obj.validationResultsCount = validation.validationResultsCount;
         }
-        if (productionRates.find(rate => rate.hour == i)) {
+        const rate = productionRates.find(rate => rate.hour == i);
+        if (rate) {
             obj.productionRatesSum = rate.productionRatesSum;
         }
+        joined.push(obj);
     }
     return joined;
 }
