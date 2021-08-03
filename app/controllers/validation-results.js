@@ -7,7 +7,7 @@ const { internalServerError }= require("./core");
 const { getDatePartConversion } = require('../helpers/sequelize');
 const { ValidationResult, Order, Shift, Material } = require('../models');
 
-async function getProductionPerHour(req, res) {
+async function getValidationResultsPerHour(req, res) {
     try {
         const params = req.body;
         const today = utcToZonedTime(params.date, "America/Mexico_City");
@@ -86,5 +86,5 @@ async function getProductionRatePerHour(req, res) {
     }
 }
 
-module.exports.getProductionPerHour = getProductionPerHour;
+module.exports.getValidationResultsPerHour = getValidationResultsPerHour;
 module.exports.getProductionRatePerHour = getProductionRatePerHour;

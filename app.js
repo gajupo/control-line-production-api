@@ -16,7 +16,7 @@ const { getShiftsPerProductionLine } = require("./app/controllers/shifts");
 const { getProductionLines: ldGetProductionLines,  
     getProductionLine: ldGetProductionLine, 
     getProductionCompliance: ldGetProductionCompliance } = require("./app/controllers/line-dashboard");
-const { getProductionPerHour, getProductionRatePerHour } = require("./app/controllers/validation-results");
+const { getValidationResultsPerHour, getProductionRatePerHour } = require("./app/controllers/validation-results");
 
 
 const app = express();
@@ -179,7 +179,7 @@ app.get('/api/productionlines/shift/customer/:customerId', async(req, res) => {
  * }
  */
 app.post('/api/validationresults/perhour', async(req, res) => {
-    await getProductionPerHour(req, res);
+    await getValidationResultsPerHour(req, res);
 });
 
 /**
