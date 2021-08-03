@@ -98,24 +98,32 @@ async function getProductionRatePerHourImpl(params) {
 function joinValidationsAndProductionRate(validationResults, productionRates, shiftStart, shiftEnd) {
     const adjustedShiftStart = Math.floor(shiftStart);
     const adjustedShiftEnd = Math.floor(shiftEnd);
-    var joined = [];
+    var hours = [];
+    var results = [];
+    var rates = [];
 
     for (let i = adjustedShiftStart; i <= adjustedShiftEnd; i++) {
-        var obj = {
-            hour: i,
-            validationResultsCount: 0,
-            productionRatesSum: 0
-        };
+        hours.push(i);
         const validation = validationResults.find(result => result.hour == i);
         if (validation) {
-            obj.validationResultsCount = validation.validationResultsCount;
+            results.push(validation.validationResultsCount);
+        }
+        else {
+            results.push(0);
         }
         const rate = productionRates.find(rate => rate.hour == i);
         if (rate) {
-            obj.productionRatesSum = rate.productionRatesSum;
+            rates.push(rate.productionRatesSum);
         }
-        joined.push(obj);
+        else {
+            rates.push(0);
+        }
     }
+    const joined = {
+        hours: hours,
+        validationResults: results,
+        productionRates: rates
+    };
     return joined;
 }
 
