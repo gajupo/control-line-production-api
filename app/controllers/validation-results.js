@@ -5,7 +5,7 @@ const { Sequelize, Op } = require('sequelize');
 const { logError } = require('../helpers/logger');
 const { internalServerError }= require("./core");
 const { getDatePartConversion } = require('../helpers/sequelize');
-const { ValidationResult, Order, Shift } = require('../models');
+const { ValidationResult, Order, Shift, Material } = require('../models');
 
 async function getProductionPerHour(req, res) {
     try {
@@ -25,13 +25,7 @@ async function getProductionPerHour(req, res) {
                     attributes: [],
                     where: {
                         id: params.shiftId,
-                        active: true,
-                        shiftStart: {
-                            [Op.lte]: today.getHours()
-                        },
-                        shiftEnd: {
-                            [Op.gte]: today.getHours()
-                        }
+                        active: true
                     }
                 }],
                 where: {
@@ -52,9 +46,45 @@ async function getProductionPerHour(req, res) {
         res.json(validations);
     }
     catch (error) {
-        logError("Error in getProductionLines", error);
+        logError("Error in getProductionPerHour", error);
         return internalServerError(`Internal server error`, res);
     }
 }
 
+async function getProductionRatePerHour(req, res) {
+    try {
+        const params = req.body;
+        const today = utcToZonedTime(params.date, "America/Mexico_City");
+        const productionRates = await Order.findAll({
+            attributes: [
+                [Sequelize.fn('DATEPART', Sequelize.literal('HOUR'), Sequelize.col('Order.CreatedAt')), 'hour'],
+                [Sequelize.fn('SUM', Sequelize.col('Material.ProductionRate')), 'productionRates']
+            ],
+            include: [{
+                model: Material,
+                required: true,
+                attributes: []
+            }],
+            where: {
+                [Op.and]: [
+                    Sequelize.where(Sequelize.col('Order.ShiftId'), '=', params.shiftId),
+                    Sequelize.where(Sequelize.col('Order.ProductionLineId'), '=', params.productionLineId),
+                    Sequelize.where(getDatePartConversion('Order.CreatedAt'), '=', today)        
+                ]
+            },
+            group: [
+                Sequelize.fn('DATEPART', Sequelize.literal('HOUR'), Sequelize.col('Order.CreatedAt')),
+                'Material.ID',
+                'Material.ProductionRate'
+            ]
+        });
+        res.json(productionRates);        
+    }
+    catch (error) {
+        logError("Error in getProductionRatePerHour", error);
+        return internalServerError(`Internal server error`, res); 
+    }
+}
+
 module.exports.getProductionPerHour = getProductionPerHour;
+module.exports.getProductionRatePerHour = getProductionRatePerHour;
