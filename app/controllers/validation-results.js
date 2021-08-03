@@ -13,8 +13,8 @@ async function getProductionPerHour(req, res) {
         const today = utcToZonedTime(params.date, "America/Mexico_City");
         const validations = await ValidationResult.findAll({
             attributes:[
-                [Sequelize.fn('COUNT', Sequelize.col('ValidationResult.Id')), 'validationResultCount'],
-                [Sequelize.fn('DATEPART', Sequelize.literal('HOUR'), Sequelize.col('ValidationResult.ScanDate')), 'scanHour']],
+                [Sequelize.fn('DATEPART', Sequelize.literal('HOUR'), Sequelize.col('ValidationResult.ScanDate')), 'hour'],
+                [Sequelize.fn('COUNT', Sequelize.col('ValidationResult.Id')), 'validationResultsCount']],
             include: [{
                 model: Order,
                 required: true,
@@ -58,7 +58,7 @@ async function getProductionRatePerHour(req, res) {
         const productionRates = await Order.findAll({
             attributes: [
                 [Sequelize.fn('DATEPART', Sequelize.literal('HOUR'), Sequelize.col('Order.CreatedAt')), 'hour'],
-                [Sequelize.fn('SUM', Sequelize.col('Material.ProductionRate')), 'productionRates']
+                [Sequelize.fn('SUM', Sequelize.col('Material.ProductionRate')), 'productionRatesSum']
             ],
             include: [{
                 model: Material,
