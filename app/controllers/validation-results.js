@@ -10,81 +10,108 @@ const { ValidationResult, Order, Shift, Material } = require('../models');
 async function getValidationResultsPerHour(req, res) {
     try {
         const params = req.body;
-        const today = utcToZonedTime(params.date, "America/Mexico_City");
-        const validations = await ValidationResult.findAll({
-            attributes:[
-                [Sequelize.fn('DATEPART', Sequelize.literal('HOUR'), Sequelize.col('ValidationResult.ScanDate')), 'hour'],
-                [Sequelize.fn('COUNT', Sequelize.col('ValidationResult.Id')), 'validationResultsCount']],
+        const [validationResults, productionRates] = await Promise.all(
+            getValidationResultsPerHourImpl(params),
+            getProductionRatePerHourImpl(params)
+        );
+        const joined = joinValidationsAndProductionRate(
+            validationResults,
+            productionRates,
+            params.shiftStart,
+            params.shiftEnd);
+        res.json(joined);
+    }
+    catch(error) {
+        logError("Error in getValidationResultsPerHour", error);
+        return internalServerError(`Internal server error`, res);
+    }
+
+}
+
+async function getValidationResultsPerHourImpl(params) {
+    const today = utcToZonedTime(params.date, "America/Mexico_City");
+    const validations = await ValidationResult.findAll({
+        attributes:[
+            [Sequelize.fn('DATEPART', Sequelize.literal('HOUR'), Sequelize.col('ValidationResult.ScanDate')), 'hour'],
+            [Sequelize.fn('COUNT', Sequelize.col('ValidationResult.Id')), 'validationResultsCount']],
+        include: [{
+            model: Order,
+            required: true,
+            attributes: [],
             include: [{
-                model: Order,
+                model: Shift,
                 required: true,
                 attributes: [],
-                include: [{
-                    model: Shift,
-                    required: true,
-                    attributes: [],
-                    where: {
-                        id: params.shiftId,
-                        active: true
-                    }
-                }],
                 where: {
-                    [Op.and]: [
-                        Sequelize.where(Sequelize.col('Order.ProductionLineId'), '=', params.productionLineId),
-                        Sequelize.where(getDatePartConversion('Order.CreatedAt'), '=', today)        
-                    ]
+                    id: params.shiftId,
+                    active: true
                 }
             }],
             where: {
                 [Op.and]: [
-                    Sequelize.where(Sequelize.col('ValidationResult.CustomerId'), '=', params.customerId),
-                    Sequelize.where(getDatePartConversion('ValidationResult.ScanDate'), '=', today)
-                ]
-            },
-            group: [Sequelize.fn('DATEPART', Sequelize.literal('HOUR'), Sequelize.col('ValidationResult.ScanDate'))]
-        });
-        res.json(validations);
-    }
-    catch (error) {
-        logError("Error in getProductionPerHour", error);
-        return internalServerError(`Internal server error`, res);
-    }
-}
-
-async function getProductionRatePerHour(req, res) {
-    try {
-        const params = req.body;
-        const today = utcToZonedTime(params.date, "America/Mexico_City");
-        const productionRates = await Order.findAll({
-            attributes: [
-                [Sequelize.fn('DATEPART', Sequelize.literal('HOUR'), Sequelize.col('Order.CreatedAt')), 'hour'],
-                [Sequelize.fn('SUM', Sequelize.col('Material.ProductionRate')), 'productionRatesSum']
-            ],
-            include: [{
-                model: Material,
-                required: true,
-                attributes: []
-            }],
-            where: {
-                [Op.and]: [
-                    Sequelize.where(Sequelize.col('Order.ShiftId'), '=', params.shiftId),
                     Sequelize.where(Sequelize.col('Order.ProductionLineId'), '=', params.productionLineId),
                     Sequelize.where(getDatePartConversion('Order.CreatedAt'), '=', today)        
                 ]
-            },
-            group: [
-                Sequelize.fn('DATEPART', Sequelize.literal('HOUR'), Sequelize.col('Order.CreatedAt')),
-                'Material.ID',
-                'Material.ProductionRate'
+            }
+        }],
+        where: {
+            [Op.and]: [
+                Sequelize.where(Sequelize.col('ValidationResult.CustomerId'), '=', params.customerId),
+                Sequelize.where(getDatePartConversion('ValidationResult.ScanDate'), '=', today)
             ]
-        });
-        res.json(productionRates);        
+        },
+        group: [Sequelize.fn('DATEPART', Sequelize.literal('HOUR'), Sequelize.col('ValidationResult.ScanDate'))]
+    });
+    return validations;
+}
+
+async function getProductionRatePerHourImpl(params) {
+    const today = utcToZonedTime(params.date, "America/Mexico_City");
+    const productionRates = await Order.findAll({
+        attributes: [
+            [Sequelize.fn('DATEPART', Sequelize.literal('HOUR'), Sequelize.col('Order.CreatedAt')), 'hour'],
+            [Sequelize.fn('SUM', Sequelize.col('Material.ProductionRate')), 'productionRatesSum']
+        ],
+        include: [{
+            model: Material,
+            required: true,
+            attributes: []
+        }],
+        where: {
+            [Op.and]: [
+                Sequelize.where(Sequelize.col('Order.ShiftId'), '=', params.shiftId),
+                Sequelize.where(Sequelize.col('Order.ProductionLineId'), '=', params.productionLineId),
+                Sequelize.where(getDatePartConversion('Order.CreatedAt'), '=', today)        
+            ]
+        },
+        group: [
+            Sequelize.fn('DATEPART', Sequelize.literal('HOUR'), Sequelize.col('Order.CreatedAt')),
+            'Material.ID',
+            'Material.ProductionRate'
+        ]
+    });
+    return productionRates;
+}
+
+function joinValidationsAndProductionRate(validationResults, productionRates, shiftStart, shiftEnd) {
+    const adjustedShiftStart = Math.floor(shiftStart);
+    const adjustedShiftEnd = Math.floor(shiftEnd);
+    var joined = [];
+
+    for (i = adjustedShiftStart; i <= adjustedShiftEnd; i++) {
+        var obj = {
+            hour: i,
+            validationResultsCount: 0,
+            productionRatesSum: 0
+        };
+        if (validationResults.find(result => result.hour == i)) {
+            obj.validationResultsCount = result.validationResultsCount;
+        }
+        if (productionRates.find(rate => rate.hour == i)) {
+            obj.productionRatesSum = rate.productionRatesSum;
+        }
     }
-    catch (error) {
-        logError("Error in getProductionRatePerHour", error);
-        return internalServerError(`Internal server error`, res); 
-    }
+    return joined;
 }
 
 module.exports.getValidationResultsPerHour = getValidationResultsPerHour;
-module.exports.getProductionRatePerHour = getProductionRatePerHour;

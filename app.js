@@ -183,20 +183,6 @@ app.post('/api/validationresults/perhour', async(req, res) => {
 });
 
 /**
- * POST /api/productionrates/perhour/
- * 
- * {
- *      "customerId": 1,
- *      "shiftId": 1,
- *      "productionLineId": 1,
- *      "date": "2021-07-20T14:34:41.157Z"
- * }
- */
- app.post('/api/productionrates/perhour', async(req, res) => {
-    await getProductionRatePerHour(req, res);
-});
-
-/**
  * GET /api/line-dashboard/productionlines/customer/6
  */
  app.get('/api/line-dashboard/productionlines/customer/:customerId', async(req, res) => {
