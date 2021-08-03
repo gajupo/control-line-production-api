@@ -178,7 +178,7 @@ app.get('/api/productionlines/shift/customer/:customerId', async(req, res) => {
  *      "date": "2021-07-20T14:34:41.157Z"
  * }
  */
-app.get('/api/validationresults/perhour/', async(req, res) => {
+app.post('/api/validationresults/perhour', async(req, res) => {
     await getProductionPerHour(req, res);
 });
 

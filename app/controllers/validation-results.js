@@ -1,37 +1,52 @@
 'use strict';
 
-const { Sequelize } = require('sequelize');
+const { utcToZonedTime } = require('date-fns-tz');
+const { Sequelize, Op } = require('sequelize');
 const { logError } = require('../helpers/logger');
 const { internalServerError }= require("./core");
 const { getDatePartConversion } = require('../helpers/sequelize');
-const { ValidationResult, Customer, Order, Shift, ProductionLine } = require('../models');
+const { ValidationResult, Order, Shift } = require('../models');
 
 async function getProductionPerHour(req, res) {
     try {
         const params = req.body;
-        const validations = ValidationResult.findAll({
+        const today = utcToZonedTime(params.date, "America/Mexico_City");
+        const validations = await ValidationResult.findAll({
+            attributes:[
+                [Sequelize.fn('COUNT', Sequelize.col('ValidationResult.Id')), 'validationResultCount'],
+                [Sequelize.fn('DATEPART', Sequelize.literal('HOUR'), Sequelize.col('ValidationResult.ScanDate')), 'scanHour']],
             include: [{
-                model: Customer,
-                attributes:[
-                    [Sequelize.fn('COUNT', Sequelize.col('ValidationResult.Id')), 'validationResultCount'],
-                    [Sequelize.fn('DATEPART', Sequelize.literal('HOUR'), Sequelize.col('ValidationResult.ScanDate')), 'scanHour']],
-                required: true,
-                where: { id: params.customerId }
-            }, {
                 model: Order,
+                required: true,
+                attributes: [],
                 include: [{
                     model: Shift,
-                    attributes: [],
                     required: true,
-                    where: { id: params.shiftId }
-                }, {
-                    model: ProductionLine,
                     attributes: [],
-                    required: true,
-                    where: { id: params.productionLineId }
-                }]
+                    where: {
+                        id: params.shiftId,
+                        active: true,
+                        shiftStart: {
+                            [Op.lte]: today.getHours()
+                        },
+                        shiftEnd: {
+                            [Op.gte]: today.getHours()
+                        }
+                    }
+                }],
+                where: {
+                    [Op.and]: [
+                        Sequelize.where(Sequelize.col('Order.ProductionLineId'), '=', params.productionLineId),
+                        Sequelize.where(getDatePartConversion('Order.CreatedAt'), '=', today)        
+                    ]
+                }
             }],
-            where: Sequelize.where(getDatePartConversion('ValidationResult.ScanDate'), '<=', today),
+            where: {
+                [Op.and]: [
+                    Sequelize.where(Sequelize.col('ValidationResult.CustomerId'), '=', params.customerId),
+                    Sequelize.where(getDatePartConversion('ValidationResult.ScanDate'), '=', today)
+                ]
+            },
             group: [Sequelize.fn('DATEPART', Sequelize.literal('HOUR'), Sequelize.col('ValidationResult.ScanDate'))]
         });
         res.json(validations);
@@ -41,3 +56,5 @@ async function getProductionPerHour(req, res) {
         return internalServerError(`Internal server error`, res);
     }
 }
+
+module.exports.getProductionPerHour = getProductionPerHour;
