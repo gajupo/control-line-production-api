@@ -3,6 +3,7 @@
 const { Sequelize } = require('sequelize');
 const { logError } = require('../helpers/logger');
 const { internalServerError }= require("./core");
+const { getDatePartConversion } = require('../helpers/sequelize');
 const { ValidationResult, Customer, Order, Shift, ProductionLine } = require('../models');
 
 async function getProductionPerHour(req, res) {
@@ -30,7 +31,7 @@ async function getProductionPerHour(req, res) {
                     where: { id: params.productionLineId }
                 }]
             }],
-            where: Sequelize.where(getDatePartConversion('ValidationResult.ScanDate'), '=', today),
+            where: Sequelize.where(getDatePartConversion('ValidationResult.ScanDate'), '<=', today),
             group: [Sequelize.fn('DATEPART', Sequelize.literal('HOUR'), Sequelize.col('ValidationResult.ScanDate'))]
         });
         res.json(validations);
