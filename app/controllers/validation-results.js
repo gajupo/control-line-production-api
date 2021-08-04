@@ -103,7 +103,7 @@ function joinValidationsAndProductionRate(validationResults, productionRates, sh
     var rates = [];
 
     for (let i = adjustedShiftStart; i <= adjustedShiftEnd; i++) {
-        hours.push(String(i));
+        hours.push(i.toString());
         const validation = validationResults.find(result => result.hour == i);
         if (validation) {
             results.push(validation.validationResultsCount);
