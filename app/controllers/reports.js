@@ -2,7 +2,7 @@
 
 const { Op } = require("sequelize");
 
-const { sequelize } = require("../helpers/sequelize");
+const { sequelize, getDatePartConversion } = require("../helpers/sequelize");
 const { logError, logMessage } = require('../helpers/logger');
 const { ValidationResult, Material, OperatingStation, Order, Shift, ReportParameterSchema,
     validatePaginationPage } = require("../models");
@@ -59,10 +59,9 @@ function createDateWhereQuery(payload) {
 
     var where = { };
     if (payload.hasOwnProperty('scanDate')) {
-        const convertFunction = sequelize.fn('CONVERT', sequelize.literal('date'), sequelize.col('ScanDate'));
         where[Op.and] = [
-            sequelize.where(convertFunction, '>=', payload.scanDate.from),
-            sequelize.where(convertFunction, '<=', payload.scanDate.to),
+            sequelize.where(getDatePartConversion('ScanDate'), '>=', payload.scanDate.from),
+            sequelize.where(getDatePartConversion('ScanDate'), '<=', payload.scanDate.to),
         ]
     }
     return where;
