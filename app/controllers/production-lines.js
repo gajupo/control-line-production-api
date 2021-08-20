@@ -67,8 +67,7 @@ async function getProductionLinesPerCustomerCurrentShift(req, res) {
         if (!customer.isValid) {
             return badRequestError("Invalid parameter passed", res, customer.errorList);
         }
-        const today = utcToZonedTime(new Date(2021, 6, 21, 22, 30, 15), "America/Mexico_City");
-        // const today = utcToZonedTime(new Date(), "America/Mexico_City");
+        const today = utcToZonedTime(new Date(), "America/Mexico_City");
         const productionLines = await ProductionLine.findAll({
             attributes: ['id', 'lineName'],
             include: [{
