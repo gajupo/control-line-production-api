@@ -16,6 +16,7 @@ async function getPaginatedReportList(req, res, next) {
             return badRequestError(`The report schema is not valid`, res, report.errorList);
         }
         const offset = calculatePaginationOffset(req.params.page);
+        const dateWhere = createDateWhereQuery(req.body);
         const pasWhere = createPasPnQuery(req.body);
 
         var result = await ValidationResult.findAndCountAll({
@@ -38,10 +39,7 @@ async function getPaginatedReportList(req, res, next) {
             ],
             limit: 10,
             offset: offset,
-            where: [
-                sequelize.where(getDatePartConversion('ScanDate'), '>=', report.scanDate.from),
-                sequelize.where(getDatePartConversion('ScanDate'), '<=', report.scanDate.to),
-            ]
+            where: dateWhere
         });
         result.currentPage = parseInt(req.params.page);
         result.totalPages = Math.ceil(result.count / 10);
@@ -53,6 +51,18 @@ async function getPaginatedReportList(req, res, next) {
         logError("Error in getPaginatedReportList", error);
         return internalServerError(`Internal server error`, res);
     }
+}
+
+function createDateWhereQuery(payload) {
+
+    var where = { };
+    if (payload.hasOwnProperty('scanDate')) {
+        where[Op.and] = [
+            sequelize.where(getDatePartConversion('ScanDate'), '>=', payload.scanDate.from),
+            sequelize.where(getDatePartConversion('ScanDate'), '<=', payload.scanDate.to),
+        ]
+    }
+    return where;
 }
 
 function createPasPnQuery(payload) {
