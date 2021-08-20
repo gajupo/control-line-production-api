@@ -4,18 +4,16 @@ const { Op } = require("sequelize");
 
 const { sequelize, getDatePartConversion } = require("../helpers/sequelize");
 const { logError, logMessage } = require('../helpers/logger');
-const { ValidationResult, Material, OperatingStation, Order, Shift, ReportParameterSchema,
+const { ValidationResult, Material, OperatingStation, Order, Shift, validateReportParameters,
     validatePaginationPage } = require("../models");
 const { badRequestError, internalServerError } = require("./core");
 
 async function getPaginatedReportList(req, res, next) {
 
     try {
-        const {error} = ReportParameterSchema.validate(req.body);
-
-        if (error) {
-            const errorList = error.details.map(e => e.message);
-            return badRequestError(`The schema is not valid`, res, errorList);
+        const report = validateReportParameters(req.body);
+        if (!report.isValid) {
+            return badRequestError(`The report schema is not valid`, res, report.errorList);
         }
         const offset = calculatePaginationOffset(req.params.page);
         const dateWhere = createDateWhereQuery(req.body);
