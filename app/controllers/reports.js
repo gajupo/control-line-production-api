@@ -8,7 +8,7 @@ const { ValidationResult, Material, OperatingStation, Order, Shift, validateRepo
     validatePaginationPage } = require("../models");
 const { badRequestError, internalServerError } = require("./core");
 
-async function getPaginatedReportList(req, res, next) {
+async function getPaginatedReportList(req, res) {
 
     try {
         const report = validateReportParameters(req.body);

@@ -110,8 +110,8 @@ app.put('/api/unblock/:stationIdentifier', async (req, res) => {
  *     }
  * }
  */
-app.post('/api/reportlist/:page', async (req, res, next) => {
-    await getPaginatedReportList(req, res, next);
+app.post('/api/reportlist/:page', async (req, res) => {
+    await getPaginatedReportList(req, res);
 });
 
 /**
@@ -122,28 +122,28 @@ app.post('/api/reportlist/:page', async (req, res, next) => {
  *      "materialId": 5
  * }
  */
-app.post('/api/orders/new', async (req, res, next) => {
+app.post('/api/orders/new', async (req, res) => {
     await createNewOrder(req, res, io);
 });
 
 /**
  * GET /api/materials
  */
-app.get('/api/materials', async (req, res, next) => {
+app.get('/api/materials', async (req, res) => {
     await getMaterialList(res);
 });
 
 /**
  * GET /api/materials/client/6
  */
-app.get('/api/materials/client/:id', async (req, res, next) => {
+app.get('/api/materials/client/:id', async (req, res) => {
     await getMaterialListPerCustomer(req, res);
 });
 
 /**
  * GET /api/productionlines
  */
-app.get('/api/productionlines', async(req, res, next) => {
+app.get('/api/productionlines', async(req, res) => {
     await getProductionLines(res);
 });
 
