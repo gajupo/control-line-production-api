@@ -23,20 +23,20 @@ const LineParameterSchema = Joi.object({
     productionDate: Joi.date().iso().required()
 });
 
-function addMessageErrorIfNotValid(returned, error) {
-    if (error) {
-        returned.isValid = false;
-        returned.errorList = error.details.map(e => e.message);
-    }
-}
-
-module.exports.ReportParameterSchema = Joi.object ({
+const ReportParameterSchema = Joi.object ({
     pasPN: Joi.string().min(8).alphanum(),
     scanDate: Joi.object({
         from: Joi.date().iso().required(),
         to: Joi.date().iso().required()
     })
 }).or('pasPN', 'scanDate');
+
+function addMessageErrorIfNotValid(returned, error) {
+    if (error) {
+        returned.isValid = false;
+        returned.errorList = error.details.map(e => e.message);
+    }
+}
 
 /**
  * Validates that the given id is  a number, integer and positive.
@@ -107,6 +107,17 @@ module.exports.validateLineParameters = function validateLineParameters(params, 
         lineId: params.lineId,
         productionDate: body.productionDate
     });
+    addMessageErrorIfNotValid(returned, error);
+    return returned;
+}
+
+module.exports.validateReportParameters = function validateReportParameters(body) {
+    const {error} = ReportParameterSchema.validate(body);
+    var returned = {
+        ...body,
+        isValid: true,
+        errorList: []
+    };
     addMessageErrorIfNotValid(returned, error);
     return returned;
 }
