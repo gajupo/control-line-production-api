@@ -67,7 +67,8 @@ async function getProductionLinesPerCustomerCurrentShift(req, res) {
         if (!customer.isValid) {
             return badRequestError("Invalid parameter passed", res, customer.errorList);
         }
-        const today = utcToZonedTime(new Date(), "America/Mexico_City");
+        const today = utcToZonedTime(new Date(2021, 6, 21, 22, 30, 15), "America/Mexico_City");
+        // const today = utcToZonedTime(new Date(), "America/Mexico_City");
         const productionLines = await ProductionLine.findAll({
             attributes: ['id', 'lineName'],
             include: [{
@@ -153,13 +154,17 @@ function transformProductionLine(productionLines, line) {
         const stations = line.OperatingStations;
         let validationResultCount = 0;
         let goal = 0;
+        let active = false;
 
-        const active = checkIfLineIsActive(line);
-        if (active) {
-            const shiftHours = getHoursPerShift(line);
-            goal = getProductionGoal(line, shiftHours);
-            validationResultCount = getValidationResultCount(stations);
+        if (checkIfLineHasShifts(line)) {
+            active = true;
+            if (checkIfLineHasOrders(line)) {
+                const shiftHours = getHoursPerShift(line);
+                goal = getProductionGoal(line, shiftHours);
+            }
         }
+        validationResultCount = getValidationResultCount(stations);
+
         productionLines.push( {
             id: line.id,
             lineName: line.lineName,
@@ -193,6 +198,22 @@ function checkIfLineIsActive(line) {
         hasShifts = shifts.length > 0;
     }
     return hasOrders && hasShifts;
+}
+
+function checkIfLineHasOrders(line) {
+    if ("Orders" in line) {
+        const orders = line.Orders;
+        return orders.length > 0;
+    }
+    return false;
+}
+
+function checkIfLineHasShifts(line) {
+    if ("Shifts" in line) {
+        const shifts = line.Shifts;
+        return shifts.length > 0;
+    }
+    return false;
 }
 
 function checkIfLineIsBlocked(stations) {
