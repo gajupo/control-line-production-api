@@ -186,19 +186,6 @@ function getValidationResultCount(stations) {
     return count;
 }
 
-function checkIfLineIsActive(line) {
-    let hasOrders = false, hasShifts = false;
-    if (line.hasOwnProperty('Orders')) {
-        const orders = line.Orders;
-        hasOrders = orders.length > 0;
-    }
-    if (line.hasOwnProperty('Shifts')) {
-        const shifts = line.Shifts;
-        hasShifts = shifts.length > 0;
-    }
-    return hasOrders && hasShifts;
-}
-
 function checkIfLineHasOrders(line) {
     if ("Orders" in line) {
         const orders = line.Orders;
