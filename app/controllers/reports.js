@@ -22,7 +22,7 @@ async function getPaginatedReportList(req, res) {
         var result = await ValidationResult.findAndCountAll(query);
         result.currentPage = parseInt(req.params.page);
         result.totalPages = Math.ceil(result.count / 10);
-        logMessage("getPaginatedReportList consumed", result);
+        logMessage("getPaginatedReportList consumed", req.body);
 
         return res.json(result);
     }
@@ -31,6 +31,24 @@ async function getPaginatedReportList(req, res) {
         return internalServerError(`Internal server error`, res);
     }
 }
+
+async function getScannedReportList(req, res) {
+    try {
+        const report = validateReportParameters(req.body);
+        if (!report.isValid) {
+            return badRequestError(`The report schema is not valid`, res, report.errorList);
+        }
+        const query = getScannedReportImpl(report);
+        const result = await ValidationResult.findAll(query);
+        logMessage("getScannedReportList consumed", req.body);
+
+        return res.json(result);
+    }
+    catch (error) {
+        logError("Error in getScannedReportList", error);
+        return internalServerError(`Internal server error`, res);
+    }
+} 
 
 function getScannedReportImpl(report) {
     const dateWhere = createDateWhereQuery(report);
@@ -91,3 +109,4 @@ function calculatePaginationOffset(page) {
 const LIMIT = 10;
 
 module.exports.getPaginatedReportList = getPaginatedReportList;
+module.exports.getScannedReportList = getScannedReportList;
