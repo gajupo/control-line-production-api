@@ -15,32 +15,11 @@ async function getPaginatedReportList(req, res) {
         if (!report.isValid) {
             return badRequestError(`The report schema is not valid`, res, report.errorList);
         }
-        const offset = calculatePaginationOffset(req.params.page);
-        const dateWhere = createDateWhereQuery(req.body);
-        const pasWhere = createPasPnQuery(req.body);
+        let query = getScannedReportImpl(report);
+        query.limit = LIMIT;
+        query.offset = calculatePaginationOffset(req.params.page);
 
-        var result = await ValidationResult.findAndCountAll({
-            attributes: ['id', 'scanDate'],
-            include: [{
-                    model: OperatingStation,
-                    attributes: ['stationIdentifier']
-                }, {
-                    model: Material,
-                    where: pasWhere,
-                    attributes: ['pasPN']
-                }, {
-                    model: Order,
-                    attributes: ['orderIdentifier'],
-                    include: [{
-                        model: Shift,
-                        attributes: ['shiftDescription']
-                    }],
-                }
-            ],
-            limit: 10,
-            offset: offset,
-            where: dateWhere
-        });
+        var result = await ValidationResult.findAndCountAll(query);
         result.currentPage = parseInt(req.params.page);
         result.totalPages = Math.ceil(result.count / 10);
         logMessage("getPaginatedReportList consumed", result);
@@ -51,6 +30,32 @@ async function getPaginatedReportList(req, res) {
         logError("Error in getPaginatedReportList", error);
         return internalServerError(`Internal server error`, res);
     }
+}
+
+function getScannedReportImpl(report) {
+    const dateWhere = createDateWhereQuery(report);
+    const pasWhere = createPasPnQuery(report);
+    const query = {
+        attributes: ['id', 'scanDate'],
+        include: [{
+                model: OperatingStation,
+                attributes: ['stationIdentifier']
+            }, {
+                model: Material,
+                where: pasWhere,
+                attributes: ['pasPN']
+            }, {
+                model: Order,
+                attributes: ['orderIdentifier'],
+                include: [{
+                    model: Shift,
+                    attributes: ['shiftDescription']
+                }],
+            }
+        ],
+        where: dateWhere
+    };
+    return query
 }
 
 function createDateWhereQuery(payload) {
