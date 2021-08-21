@@ -6,7 +6,7 @@ const cors = require('cors');
 const { getCustomerList } = require("./app/controllers/customer");
 const { getCurrentOrders, createNewOrder, getCustomerOrders,
     scanOrderProduct, closeOrder } = require("./app/controllers/orders");
-const { getPaginatedScannedReportList } = require("./app/controllers/reports");
+const { getPaginatedScannedReportList, getScannedReportList } = require("./app/controllers/reports");
 const { getActiveStopCauseLogs, getStopCauseLogsRecord, unblockLine, 
     getActiveStopCauseLogsByCustomer, getStopCauseLogsRecordByCustomer } = require("./app/controllers/stop-cause-log");
 const { getMaterialList, getMaterialListPerCustomer } = require("./app/controllers/materials");
@@ -16,7 +16,7 @@ const { getShiftsPerProductionLine } = require("./app/controllers/shifts");
 const { getProductionLines: ldGetProductionLines,  
     getProductionLine: ldGetProductionLine, 
     getProductionCompliance: ldGetProductionCompliance } = require("./app/controllers/line-dashboard");
-const { getValidationResultsPerHour, getProductionRatePerHour } = require("./app/controllers/validation-results");
+const { getValidationResultsPerHour } = require("./app/controllers/validation-results");
 
 
 const app = express();
@@ -112,6 +112,22 @@ app.put('/api/unblock/:stationIdentifier', async (req, res) => {
  */
 app.post('/api/reportlist/:page', async (req, res) => {
     await getPaginatedScannedReportList(req, res);
+});
+
+/**
+ * POST /api/reportlist/
+ * 
+ * {
+ *     "pasPN": "290D2851G001",
+ *     "scanDate": 
+ *     {
+ *         "from": "2020-11-27T14:34:41.157Z",
+ *         "to": "2020-11-27T20:37:48.330Z"
+ *     }
+ * }
+ */
+ app.post('/api/reportlist/', async (req, res) => {
+    await getScannedReportList(req, res);
 });
 
 /**
