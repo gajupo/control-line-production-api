@@ -8,7 +8,7 @@ const { ValidationResult, Material, OperatingStation, Order, Shift, validateRepo
     validatePaginationPage } = require("../models");
 const { badRequestError, internalServerError } = require("./core");
 
-async function getPaginatedReportList(req, res) {
+async function getPaginatedScannedReportList(req, res) {
 
     try {
         const report = validateReportParameters(req.body);
@@ -108,5 +108,5 @@ function calculatePaginationOffset(page) {
 
 const LIMIT = 10;
 
-module.exports.getPaginatedReportList = getPaginatedReportList;
+module.exports.getPaginatedScannedReportList = getPaginatedScannedReportList;
 module.exports.getScannedReportList = getScannedReportList;

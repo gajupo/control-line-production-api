@@ -6,7 +6,7 @@ const cors = require('cors');
 const { getCustomerList } = require("./app/controllers/customer");
 const { getCurrentOrders, createNewOrder, getCustomerOrders,
     scanOrderProduct, closeOrder } = require("./app/controllers/orders");
-const { getPaginatedReportList } = require("./app/controllers/reports");
+const { getPaginatedScannedReportList } = require("./app/controllers/reports");
 const { getActiveStopCauseLogs, getStopCauseLogsRecord, unblockLine, 
     getActiveStopCauseLogsByCustomer, getStopCauseLogsRecordByCustomer } = require("./app/controllers/stop-cause-log");
 const { getMaterialList, getMaterialListPerCustomer } = require("./app/controllers/materials");
@@ -111,7 +111,7 @@ app.put('/api/unblock/:stationIdentifier', async (req, res) => {
  * }
  */
 app.post('/api/reportlist/:page', async (req, res) => {
-    await getPaginatedReportList(req, res);
+    await getPaginatedScannedReportList(req, res);
 });
 
 /**
