@@ -62,34 +62,36 @@ async function getActiveStopCauseLogsByCustomer(req, res) {
     try {
         const stopCauseLogs = await StopCauseLog.findAll({
             where: { status: true },
-            attributes: ['id', 'status', 'createdDate'],
+            attributes: ['id', 'status', 'createdDate', 'Barcode'],
             include: [{
+                model: StopCause,
+                attributes: ['description'],
+                required:true
+            }, 
+            {
+                model: OperatingStation,
+                attributes: ['id', 'stationIdentifier'],
+                required:true,
+                include: [{
+                    model: ProductionLine,
+                    attributes: ['lineName'],
+                    required:true,
+                    include: [{
+                            model: Customer,
+                            attributes: ['customerName'],
+                            required:true,
+                            where: { id: customer.id }
+                        }]
+                    }]
+            },
+            {
                 model: Order,
-                required: true,
+                required: false,
                 attributes: ['orderIdentifier', 'pasPN'],
                 include: [{
                     model: Shift,
                     attributes: ['shiftDescription']
-                }, {
-                    model: Material,
-                    include: [{
-                        model: Customer,
-                        attributes: ['customerName'],
-                        where: { id: customer.id }
-                    }],
-                    attributes: ['id'],
-                    required: true
                 }]
-            }, {
-                model: StopCause,
-                attributes: ['description']
-            }, {
-                model: OperatingStation,
-                attributes: ['id', 'stationIdentifier'],
-                include: [{
-                    model: ProductionLine,
-                    attributes: ['lineName']
-                    }]
             }]
         });
         const payload = stopCauseLogs.map(p => p.dataValues);
@@ -144,28 +146,37 @@ async function getStopCauseLogsRecordByCustomer(req, res) {
         const recordCauseLog = await StopCauseLog.findAll({
             where: { status: false },
             limit: 10,
-            attributes: ['id', 'createdDate'],
+            attributes: ['id', 'createdDate','Barcode'],
             include: [{
+                model: StopCause,
+                attributes: ['description'],
+                required:true
+            }, 
+            {
+                model: OperatingStation,
+                attributes: ['id', 'stationIdentifier'],
+                required:true,
+                include: [{
+                    model: ProductionLine,
+                    attributes: ['lineName'],
+                    required:true,
+                    include: [{
+                            model: Customer,
+                            attributes: ['customerName'],
+                            required:true,
+                            where: { id: customer.id }
+                        }]
+                    }]
+            },
+            {
                 model: Order,
-                required: true,
+                required: false,
                 attributes: ['orderIdentifier', 'pasPN'],
                 include: [{
                     model: Shift,
                     attributes: ['shiftDescription']
-                }, {
-                    model: Material,
-                    include: [{
-                        model: Customer,
-                        attributes: ['customerName'],
-                        where: { id: customer.id }
-                    }],
-                    attributes: ['id'],
-                    required: true
                 }]
-            }, {
-                    model: StopCause,
-                    attributes: ['description']
-                }],
+            }],
             order: [['createdDate', 'DESC']]
         });
         const payload = recordCauseLog.map(p => p.dataValues);
@@ -182,6 +193,8 @@ async function getStopCauseLogsRecordByCustomer(req, res) {
 async function unblockLine(req, res, io) {
     try {
         const stationIdentifier = Hoek.escapeHtml(req.params.stationIdentifier);
+        console.log("Params....");
+        console.info(req.params);
         const stoppedLine = await StopCauseLog.findOne({
             include: [{
                 model: OperatingStation,
@@ -192,6 +205,8 @@ async function unblockLine(req, res, io) {
             }],
             where: { status: true }
         });
+        console.log("Paro encontrado");
+        console.info(stoppedLine);
         if (stoppedLine) {
             var actualizados = await updateStoppedLine(stoppedLine.id);
             if (actualizados) {
@@ -216,14 +231,21 @@ async function unblockLine(req, res, io) {
 
 async function updateStoppedLine(stopCauseLogId) {
 
-    var actualizados = await StopCauseLog.update({ 
-        status: false,
-        // TODO: Find a better way to do this.
-        solutionDate: sequelize.literal('CURRENT_TIMESTAMP')
-     }, {
-        where: { id: stopCauseLogId }
-    });
-    return actualizados;
+    try {
+        var actualizados = await StopCauseLog.update({ 
+            status: false,
+            // TODO: Find a better way to do this.
+            solutionDate: sequelize.literal('CURRENT_TIMESTAMP')
+         }, {
+            where: { id: stopCauseLogId }
+        });
+        console.log("Paro actualizado");
+        return actualizados;
+    } catch (error) {
+        logError("Error in unblockLine", error);
+        return internalServerError(`Internal server error`);
+    }
+    
 }
 
 module.exports.getActiveStopCauseLogs = getActiveStopCauseLogs;
