@@ -13,7 +13,7 @@ async function getPaginatedScannedReportList(req, res) {
     try {
         const report = validateReportParameters(req.body);
         if (!report.isValid) {
-            return badRequestError(`The report schema is not valid`, res, report.errorList);
+            return badRequestError("The report schema is not valid", res, report.errorList);
         }
         let query = getScannedReportImpl(report);
         query.limit = LIMIT;
@@ -28,7 +28,7 @@ async function getPaginatedScannedReportList(req, res) {
     }
     catch(error) {
         logError("Error in getPaginatedReportList", error);
-        return internalServerError(`Internal server error`, res);
+        return internalServerError("Internal server error", res);
     }
 }
 
@@ -36,7 +36,7 @@ async function getScannedReportList(req, res) {
     try {
         const report = validateReportParameters(req.body);
         if (!report.isValid) {
-            return badRequestError(`The report schema is not valid`, res, report.errorList);
+            return badRequestError("The report schema is not valid", res, report.errorList);
         }
         const query = getScannedReportImpl(report);
         const result = await ValidationResult.findAll(query);
@@ -46,7 +46,7 @@ async function getScannedReportList(req, res) {
     }
     catch (error) {
         logError("Error in getScannedReportList", error);
-        return internalServerError(`Internal server error`, res);
+        return internalServerError("Internal server error", res);
     }
 } 
 
