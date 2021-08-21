@@ -22,7 +22,7 @@ async function getProductionLines(res) {
     }
     catch (error) {
         logError("Error in getProductionLines", error);
-        return internalServerError(`Internal server error`, res);
+        return internalServerError("Internal server error", res);
     }
 }
 
@@ -57,7 +57,7 @@ async function getProductionLinesPerCustomer(req, res) {
     }
     catch (error) {
         logError("Error in getProductionLinesPerCustomer", error);
-        return internalServerError(`Internal server error`, res);
+        return internalServerError("Internal server error", res);
     }
 }
 
@@ -134,7 +134,7 @@ async function getProductionLinesPerCustomerCurrentShift(req, res) {
     }
     catch (error) {
         logError("Error in getProductionLinesPerCustomerCurrentShift", error);
-        return internalServerError(`Internal server error`, res);
+        return internalServerError("Internal server error", res);
     }
 }
 
