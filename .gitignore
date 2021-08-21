@@ -138,3 +138,4 @@ deploy.sh
 
 # Log files
 app/logs
+config/development.json
