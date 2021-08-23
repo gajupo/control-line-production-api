@@ -39,6 +39,7 @@ async function getScannedReportList(req, res) {
             return badRequestError("The report schema is not valid", res, report.errorList);
         }
         const query = getScannedReportImpl(report);
+        query.raw = true;
         const result = await ValidationResult.findAll(query);
         logMessage("getScannedReportList consumed", req.body);
 
