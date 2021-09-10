@@ -37,8 +37,9 @@ function errorMessage(message, description, statusCode, res, errorList = undefin
 
 function getHoursPerShift(line) {
     if (line.hasOwnProperty('Shifts') && line.Shifts.length == 1) {
+        const today = utcToZonedTime(new Date(), "America/Mexico_City");
         const shift = line.Shifts[0];
-        return Math.ceil(shift.shiftEnd - shift.shiftStart);
+        return Math.ceil(shift.shiftEnd - today.getHours());
     }
     return 0;
 }
