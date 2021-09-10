@@ -24,6 +24,18 @@ module.exports = sequelize.define('Shift', {
         allowNull: false,
         field: 'ShiftEnd'
     }
+    ,
+    shiftStartStr: {
+        type: DataTypes.STRING,
+        allowNull: true,
+        field: 'ShiftStartStr'
+    }
+    ,
+    shiftEndStr: {
+        type: DataTypes.STRING,
+        allowNull: true,
+        field: 'ShiftEndStr'
+    }
 }, {
     tableName: 'Shifts',
     timestamps: false,
