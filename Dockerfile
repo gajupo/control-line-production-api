@@ -22,5 +22,7 @@ COPY --chown=node:node . .
 EXPOSE 3000
 # Port for production environments
 EXPOSE 80
+# Port for node debugging
+EXPOSE 9229
 # An array of commands our container needs to run when we start it
 CMD [ "node", "app.js" ]

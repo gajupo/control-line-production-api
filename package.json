@@ -6,7 +6,7 @@
   "scripts": {
     "test": "test",
     "start": "node app.js",
-    "dev": "nodemon app.js"
+    "dev": "nodemon --inspect=0.0.0.0:9229 app.js"
   },
   "repository": {
     "type": "git",
