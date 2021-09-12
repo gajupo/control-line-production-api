@@ -58,11 +58,11 @@ function getProductionGoal(line, shiftHours) {
     return goal;
 }
 
-function getProductionRate(validationResultCount, productionRate) {
-    if (productionRate == 0) {
+function getProductionRate(validationResultCount, goal) {
+    if (goal == 0) {
         return 0;
     }
-    return Math.ceil((validationResultCount / productionRate) * 100);
+    return Math.ceil((validationResultCount / goal) * 100);
 }
 
 module.exports.notFoundError = notFoundError;
