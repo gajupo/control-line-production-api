@@ -1,10 +1,12 @@
 'use strict';
 
 const { logError } = require('../helpers/logger');
+const services = require('../services');
+const libs = require('../helpers/lib');
 const { getDatePartConversion } = require('../helpers/sequelize');
 const { internalServerError, badRequestError, getHoursPerShift, 
     getProductionGoal, getProductionRate } = require("./core");
-const { Sequelize, Op } = require('sequelize');
+const { Sequelize, Op, QueryTypes } = require('sequelize');
 const { utcToZonedTime } = require('date-fns-tz');
 const { ProductionLine, OperatingStation, Customer, ValidationResult, Order, 
     Material, Shift, validateModelId, StopCauseLog } = require('../models');
@@ -44,15 +46,7 @@ async function getProductionLinesPerCustomer(req, res) {
         if (!customer.isValid) {
             return badRequestError("Invalid parameter passed", res, customer.errorList);
         }
-        const productionLines = await ProductionLine.findAll({
-            attributes: ['id', 'lineName'],
-            include: [{
-                model: Customer,
-                required: true,
-                attributes: [],
-                where: { id: customer.id }
-            }]
-        });
+        const productionLines = await services.ProductionLines.getProductionLinesPerCustomer(customer.id);
         res.json(productionLines);
     }
     catch (error) {
@@ -68,69 +62,86 @@ async function getProductionLinesPerCustomerCurrentShift(req, res) {
             return badRequestError("Invalid parameter passed", res, customer.errorList);
         }
         const today = utcToZonedTime(new Date(), "America/Mexico_City");
-        const productionLines = await ProductionLine.findAll({
-            attributes: ['id', 'lineName'],
-            include: [{
-                model: Customer,
-                required: true,
-                attributes: ['id', 'customerName'],
-                where: { id: customer.id }
-            }, {
-                model: Shift,
-                attributes: ['id', 'shiftStart', 'shiftEnd'],
-                through: { attributes: [] },
-                required: false,
-                where: {
-                    active: true,
-                    shiftStart: {
-                        [Op.lte]: today.getHours()
-                    },
-                    shiftEnd: {
-                        [Op.gte]: today.getHours()
-                    }
+        let linesValidationResultStats = [];
+        var lines = [];
+        const productionLines = await services.ProductionLines.getProductionLinesAndShiftsByCustomer(customer.id);
+        if(libs.isArray(productionLines))
+        {
+            for (const entry of productionLines) {
+                if(libs.isObject(entry))
+                {
+                    let lineResults = await services.ProductionLines.getLineStatsByLineIdAndShift(entry.ProductionLineId,entry.ShiftStartStr, entry.ShiftEndStr);
+                    if(libs.isArray(lineResults) && lineResults.length > 0)
+                        services.ProductionLines.transformProductionLine(lines,entry,lineResults);
                 }
-            }, {
-                model: OperatingStation,
-                attributes: [
-                    'id',
-                    'stationIdentifier',
-                    [Sequelize.fn('count', Sequelize.col('OperatingStations.ValidationResults.Id')), 'validationResultCount']
-                ],
-                include: [{
-                    model: StopCauseLog,
-                    required: false,
-                    where: { status: true },
-                    attributes: ['id']
-                }, {
-                    model: ValidationResult,
-                    attributes: [],
-                    required: false,
-                    where: Sequelize.where(getDatePartConversion('OperatingStations.ValidationResults.ScanDate'), '=', today)
-                }]
-            }, {
-                model: Order,
-                attributes: ['id'],
-                required: false,
-                include: [{
-                    model: Material,
-                    attributes: ['id', 'productionRate'],
-                    required: false
-                }],
-                where: {
-                    [Op.and]: [
-                        Sequelize.where(Sequelize.col('Orders.IsIncomplete'), '=', true),
-                        Sequelize.where(getDatePartConversion('Orders.CreatedAt'), '=', today)
-                    ]
-                }
-            }],
-            group: ['ProductionLine.id', 'ProductionLine.lineName', 
-                'OperatingStations.id','OperatingStations.stationIdentifier',
-                'OperatingStations.StopCauseLogs.id', 'Orders.Material.id',
-                'Orders.Material.productionRate', 'Orders.id', 'Customer.id',
-                'Customer.customerName', 'Shifts.id', 'Shifts.shiftStart', 'Shifts.shiftEnd'],
-        });
-        const result = transformProductionLines(productionLines);
-        res.json(result);
+            }
+        }
+
+                  
+        // const productionLinesAux = await ProductionLine.findAll({
+        //     attributes: ['id', 'lineName'],
+        //     include: [{
+        //         model: Customer,
+        //         required: true,
+        //         attributes: ['id', 'customerName'],
+        //         where: { id: customer.id }
+        //     }, {
+        //         model: Shift,
+        //         attributes: ['id', 'shiftStart', 'shiftEnd'],
+        //         through: { attributes: [] },
+        //         required: false,
+        //         where: {
+        //             active: true,
+        //             shiftStart: {
+        //                 [Op.lte]: today.getHours()
+        //             },
+        //             shiftEnd: {
+        //                 [Op.gte]: today.getHours()
+        //             }
+        //         }
+        //     }, {
+        //         model: OperatingStation,
+        //         attributes: [
+        //             'id',
+        //             'stationIdentifier',
+        //             [Sequelize.fn('count', Sequelize.col('OperatingStations.ValidationResults.Id')), 'validationResultCount']
+        //         ],
+        //         include: [{
+        //             model: StopCauseLog,
+        //             required: false,
+        //             where: { status: true },
+        //             attributes: ['id']
+        //         }, {
+        //             model: ValidationResult,
+        //             attributes: [],
+        //             required: false,
+        //             where: Sequelize.where(getDatePartConversion('OperatingStations.ValidationResults.ScanDate'), '=', today)
+        //         }]
+        //     }, {
+        //         model: Order,
+        //         attributes: ['id'],
+        //         required: false,
+        //         include: [{
+        //             model: Material,
+        //             attributes: ['id', 'productionRate'],
+        //             required: false
+        //         }],
+        //         where: {
+        //             [Op.and]: [
+        //                 Sequelize.where(Sequelize.col('Orders.IsIncomplete'), '=', true),
+        //                 Sequelize.where(getDatePartConversion('Orders.CreatedAt'), '=', today)
+        //             ]
+        //         }
+        //     }],
+        //     group: ['ProductionLine.id', 'ProductionLine.lineName', 
+        //         'OperatingStations.id','OperatingStations.stationIdentifier',
+        //         'OperatingStations.StopCauseLogs.id', 'Orders.Material.id',
+        //         'Orders.Material.productionRate', 'Orders.id', 'Customer.id',
+        //         'Customer.customerName', 'Shifts.id', 'Shifts.shiftStart', 'Shifts.shiftEnd'],
+        // });
+
+        // const result = transformProductionLines(linesValidationResultStats);
+        res.json(lines);
     }
     catch (error) {
         logError("Error in getProductionLinesPerCustomerCurrentShift", error);
@@ -138,18 +149,21 @@ async function getProductionLinesPerCustomerCurrentShift(req, res) {
     }
 }
 
-function transformProductionLines(productionLines) {
+function transformProductionLines(linesValidationResultStats) {
     var lines = [];
 
+    for (const lineResultInfo of linesValidationResultStats) {
+        transformProductionLine(lines, lineResultInfo);
+    }
     productionLines.forEach((line) => {
         transformProductionLine(lines, line.dataValues);
     });
     return lines;
 }
 
-function transformProductionLine(productionLines, line) {
-    if (line.hasOwnProperty('OperatingStations')) {
-        const customer = line.Customer;
+function transformProductionLine(productionLines, lineResultInfo) {
+    if (libs.isArray(lineResultInfo)) {
+        const customer = this.line.CustomerName;
         const stations = line.OperatingStations;
         let validationResultCount = 0;
         let goal = 0;
@@ -163,7 +177,7 @@ function transformProductionLine(productionLines, line) {
             }
         }
         validationResultCount = getValidationResultCount(stations);
-
+        console.log(checkIfLineIsBlocked(stations));
         productionLines.push( {
             id: line.id,
             lineName: line.lineName,
@@ -203,7 +217,7 @@ function checkIfLineHasShifts(line) {
 }
 
 function checkIfLineIsBlocked(stations) {
-    return stations.every(station => station.StopCauseLogs.length > 0);
+    return stations.every(station => station.StopCauseLogs.length > 0) > 0;
 }
 
 module.exports.getProductionLinesPerCustomerCurrentShift = getProductionLinesPerCustomerCurrentShift;
