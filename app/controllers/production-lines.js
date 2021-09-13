@@ -73,6 +73,8 @@ async function getProductionLinesPerCustomerCurrentShift(req, res) {
                     let lineResults = await services.ProductionLines.getLineStatsByLineIdAndShift(entry.ProductionLineId,entry.ShiftStartStr, entry.ShiftEndStr);
                     if(libs.isArray(lineResults) && lineResults.length > 0)
                         services.ProductionLines.transformProductionLine(lines,entry,lineResults);
+                    else
+                        services.ProductionLines.transformProductionLineDefault(lines,entry);
                 }
             }
         }

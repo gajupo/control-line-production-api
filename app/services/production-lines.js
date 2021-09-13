@@ -103,7 +103,6 @@ async function getProductionLinesAndShiftsByCustomer(customerId) {
 
 function transformProductionLine(lines,line, lineInfoStats) {
 
-    const customer = line.CustomerName;
     let validationResultCount = 0;
     let validationResultCountMeta = 0;
     let goal = 0;
@@ -118,9 +117,7 @@ function transformProductionLine(lines,line, lineInfoStats) {
     }
     else
     {
-        shiftHours = lineInfoStats[0].remaningMinutes / 60;   
-        //validationResultCount = getValidationResultCount(stations);
-    
+        shiftHours = lineInfoStats[0].remaningMinutes / 60;       
         lineInfoStats.forEach(function(entry,index) {
             if(index > 0)
                 validationResultCountMeta += entry.countValidationResult;
@@ -143,13 +140,34 @@ function transformProductionLine(lines,line, lineInfoStats) {
     });
     
 }
+function transformProductionLineDefault(lines,line) {
+
+    let validationResultCount = 0;
+    let validationResultCountMeta = 0;
+    let goal = 0;
+    let active = true;
+ 
+    lines.push( {
+        id: line.ProductionLineId,
+        lineName: line.LineName,
+        active: active,
+        blocked: false,
+        customerId: line.CustomerId,
+        customerName: line.CustomerName,
+        validationResultCount: validationResultCount,
+        goal: goal,
+        rate: 0
+    });
+    
+}
 function getCurrentProductionByRate(validationResultCount, goal) {
     if (goal == 0) {
         return 0;
     }
-    return Math.floor((validationResultCount / goal) * 100);
+    return Math.ceil((validationResultCount / goal) * 100);
 }
 module.exports.getProductionLinesPerCustomer = getProductionLinesPerCustomer;
 module.exports.getLineStatsByLineIdAndShift = getLineStatsByLineIdAndShift;
 module.exports.getProductionLinesAndShiftsByCustomer = getProductionLinesAndShiftsByCustomer;
 module.exports.transformProductionLine = transformProductionLine;
+module.exports.transformProductionLineDefault = transformProductionLineDefault;
