@@ -3,10 +3,10 @@
 const { format } = require('date-fns');
 const { Sequelize } = require('sequelize');
 const { logError } = require('../helpers/logger');
+const services = require('../services');
 const { internalServerError, notFoundError, successfulOperation, badRequestError } = require("./core");
 const { Order, Material, Customer, ProductionLine, Shift, validateModelId, 
         validateOrderParameters, StopCauseLog} = require("../models");
-const { getProductionLine } = require("./production-lines");
 const { getMaterial } = require("./materials");
 
 
@@ -90,7 +90,7 @@ async function createNewOrder(req, res, io) {
         const shiftId = req.body.shiftId;
         const now = new Date();
 
-        const productionLine = await getProductionLine(lineId);
+        const productionLine = await services.ProductionLines.getProductionLineById(lineId);
         if (productionLine == null) {
             return notFoundError(`A order with the id ${lineId} was not found`);
         }

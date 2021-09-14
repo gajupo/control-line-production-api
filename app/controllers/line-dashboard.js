@@ -8,17 +8,18 @@ const { internalServerError, badRequestError, getHoursPerShift,
 const { Sequelize, Op } = require('sequelize');
 const { ProductionLine, OperatingStation, Customer, ValidationResult,
     Shift, StopCauseLog, validateModelId, Order, Material } = require('../models');
+const services = require('../services');
 
     
 async function getProductionLine(req, res) {
     try {
-        const today = utcToZonedTime("2021-07-21 19:21:05.217", "America/Mexico_City");
         const line = validateModelId(req.params.lineId);
         if (!line.isValid) {
             return badRequestError("Invalid parameter passed to getProductionLineImpl", res, line.errorList);
         }
-        const productionLine = await getProductionLineImpl(line, today);
-        const compliance = await getProductionComplianceImpl(line, today);
+        const today = utcToZonedTime("2021-07-21 19:21:05.217", "America/Mexico_City");
+        const productionLine = await getProductionLineImpl(line);
+        const compliance = await services.ValidationResults.getProductionComplianceImpl(line, today);
         productionLine.compliance = compliance;
 
         res.json(productionLine);
@@ -29,66 +30,10 @@ async function getProductionLine(req, res) {
     }
 }
 
-async function getProductionLineImpl(line, today) {
-    const productionLine = await ProductionLine.findOne({
-        where: { id: line.id },
-        attributes: ['id', 'lineName'],
-        include: [{
-            model: Shift,
-            attributes: ['id', 'shiftDescription', 'shiftStart', 'shiftEnd'],
-            through: { attributes: [] },
-            required: true,
-            where: {
-                active: true,
-                shiftStart: {
-                    [Op.lte]: today.getHours()
-                },
-                shiftEnd: {
-                    [Op.gte]: today.getHours()
-                }
-            }
-        }, {
-            model: OperatingStation,
-            attributes: [
-                'id',
-                'stationIdentifier',
-                [Sequelize.fn('count', Sequelize.col('OperatingStations.ValidationResults.Id')), 'validationResultCount']
-            ],
-            include: [{
-                model: StopCauseLog,
-                required: false,
-                where: { status: true },
-                attributes: ['id']
-            }, {
-                model: ValidationResult,
-                attributes: [],
-                required: false,
-                where: Sequelize.where(getDatePartConversion('OperatingStations.ValidationResults.ScanDate'), '=', today)
-            }]
-        }, {
-            model: Order,
-            required: false,
-            attributes: ['id'],
-            where: {
-                [Op.and]: [
-                    Sequelize.where(Sequelize.col('Orders.IsIncomplete'), '=', true),
-                    Sequelize.where(getDatePartConversion('Orders.CreatedAt'), '<=', today)
-                ]
-            },
-            include: [{
-                model: Material,
-                required: true,
-                attributes: ['id', 'productionRate']
-            }]
-        }],
-        group: ['ProductionLine.id', 'ProductionLine.lineName', 
-            'OperatingStations.id','OperatingStations.stationIdentifier',
-            'OperatingStations.StopCauseLogs.id', 'Orders.id', 'Orders.Material.id',
-            'Orders.Material.productionRate', 'Shifts.id', 'Shifts.shiftStart',
-            'Shifts.shiftEnd', 'Shifts.shiftDescription']
-    });
-    const transformed = transformLine(productionLine);
-    return transformed;
+async function getProductionLineImpl(line) {
+    const today = utcToZonedTime("2021-07-21 19:21:05.217", "America/Mexico_City");
+    const lineImpl = await services.ProductionLines.getProductionLineImpl(line, today);
+    return transformLine(lineImpl);
 }
 
 function transformLine(productionLine) {
@@ -137,29 +82,7 @@ async function getProductionLines(req, res) {
             return badRequestError("Invalid parameter", res, customer.errorList);
         }
         const today = utcToZonedTime(new Date(), "America/Mexico_City");
-        const productionlines = await ProductionLine.findAll({
-            attributes: ['id', 'lineName'],
-            include: [{
-                model: Customer,
-                required: true,
-                attributes: [],
-                where: { id: customer.id }
-            }, {
-                model: Shift,
-                attributes: ['id', 'shiftDescription', 'shiftStart', 'shiftEnd'],
-                through: { attributes: [] },
-                required: true,
-                where: {
-                    active: true,
-                    shiftStart: {
-                        [Op.lte]: today.getHours()
-                    },
-                    shiftEnd: {
-                        [Op.gte]: today.getHours()
-                    }
-                }
-            }]
-        });
+        const productionlines = await services.ProductionLines.getProductionLineByCustomerIdAndShift(customer.id, today);
         res.json(productionlines);
     }
     catch (error) {
@@ -175,7 +98,7 @@ async function getProductionCompliance(req, res) {
         if (!line.isValid) {
             return badRequestError("Invalid parameter", res, line.errorList);
         }
-        const validationResults = await getProductionComplianceImpl(line, today);
+        const validationResults = await services.ValidationResults.getProductionComplianceImpl(line, today);
         
         res.json(validationResults);
     }
@@ -183,37 +106,6 @@ async function getProductionCompliance(req, res) {
         logError("Error in getProductionCompliance", error);
         return internalServerError(`Internal server error`, res);
     }
-}
-
-async function getProductionComplianceImpl(line, today) {
-    const validationResults = await ValidationResult.findAll({
-        attributes:[
-            [Sequelize.fn('COUNT', Sequelize.col('ValidationResult.Id')), 'validationResultCount'],
-            [Sequelize.fn('DATEPART', Sequelize.literal('HOUR'), Sequelize.col('ValidationResult.ScanDate')), 'scanHour']],
-        include: [{
-            model: Order,
-            required: true,
-            attributes: [],
-            include: [{
-                model: Shift,
-                required: true,
-                attributes: [],
-                where: {
-                    active: true,
-                    shiftStart: {
-                        [Op.lte]: today.getHours()
-                    },
-                    shiftEnd: {
-                        [Op.gte]: today.getHours()
-                    }
-                }
-            }],
-            where: { productionLineId: line.id }
-        }],
-        where: Sequelize.where(getDatePartConversion('ValidationResult.ScanDate'), '=', today),
-        group: [Sequelize.fn('DATEPART', Sequelize.literal('HOUR'), Sequelize.col('ValidationResult.ScanDate'))]
-    });
-    return validationResults;
 }
 
 module.exports.getProductionLines = getProductionLines;
