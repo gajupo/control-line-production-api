@@ -79,7 +79,8 @@ async function getProductionLinesAndShiftsByCustomer(customerId) {
             ProductionLines.LineName,
             Customers.Id as CustomerId,
             Customers.CustomerName, 
-            count(ProductionLines.Id) as NumberOfLines
+            count(ProductionLines.Id) as NumberOfLines,
+            (case when (count(OperatingStations.id) = count(StopCauseLogs.id)) then 1 else 0 end) as isBlocked
         from ProductionLines
         left join ProductionLineShifts on ProductionLines.Id = ProductionLineShifts.ProductionLineId
         left join 
@@ -87,6 +88,8 @@ async function getProductionLinesAndShiftsByCustomer(customerId) {
             CAST(CONCAT(FORMAT(getdate(),'yyyy-MM-dd'),' ',  Shifts.ShiftStartStr) AS DATETIME) <= GETDATE() and
             CAST(CONCAT(FORMAT(getdate(),'yyyy-MM-dd'),' ', Shifts.ShiftEndStr) AS DATETIME) >= GETDATE()
         inner join Customers on ProductionLines.CustomerId = Customers.Id
+        inner join OperatingStations on OperatingStations.LineId = ProductionLines.Id
+        left join StopCauseLogs on StopCauseLogs.StationId = OperatingStations.Id  and StopCauseLogs.status = 1
         where 
             ProductionLines.CustomerId = $customerId and ProductionLines.Status = 1
         group by 
@@ -108,17 +111,21 @@ async function getProductionLinesAndShiftsByCustomer(customerId) {
         throw new Error(error);
     }
 }
-function GroupByStationId(items, StationId)
-{
+function GroupByStationId(items, StationId){
     let validationResultCountMeta = 0;
     let validationResultCount = 0;
     let goal = 0;
+    // sum all scanned material exceptio the first one, the first one is the last scanned, the sql query is ordered as DESC
     items.forEach(function(entry,index) {
         if(index > 0)
             validationResultCountMeta += entry.countValidationResult;
     });
+    // sum all scanned material
     validationResultCount = _.sumBy(items, 'countValidationResult');
+    // we take the last scanned material and get the production rate to obtain the remaining hours of the shift
     shiftHours = items[0].remaningMinutes / 60;
+    // calculate the goal (remainig hours * materials production rate) + total of scanned material except the last one material
+    // the goal will change until the materia changes
     goal = Math.floor(shiftHours * items[0].ProductionRate) + validationResultCountMeta;
 
     return {
@@ -128,39 +135,49 @@ function GroupByStationId(items, StationId)
         rate: getCurrentProductionByRate(validationResultCount, goal)
     };
 }
-function transformProductionLine(lines,line, lineInfoStats) {
+function transformProductionLine(lines, line, lineInfoStats){
 
     let active = true;
-    console.log("Groups");
-    let list = _(lineInfoStats)
+    // group line orders by station id to obtaing a single object by station
+    /* stationId: 1, 
+       countValidationResult: 300,
+       goal:  1500,
+       rate: 30
+     */
+    let currentProduction = _(lineInfoStats)
                 .groupBy('StationId')
                 .map(GroupByStationId).value();
-
+    // list to store the current production for all stations of the line passed as parameter
     lines.push( {
         id: line.ProductionLineId,
         lineName: line.LineName,
         active: active,
-        blocked: false,
+        blocked: !!line.isBlocked,
         customerId: line.CustomerId,
         customerName: line.CustomerName,
-        validationResultCount: _.sumBy(list, 'countValidationResult'),
-        goal: _.sumBy(list, 'goal'),
-        rate: _.sumBy(list, 'rate')
+        validationResultCount: _.sumBy(currentProduction, 'countValidationResult'), // sum fo all stations scanned materials
+        goal: _.sumBy(currentProduction, 'goal'), // sum of goals for all stations
+        rate: _.sumBy(currentProduction, 'rate') // sum of all percentages completition vs goal
     });
     
 }
+/**
+ * Return line object representation with 0 on rate, goal and total of scanned materials by line.
+ * Used in case the line does not have shift or dayly production
+ * @param lines Object to Store all lines of the customer
+ * @param line The current line is being processed
+ */
 function transformProductionLineDefault(lines,line) {
 
     let validationResultCount = 0;
     let validationResultCountMeta = 0;
     let goal = 0;
     let active = true;
- 
     lines.push( {
         id: line.ProductionLineId,
         lineName: line.LineName,
         active: active,
-        blocked: false,
+        blocked: !!line.isBlocked,
         customerId: line.CustomerId,
         customerName: line.CustomerName,
         validationResultCount: validationResultCount,
@@ -169,7 +186,10 @@ function transformProductionLineDefault(lines,line) {
     });
     
 }
-function getCurrentProductionByRate(validationResultCount, goal) {
+/**
+ * Calculates the percentage based on goal and sum of materials scanned
+ */
+function getCurrentProductionByRate(validationResultCount, goal){
     if (goal == 0) {
         return 0;
     }
