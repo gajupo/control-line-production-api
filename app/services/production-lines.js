@@ -70,25 +70,33 @@ async function getLineStatsByLineIdAndShift(lineId, shiftStart, shiftEnd) {
 async function getProductionLinesAndShiftsByCustomer(customerId) {
     try {
         const productionLinesCurrentShift = await sequelize.query(
-            `Select 
-                MAX(Shifts.Id) as ShiftId, 
-                Shifts.ShiftStartStr, 
-                Shifts.ShiftEndStr, 
-                ProductionLines.Id as ProductionLineId,
-                ProductionLines.Status as Active,
-                ProductionLines.LineName,
-                Customers.Id as CustomerId,
-                Customers.CustomerName, 
-                count(ProductionLines.Id) as NumberOfLines  
-            from ProductionLines
-            inner join ProductionLineShifts on ProductionLines.Id = ProductionLineShifts.ProductionLineId
-            inner join Shifts on Shifts.Id = ProductionLineShifts.ShiftId
-            inner join Customers on ProductionLines.CustomerId = Customers.Id
-            where 
-                ProductionLines.CustomerId = $customerId and 
-                CAST(Shifts.ShiftStart AS FLOAT) <= CAST(FORMAT(GETDATE(),'HH.mm') AS FLOAT) and 
-                CONVERT(FLOAT, Shifts.ShiftEnd) >= CAST(FORMAT(GETDATE(),'HH.mm') AS FLOAT)
-            group by Shifts.ShiftStartStr, Shifts.ShiftEndStr, ProductionLines.Id,ProductionLines.LineName,Customers.Id,Customers.Id,ProductionLines.Status, Customers.CustomerName`,
+            `select 
+            MAX(Shifts.Id) as ShiftId, 
+            Shifts.ShiftStartStr, 
+            Shifts.ShiftEndStr, 
+            ProductionLineShifts.ProductionLineId as ProductionLineId,
+            ProductionLines.Status as Active,
+            ProductionLines.LineName,
+            Customers.Id as CustomerId,
+            Customers.CustomerName, 
+            count(ProductionLines.Id) as NumberOfLines
+        from ProductionLines
+        left join ProductionLineShifts on ProductionLines.Id = ProductionLineShifts.ProductionLineId
+        left join 
+            Shifts on Shifts.Id = ProductionLineShifts.ShiftId and 
+            CAST(CONCAT(FORMAT(getdate(),'yyyy-MM-dd'),' ',  Shifts.ShiftStartStr) AS DATETIME) <= GETDATE() and
+            CAST(CONCAT(FORMAT(getdate(),'yyyy-MM-dd'),' ', Shifts.ShiftEndStr) AS DATETIME) >= GETDATE()
+        inner join Customers on ProductionLines.CustomerId = Customers.Id
+        where 
+            ProductionLines.CustomerId = $customerId and ProductionLines.Status = 1
+        group by 
+            Shifts.ShiftStartStr, 
+            Shifts.ShiftEndStr, 
+            ProductionLineShifts.ProductionLineId,
+            ProductionLines.Status,
+            ProductionLines.LineName,
+            Customers.Id,
+            Customers.CustomerName;`,
             {
               bind: { customerId: customerId},
               raw: true,
@@ -164,10 +172,171 @@ function getCurrentProductionByRate(validationResultCount, goal) {
     if (goal == 0) {
         return 0;
     }
-    return Math.ceil((validationResultCount / goal) * 100);
+    let rate = Math.ceil((validationResultCount / goal) * 100);
+    console.log(`[ El avance actual es ${rate} ]`)
+    return (rate > 100)? 100 : rate;
+}
+function getValidationResultCount(stations) {
+    let count = 0;
+    stations.forEach(station => {
+        count += station.dataValues.validationResultCount;
+    });
+    return count;
+}
+
+function checkIfLineHasOrders(line) {
+    if ("Orders" in line) {
+        const orders = line.Orders;
+        return orders.length > 0;
+    }
+    return false;
+}
+
+function checkIfLineHasShifts(line) {
+    if ("Shifts" in line) {
+        const shifts = line.Shifts;
+        return shifts.length > 0;
+    }
+    return false;
+}
+
+function checkIfLineIsBlocked(stations) {
+    return stations.every(station => station.StopCauseLogs.length > 0) > 0;
+}
+async function getProductionLines() {
+    try {
+        const productionlines = await models.ProductionLine.findAll({
+            include: [{
+                model: models.OperatingStation,
+                attributes: ['id', 'stationIdentifier']
+            }],
+            attributes: ['id', 'lineName']
+        });
+        return productionlines;
+    } catch (error) {
+        throw new Error(error);
+    }
+}
+async function getProductionLineByCustomerIdAndShift(customerId, today) {
+    try {
+        
+        const productionlines = await models.ProductionLine.findAll({
+            attributes: ['id', 'lineName'],
+            include: [{
+                model: models.Customer,
+                required: true,
+                attributes: [],
+                where: { id: customerId }
+            }, {
+                model: models.Shift,
+                attributes: ['id', 'shiftDescription', 'shiftStart', 'shiftEnd'],
+                through: { attributes: [] },
+                required: true,
+                where: {
+                    active: true,
+                    shiftStart: {
+                        [Op.lte]: today.getHours()
+                    },
+                    shiftEnd: {
+                        [Op.gte]: today.getHours()
+                    }
+                }
+            }]
+        });
+        return productionlines;
+    } catch (error) {
+        throw new Error(error);
+    }
+}
+async function getProductionLineById(productionLineId) {
+    try {
+        var productionLine = await models.ProductionLine.findOne({
+            where: { id: productionLineId },
+            include: [{
+                model: models.OperatingStation,
+                attributes: ['id', 'stationIdentifier']
+            }],
+            attributes: ['id']
+        });
+        return productionLine;
+    } catch (error) {
+        throw new Error(error);
+    }
+}
+async function getProductionLineImpl(line, today) {
+    try {
+        const productionLine = await models.ProductionLine.findOne({
+            where: { id: line.id },
+            attributes: ['id', 'lineName'],
+            include: [{
+                model: models.Shift,
+                attributes: ['id', 'shiftDescription', 'shiftStart', 'shiftEnd'],
+                through: { attributes: [] },
+                required: true,
+                where: {
+                    active: true,
+                    shiftStart: {
+                        [Op.lte]: today.getHours()
+                    },
+                    shiftEnd: {
+                        [Op.gte]: today.getHours()
+                    }
+                }
+            }, {
+                model: models.OperatingStation,
+                attributes: [
+                    'id',
+                    'stationIdentifier',
+                    [Sequelize.fn('count', Sequelize.col('OperatingStations.ValidationResults.Id')), 'validationResultCount']
+                ],
+                include: [{
+                    model: models.StopCauseLog,
+                    required: false,
+                    where: { status: true },
+                    attributes: ['id']
+                }, {
+                    model: models.ValidationResult,
+                    attributes: [],
+                    required: false,
+                    where: Sequelize.where(getDatePartConversion('OperatingStations.ValidationResults.ScanDate'), '=', today)
+                }]
+            }, {
+                model: models.Order,
+                required: false,
+                attributes: ['id'],
+                where: {
+                    [Op.and]: [
+                        Sequelize.where(Sequelize.col('Orders.IsIncomplete'), '=', true),
+                        Sequelize.where(getDatePartConversion('Orders.CreatedAt'), '<=', today)
+                    ]
+                },
+                include: [{
+                    model: models.Material,
+                    required: true,
+                    attributes: ['id', 'productionRate']
+                }]
+            }],
+            group: ['ProductionLine.id', 'ProductionLine.lineName', 
+                'OperatingStations.id','OperatingStations.stationIdentifier',
+                'OperatingStations.StopCauseLogs.id', 'Orders.id', 'Orders.Material.id',
+                'Orders.Material.productionRate', 'Shifts.id', 'Shifts.shiftStart',
+                'Shifts.shiftEnd', 'Shifts.shiftDescription']
+        });
+        return productionLine;
+    } catch (error) {
+        throw new Error(error);
+    }
 }
 module.exports.getProductionLinesPerCustomer = getProductionLinesPerCustomer;
 module.exports.getLineStatsByLineIdAndShift = getLineStatsByLineIdAndShift;
 module.exports.getProductionLinesAndShiftsByCustomer = getProductionLinesAndShiftsByCustomer;
 module.exports.transformProductionLine = transformProductionLine;
 module.exports.transformProductionLineDefault = transformProductionLineDefault;
+module.exports.getValidationResultCount = getValidationResultCount;
+module.exports.checkIfLineHasOrders = checkIfLineHasOrders;
+module.exports.checkIfLineHasShifts = checkIfLineHasShifts;
+module.exports.checkIfLineIsBlocked = checkIfLineIsBlocked;
+module.exports.getProductionLines = getProductionLines;
+module.exports.getProductionLineById = getProductionLineById;
+module.exports.getProductionLineImpl = getProductionLineImpl;
+module.exports.getProductionLineByCustomerIdAndShift = getProductionLineByCustomerIdAndShift;
