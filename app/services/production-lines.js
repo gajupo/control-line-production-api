@@ -1,7 +1,7 @@
 const { Sequelize, Op, QueryTypes } = require('sequelize');
 const { sequelize } = require("../helpers/sequelize");
 const models = require("../models");
-
+const _ = require('lodash/');
 
 async function getProductionLinesPerCustomer(customerId) {
     try {
@@ -108,32 +108,33 @@ async function getProductionLinesAndShiftsByCustomer(customerId) {
         throw new Error(error);
     }
 }
+function GroupByStationId(items, StationId)
+{
+    let validationResultCountMeta = 0;
+    let validationResultCount = 0;
+    let goal = 0;
+    items.forEach(function(entry,index) {
+        if(index > 0)
+            validationResultCountMeta += entry.countValidationResult;
+    });
+    validationResultCount = _.sumBy(items, 'countValidationResult');
+    shiftHours = items[0].remaningMinutes / 60;
+    goal = Math.floor(shiftHours * items[0].ProductionRate) + validationResultCountMeta;
 
+    return {
+        stationId: StationId, 
+        countValidationResult: _.sumBy(items, 'countValidationResult'),
+        goal:  goal,
+        rate: getCurrentProductionByRate(validationResultCount, goal)
+    };
+}
 function transformProductionLine(lines,line, lineInfoStats) {
 
-    let validationResultCount = 0;
-    let validationResultCountMeta = 0;
-    let goal = 0;
     let active = true;
-
-    if(lineInfoStats[0].remaningMinutes <= 1)
-    {    
-        lineInfoStats.forEach(function(entry) {
-            validationResultCount += entry.countValidationResult;
-        });
-        goal = 1 + validationResultCount;
-    }
-    else
-    {
-        shiftHours = lineInfoStats[0].remaningMinutes / 60;       
-        lineInfoStats.forEach(function(entry,index) {
-            if(index > 0)
-                validationResultCountMeta += entry.countValidationResult;
-            validationResultCount += entry.countValidationResult;
-        });
-        goal = Math.floor(shiftHours * lineInfoStats[0].ProductionRate) + validationResultCountMeta;
-    }
-   
+    console.log("Groups");
+    let list = _(lineInfoStats)
+                .groupBy('StationId')
+                .map(GroupByStationId).value();
 
     lines.push( {
         id: line.ProductionLineId,
@@ -142,9 +143,9 @@ function transformProductionLine(lines,line, lineInfoStats) {
         blocked: false,
         customerId: line.CustomerId,
         customerName: line.CustomerName,
-        validationResultCount: validationResultCount,
-        goal: goal,
-        rate: getCurrentProductionByRate(validationResultCount,goal)
+        validationResultCount: _.sumBy(list, 'countValidationResult'),
+        goal: _.sumBy(list, 'goal'),
+        rate: _.sumBy(list, 'rate')
     });
     
 }
