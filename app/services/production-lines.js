@@ -70,36 +70,40 @@ async function getLineStatsByLineIdAndShift(lineId, shiftStart, shiftEnd) {
 async function getProductionLinesAndShiftsByCustomer(customerId) {
     try {
         const productionLinesCurrentShift = await sequelize.query(
-            `select 
-            MAX(Shifts.Id) as ShiftId, 
-            Shifts.ShiftStartStr, 
-            Shifts.ShiftEndStr, 
-            ProductionLineShifts.ProductionLineId as ProductionLineId,
-            ProductionLines.Status as Active,
-            ProductionLines.LineName,
-            Customers.Id as CustomerId,
-            Customers.CustomerName, 
-            count(ProductionLines.Id) as NumberOfLines,
-            (case when (count(OperatingStations.id) = count(StopCauseLogs.id)) then 1 else 0 end) as isBlocked
-        from ProductionLines
-        left join ProductionLineShifts on ProductionLines.Id = ProductionLineShifts.ProductionLineId
-        left join 
-            Shifts on Shifts.Id = ProductionLineShifts.ShiftId and 
-            CAST(CONCAT(FORMAT(getdate(),'yyyy-MM-dd'),' ',  Shifts.ShiftStartStr) AS DATETIME) <= GETDATE() and
-            CAST(CONCAT(FORMAT(getdate(),'yyyy-MM-dd'),' ', Shifts.ShiftEndStr) AS DATETIME) >= GETDATE()
-        inner join Customers on ProductionLines.CustomerId = Customers.Id
-        inner join OperatingStations on OperatingStations.LineId = ProductionLines.Id
-        left join StopCauseLogs on StopCauseLogs.StationId = OperatingStations.Id  and StopCauseLogs.status = 1
-        where 
-            ProductionLines.CustomerId = $customerId and ProductionLines.Status = 1
-        group by 
-            Shifts.ShiftStartStr, 
-            Shifts.ShiftEndStr, 
-            ProductionLineShifts.ProductionLineId,
-            ProductionLines.Status,
-            ProductionLines.LineName,
-            Customers.Id,
-            Customers.CustomerName;`,
+            `select * from (
+                select 
+                    max(ProductionLineShifts.ShiftId) as ShiftId, 
+                    Shifts.ShiftStartStr, 
+                    Shifts.ShiftEndStr, 
+                    ProductionLineShifts.ProductionLineId as ProductionLineId,
+                    ProductionLines.Status as Active,
+                    ProductionLines.LineName,
+                    Customers.Id as CustomerId,
+                    Customers.CustomerName, 
+                    count(ProductionLines.Id) as NumberOfLines,
+                    (case when (count(OperatingStations.id) = count(StopCauseLogs.id)) then 1 else 0 end) as isBlocked,
+                    row_number() OVER(PARTITION BY ProductionLineShifts.ProductionLineId ORDER BY ProductionLineShifts.ShiftId desc) AS rn
+                from ProductionLines
+                left join ProductionLineShifts on ProductionLines.Id = ProductionLineShifts.ProductionLineId
+                left join Shifts on Shifts.Id = ProductionLineShifts.ShiftId and 
+                    CAST(CONCAT(FORMAT(getdate(),'yyyy-MM-dd'),' ',  Shifts.ShiftStartStr) AS DATETIME) <= GETDATE() and
+                    CAST(CONCAT(FORMAT(getdate(),'yyyy-MM-dd'),' ', Shifts.ShiftEndStr) AS DATETIME) >= GETDATE()
+                inner join Customers on ProductionLines.CustomerId = Customers.Id
+                inner join OperatingStations on OperatingStations.LineId = ProductionLines.Id
+                left join StopCauseLogs on StopCauseLogs.StationId = OperatingStations.Id  and StopCauseLogs.status = 1
+                where 
+                    ProductionLines.CustomerId = $customerId and ProductionLines.Status = 1
+                group by 
+                    Shifts.ShiftStartStr, 
+                    Shifts.ShiftEndStr, 
+                    ProductionLineShifts.ProductionLineId,
+                    ProductionLines.Status,
+                    ProductionLines.LineName,
+                    Customers.Id,
+                    Customers.CustomerName,
+                    ProductionLineShifts.ShiftId
+                ) as result
+                where result.rn = 1`,
             {
               bind: { customerId: customerId},
               raw: true,
