@@ -1,24 +1,19 @@
 'use strict';
 
-const { utcToZonedTime } = require('date-fns-tz');
+const { utcToZonedTime,format } = require('date-fns-tz');
 const { Sequelize, Op } = require('sequelize');
 const { logError } = require('../helpers/logger');
 const { internalServerError }= require("./core");
+const services = require('../services');
 const { getDatePartConversion } = require('../helpers/sequelize');
 const { ValidationResult, Order, Shift, Material } = require('../models');
+const lib = require('../helpers/lib');
 
 async function getValidationResultsPerHour(req, res) {
     try {
         const params = req.body;
-        const [validationResults, productionRates] = await Promise.all([
-            getValidationResultsPerHourImpl(params),
-            getProductionRatePerHourImpl(params)
-        ]);
-        const joined = joinValidationsAndProductionRate(
-            validationResults,
-            productionRates,
-            params.shiftStart,
-            params.shiftEnd);
+        const productionPerHour = await services.ValidationResults.getValidationResultsPerHourImpl(params);
+        const joined = joinValidationsAndProductionRate(productionPerHour,{},params.shiftStart, params.shiftEnd);
         res.json(joined);
     }
     catch(error) {
@@ -30,6 +25,7 @@ async function getValidationResultsPerHour(req, res) {
 
 async function getValidationResultsPerHourImpl(params) {
     const today = utcToZonedTime(params.date, "America/Mexico_City");
+    
     const validations = await ValidationResult.findAll({
         attributes:[
             [Sequelize.fn('DATEPART', Sequelize.literal('HOUR'), Sequelize.col('ValidationResult.ScanDate')), 'hour'],
@@ -95,27 +91,22 @@ async function getProductionRatePerHourImpl(params) {
     return productionRates;
 }
 
-function joinValidationsAndProductionRate(validationResults, productionRates, shiftStart, shiftEnd) {
-    const adjustedShiftStart = Math.floor(shiftStart);
-    const adjustedShiftEnd = Math.floor(shiftEnd);
-    var hours = [];
-    var results = [];
-    var rates = [];
+function joinValidationsAndProductionRate(validationResults, productionRates, shiftStartStr, shiftEndStr) {   
+    const adjustedShiftStart = lib.getShiftHour('00:01:00');
+    const adjustedShiftEnd = lib.getShiftHour('17:59:59');
+    let hours = [];
+    let results = [];
+    let rates = [];
 
     for (let i = adjustedShiftStart; i <= adjustedShiftEnd; i++) {
-        hours.push(i.toString());
-        const validation = validationResults.find(result => result.hour == i);
+        hours.push(i);
+        const validation = validationResults.find(result => result.hours == i);
         if (validation) {
-            results.push(validation.validationResultsCount);
+            results.push(validation.validationResults);
+            rates.push(validation.productionRates);
         }
         else {
             results.push(0);
-        }
-        const rate = productionRates.find(rate => rate.hour == i);
-        if (rate) {
-            rates.push(rate.productionRatesSum);
-        }
-        else {
             rates.push(0);
         }
     }
