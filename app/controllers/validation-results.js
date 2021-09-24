@@ -111,7 +111,10 @@ function joinValidationsAndProductionRate(validationResults, productionRates, sh
         if(countByHour === 0){
             // in this hour there is no material validations
             results.push(0);
-            rates.push(firstOrder.ProductionRate || 0);
+            if(!!firstOrder && firstOrder.hasOwnProperty('ProductionRate'))
+                rates.push(firstOrder.ProductionRate || 0);
+            else
+                rates.push(0);
         }else if (countByHour === 1) {
             // //get worked minutes
             // let maxUtcDateScanedMinutes  = 0;
@@ -138,18 +141,23 @@ function joinValidationsAndProductionRate(validationResults, productionRates, sh
                 maxUtcDateScanedMinutes = getMinutes(maxUtcDateScaned);
             }
             // rate for the first material
-            let firstRate = Math.ceil( (parseInt(validations[0].ProductionRate) * maxUtcDateScanedMinutes) / 60 ) + validations[0].validationResults;
+            let firstRate = Math.ceil( (parseInt(validations[0].ProductionRate) * maxUtcDateScanedMinutes) / 60 );
             // rate for the last material, because the such hour just two orders were processed
-            let lastRate = Math.ceil( ( ( 60 - minUtcDateScanedMinutes ) * parseInt(validations[1].ProductionRate) ) / 60 ) + validations[1].validationResults;
+            let lastRate = Math.ceil( ( ( 60 - minUtcDateScanedMinutes ) * parseInt(validations[1].ProductionRate) ) / 60 );
             // calculate the total of validation resualts
-            let totalOfValidations = validations[0].validationResults + validations[1].validationResults;
+            let totalOfValidations = parseInt(validations[0].validationResults) + parseInt(validations[1].validationResults);
             results.push(totalOfValidations);
             rates.push(firstRate + lastRate);
         }
         else{
             // when we have more that two different materials processed in the same hour
             //get worked minutes
-            let minUtcDateScanedMinutes,maxUtcDateScanedMinutes, sumMiddleMaterialRates, globalRate, globalValidationResults, sumMiddleValidationResults  = 0;
+            let minUtcDateScanedMinutes = 0,
+            maxUtcDateScanedMinutes = 0, 
+            sumMiddleMaterialRates = 0, 
+            globalRate = 0 , 
+            globalValidationResults = 0, 
+            sumMiddleValidationResults  = 0;
             
             // get the min date of the first barcode scaned, this means it is the first time the order was used
             const maxUtcDateScaned = zonedTimeToUtc(validations[0].maxDate, "America/Mexico_City")
@@ -159,21 +167,27 @@ function joinValidationsAndProductionRate(validationResults, productionRates, sh
                 maxUtcDateScanedMinutes = getMinutes(maxUtcDateScaned);
             }
              // rate for the first material
-             let firstRate = Math.ceil( (parseInt(validations[0].ProductionRate) * maxUtcDateScanedMinutes) / 60 ) + validations[0].validationResults;;
+             let firstRate = Math.ceil( (parseInt(validations[0].ProductionRate) * maxUtcDateScanedMinutes) / 60 ) ;
              // rate for the last material, because the such hour just two orders were processed
-             let lastRate = Math.ceil( ( ( 60 - minUtcDateScanedMinutes ) * parseInt(validations[validations.length - 1].ProductionRate) ) / 60 ) + validations[validations.length - 1].validationResults;;
-
+             let lastRate = Math.ceil( ( ( 60 - minUtcDateScanedMinutes ) * parseInt(validations[validations.length - 1].ProductionRate) ) / 60 );
+              let count = 0;
              for (let index = 1; index < validations.length - 1; index++) {
                 let maxUtcDateScaned = zonedTimeToUtc(validations[index].maxDate, "America/Mexico_City")
                 let minUtcDateScaned = zonedTimeToUtc(validations[index].minDate, "America/Mexico_City")
-                let difference = differenceInMinutes(maxUtcDateScaned,minUtcDateScaned,'ceil');
+                let difference = differenceInMinutes(maxUtcDateScaned,minUtcDateScaned,{roundingMethod:'ceil'});
                 console.log(difference);
-                sumMiddleMaterialRates += (difference * validations[index].ProductionRate) / 60;
-                sumMiddleValidationResults += validations[index].validationResults;
+                console.log(parseInt(validations[index].ProductionRate));
+                console.log(sumMiddleMaterialRates);
+                sumMiddleMaterialRates += Math.floor( (difference * parseInt(validations[index].ProductionRate)) / 60);
+                sumMiddleValidationResults += parseInt(validations[index].validationResults);
+                count++;
              }
+             console.log(`Total of middle orders ${count}`);
+             console.log(`first order results = ${validations[0].validationResults}`)
+             console.log(`Last order results = ${validations[validations.length - 1].validationResults}`)
 
              globalRate = firstRate + sumMiddleMaterialRates + lastRate;
-             globalValidationResults = validations[0].validationResults + sumMiddleValidationResults + validations[validations.length - 1].validationResults;
+             globalValidationResults = parseInt(validations[0].validationResults) + sumMiddleValidationResults + parseInt(validations[validations.length - 1].validationResults);
              results.push(globalValidationResults);
              rates.push(globalRate);
         }

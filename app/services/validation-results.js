@@ -40,6 +40,7 @@ async function getValidationResultsPerHourImpl(params) {
     try {
         const dateValue = utcToZonedTime(params.date,'America/Mexico_City');
         const pattern = 'yyyy-MM-dd HH:mm:ss';
+        console.log(format(dateValue, pattern));
         const validations = await sequelize.query(
             `select 
             count(ValidationResults.id) as validationResults,
