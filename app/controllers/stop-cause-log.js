@@ -78,7 +78,7 @@ async function getActiveStopCauseLogsByCustomer(req, res) {
                     required:true,
                     include: [{
                             model: Customer,
-                            attributes: ['customerName'],
+                            attributes: ['id','customerName', 'customerNumber'],
                             required:true,
                             where: { id: customer.id }
                         }]

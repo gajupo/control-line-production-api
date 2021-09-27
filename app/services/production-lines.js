@@ -2,6 +2,7 @@ const { Sequelize, Op, QueryTypes } = require('sequelize');
 const { sequelize } = require("../helpers/sequelize");
 const models = require("../models");
 const _ = require('lodash/');
+const { utcToZonedTime, format } = require('date-fns-tz');
 
 async function getProductionLinesPerCustomer(customerId) {
     try {
@@ -25,15 +26,15 @@ async function getProductionLinesPerCustomer(customerId) {
 /**
  * Returns all validation results, count validation result, remaning minutes until shift end, productions rate by meterial scanned, the station id.
  * @param lineId 
- * @param shiftStart
- * @param shiftEnd 
+ * @param shiftEnd
+ * @param customerId
+ * @param shiftId
+ *  
  */
-async function getLineStatsByLineIdAndShift(lineId, shiftStart, shiftEnd) {
+async function getLineStatsByLineIdAndShift(lineId, shiftEnd,customerId,shiftId) {
     try {
-
-        
-        const productionLineStats = await sequelize.query(
-            `select
+        // OLD QUERY JUST KEEP IT FOR A WHILE
+        /* `select
                 ValidationResults.StationId,
                 ValidationResults.MaterialId,
                 ValidationResults.OrderIdentifier,
@@ -51,9 +52,29 @@ async function getLineStatsByLineIdAndShift(lineId, shiftStart, shiftEnd) {
                     select ps.Id from OperatingStations AS ps inner join ProductionLines AS pl on ps.LineId = pl.Id inner join Customers AS co on pl.CustomerId = co.Id where pl.Id = $lineId
                 )
             group by ValidationResults.StationId, ValidationResults.MaterialId, ValidationResults.OrderIdentifier,Materials.ProductionRate, ValidationResults.OrderId
-            order by ValidationResults.OrderId desc`,
+            order by ValidationResults.OrderId desc` */
+        const dateValue = utcToZonedTime(new Date().toISOString(),'America/Mexico_City');
+        const pattern = 'yyyy-MM-dd HH:mm:ss';
+        const productionLineStats = await sequelize.query(
+            `SELECT 
+            COUNT(ValidationResults.id) as validationResults,
+            MIN(ValidationResults.ScanDate) as minDate,
+            MAX(ValidationResults.ScanDate) as maxDate,
+            DATEPART(MINUTE,MIN(ValidationResults.ScanDate)) as minMinute,
+            DATEDIFF(SECOND,MIN(ValidationResults.ScanDate),MAX(ValidationResults.ScanDate)) as usedSeconds,
+            DATEDIFF(MINUTE,MIN(ValidationResults.ScanDate), CONCAT(CONVERT (DATE, SYSDATETIME()) ,' ', $shiftEnd)) as shiftRemaningMinutes,
+            ValidationResults.OrderIdentifier,
+            Materials.ProductionRate,
+            ValidationResults.MaterialId,
+            ValidationResults.OrderId
+            FROM ValidationResults
+            inner join Materials on Materials.ID = ValidationResults.MaterialId
+            inner join Orders on Orders.Id = ValidationResults.OrderId and Orders.ProductionLineId = $lineId and Orders.ShiftId = $shiftId
+            WHERE 
+                CONVERT(date, ValidationResults.ScanDate) = $todayDate and ValidationResults.CustomerId = $customerId 
+            GROUP BY ValidationResults.OrderIdentifier,ValidationResults.OrderId,Materials.ProductionRate,ValidationResults.MaterialId`,
             {
-              bind: { lineId: lineId, shiftStart: shiftStart, shiftEnd: shiftEnd },
+              bind: { lineId: lineId, shiftId: shiftId, shiftEnd: shiftEnd, customerId: customerId, todayDate: format(dateValue, pattern) },
               raw: true,
               type: QueryTypes.SELECT
             }
@@ -119,7 +140,7 @@ function GroupByStationId(items, StationId){
     let validationResultCountMeta = 0;
     let validationResultCount = 0;
     let goal = 0;
-    // sum all scanned material exceptio the first one, the first one is the last scanned, the sql query is ordered as DESC
+    // sum all scanned material but not the first one, the first one is the last scanned, the sql query is ordered as DESC
     items.forEach(function(entry,index) {
         if(index > 0)
             validationResultCountMeta += entry.countValidationResult;
@@ -352,6 +373,104 @@ async function getProductionLineImpl(line, today) {
         throw new Error(error);
     }
 }
+function formatProductionLineLiveStats(lines, currentLine, validationResults) {   
+    const adjustedShiftStart = lib.getShiftHour(currentLine.shiftStartStr);
+    const adjustedShiftEnd = lib.getShiftHour(currentLine.shiftEndStr);
+    let active = true;
+    let hours = [];
+    let results = [];
+    let rates = [];
+
+    if(validationResults.length === 0){
+        // there is no validations for this shift at this current moment
+
+    }else if (validationResults.length === 1) {
+        // //get worked minutes
+        // let maxUtcDateScanedMinutes  = 0;
+        // // get the max date of the last barcode scaned, this means it is the last time the order was used
+        // const maxUtcDateScaned = zonedTimeToUtc(validations[0].maxDate, "America/Mexico_City")
+        // if (isValid(maxUtcDateScaned)) {
+        //     maxUtcDateScanedMinutes = getMinutes(maxUtcDateScaned);
+        // }
+
+        // let rate = Math.ceil( (parseInt(validations[0].ProductionRate) * maxUtcDateScanedMinutes)/60 );
+        // console.log(maxUtcDateScanedMinutes);
+        rates.push(firstOrder.ProductionRate || 0);
+        results.push(validations[0].validationResults);
+
+        // list to store the current production for all stations of the line passed as parameter
+    lines.push( {
+        id: currentLine.ProductionLineId,
+        lineName: currentLine.LineName,
+        active: active,
+        blocked: !!currentLine.isBlocked,
+        customerId: currentLine.CustomerId,
+        customerName: currentLine.CustomerName,
+        validationResultCount: validations[0].validationResults, // sum fo all stations scanned materials
+        //goal: parent(validations[0].validationResults) * , // sum of goals for all stations
+        rate: _.sumBy(currentProduction, 'rate') // sum of all percentages completition vs goal
+    });
+
+    } else if(validationResults.length === 2) {
+        // when we have just two different material in the same hour
+        //get worked minutes
+        let minUtcDateScanedMinutes,maxUtcDateScanedMinutes  = 0;
+        
+        // get the min date of the first barcode scaned, this means it is the first time the order was used
+        const maxUtcDateScaned = zonedTimeToUtc(validations[0].maxDate, "America/Mexico_City")
+        const minUtcDateScaned = zonedTimeToUtc(validations[1].minDate, "America/Mexico_City")
+        if (isValid(minUtcDateScaned) && isValid(maxUtcDateScaned)) {
+            minUtcDateScanedMinutes = getMinutes(minUtcDateScaned);
+            maxUtcDateScanedMinutes = getMinutes(maxUtcDateScaned);
+        }
+        // rate for the first material
+        let firstRate = Math.ceil( (parseInt(validations[0].ProductionRate) * maxUtcDateScanedMinutes) / 60 );
+        // rate for the last material, because the such hour just two orders were processed
+        let lastRate = Math.ceil( ( ( 60 - minUtcDateScanedMinutes ) * parseInt(validations[1].ProductionRate) ) / 60 );
+        // calculate the total of validation resualts
+        let totalOfValidations = parseInt(validations[0].validationResults) + parseInt(validations[1].validationResults);
+        results.push(totalOfValidations);
+        rates.push(firstRate + lastRate);
+    }
+    else{
+        // when we have more that two different materials processed in the same hour
+        //get worked minutes
+        let minUtcDateScanedMinutes = 0,
+        maxUtcDateScanedMinutes = 0, 
+        sumMiddleMaterialRates = 0, 
+        globalRate = 0 , 
+        globalValidationResults = 0, 
+        sumMiddleValidationResults  = 0;
+        
+        // get the min date of the first barcode scaned, this means it is the first time the order was used
+        const maxUtcDateScaned = zonedTimeToUtc(validations[0].maxDate, "America/Mexico_City")
+        const minUtcDateScaned = zonedTimeToUtc(validations[validations.length - 1].minDate, "America/Mexico_City")
+        if (isValid(minUtcDateScaned) && isValid(maxUtcDateScaned)) {
+            minUtcDateScanedMinutes = getMinutes(minUtcDateScaned);
+            maxUtcDateScanedMinutes = getMinutes(maxUtcDateScaned);
+        }
+            // rate for the first material
+            let firstRate = Math.ceil( (parseInt(validations[0].ProductionRate) * maxUtcDateScanedMinutes) / 60 ) ;
+            // rate for the last material, because the such hour just two orders were processed
+            let lastRate = Math.ceil( ( ( 60 - minUtcDateScanedMinutes ) * parseInt(validations[validations.length - 1].ProductionRate) ) / 60 );
+            let count = 0;
+            for (let index = 1; index < validations.length - 1; index++) {
+            let maxUtcDateScaned = zonedTimeToUtc(validations[index].maxDate, "America/Mexico_City")
+            let minUtcDateScaned = zonedTimeToUtc(validations[index].minDate, "America/Mexico_City")
+            let difference = differenceInMinutes(maxUtcDateScaned,minUtcDateScaned,{roundingMethod:'ceil'});
+            console.log(difference);
+            console.log(parseInt(validations[index].ProductionRate));
+            console.log(sumMiddleMaterialRates);
+            sumMiddleMaterialRates += Math.floor( (difference * parseInt(validations[index].ProductionRate)) / 60);
+            sumMiddleValidationResults += parseInt(validations[index].validationResults);
+            }
+
+            globalRate = firstRate + sumMiddleMaterialRates + lastRate;
+            globalValidationResults = parseInt(validations[0].validationResults) + sumMiddleValidationResults + parseInt(validations[validations.length - 1].validationResults);
+            results.push(globalValidationResults);
+            rates.push(globalRate);
+    }
+}
 module.exports.getProductionLinesPerCustomer = getProductionLinesPerCustomer;
 module.exports.getLineStatsByLineIdAndShift = getLineStatsByLineIdAndShift;
 module.exports.getProductionLinesAndShiftsByCustomer = getProductionLinesAndShiftsByCustomer;
@@ -365,3 +484,4 @@ module.exports.getProductionLines = getProductionLines;
 module.exports.getProductionLineById = getProductionLineById;
 module.exports.getProductionLineImpl = getProductionLineImpl;
 module.exports.getProductionLineByCustomerIdAndShift = getProductionLineByCustomerIdAndShift;
+module.exports.formatProductionLineLiveStats = formatProductionLineLiveStats;

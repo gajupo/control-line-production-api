@@ -58,9 +58,9 @@ async function getProductionLinesPerCustomerCurrentShift(req, res) {
             for (const entry of productionLines) {
                 if(libs.isObject(entry) && !!entry.ShiftId)
                 {
-                    let lineResults = await services.ProductionLines.getLineStatsByLineIdAndShift(entry.ProductionLineId,entry.ShiftStartStr, entry.ShiftEndStr);
+                    let lineResults = await services.ProductionLines.getLineStatsByLineIdAndShift(entry.ProductionLineId, entry.ShiftEndStr,customer.id, entry.ShiftId);
                     if(libs.isArray(lineResults) && lineResults.length > 0)
-                        services.ProductionLines.transformProductionLine(lines,entry,lineResults);
+                        services.ProductionLines.formatProductionLineLiveStats(lines,entry,lineResults);
                     else
                     {
                         logMessage("NO ROWS FOUND", "The Production Line does not have scanned material in the current shift")
