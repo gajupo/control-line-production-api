@@ -4,6 +4,7 @@ const { isValid, parseISO, parse, getMinutes  } = require('date-fns');
 const differenceInMinutes = require('date-fns/differenceInMinutes');
 const { sequelize } = require("../helpers/sequelize");
 const models = require("../models");
+const lib = require('../helpers/lib');
 async function getProductionComplianceImpl(line, today) {
     try {
         const validationResults = await models.ValidationResult.findAll({
