@@ -2,8 +2,9 @@ const { Sequelize, Op, QueryTypes } = require('sequelize');
 const { sequelize } = require("../helpers/sequelize");
 const models = require("../models");
 const _ = require('lodash/');
-const { utcToZonedTime, format } = require('date-fns-tz');
-
+const { utcToZonedTime, format, zonedTimeToUtc } = require('date-fns-tz');
+const { isValid, parseISO, parse, getMinutes  } = require('date-fns');
+const lib = require('../helpers/lib');
 async function getProductionLinesPerCustomer(customerId) {
     try {
 
@@ -31,7 +32,7 @@ async function getProductionLinesPerCustomer(customerId) {
  * @param shiftId
  *  
  */
-async function getLineStatsByLineIdAndShift(lineId, shiftEnd,customerId,shiftId) {
+async function getLineStatsByLineIdAndShift(lineId, shiftEnd, shiftStart,customerId,shiftId) {
     try {
         // OLD QUERY JUST KEEP IT FOR A WHILE
         /* `select
@@ -59,9 +60,8 @@ async function getLineStatsByLineIdAndShift(lineId, shiftEnd,customerId,shiftId)
             `SELECT 
             COUNT(ValidationResults.id) as validationResults,
             MIN(ValidationResults.ScanDate) as minDate,
-            MAX(ValidationResults.ScanDate) as maxDate,
-            DATEPART(MINUTE,MIN(ValidationResults.ScanDate)) as minMinute,
-            DATEDIFF(SECOND,MIN(ValidationResults.ScanDate),MAX(ValidationResults.ScanDate)) as usedSeconds,
+            MAX(ValidationResults.ScanDate) as maxDate,            
+            DATEDIFF(MINUTE, CONCAT(CONVERT (DATE, SYSDATETIME()) ,' ', $shiftStart), MAX(ValidationResults.ScanDate)) as minutesUsed,
             DATEDIFF(MINUTE,MIN(ValidationResults.ScanDate), CONCAT(CONVERT (DATE, SYSDATETIME()) ,' ', $shiftEnd)) as shiftRemaningMinutes,
             ValidationResults.OrderIdentifier,
             Materials.ProductionRate,
@@ -74,7 +74,7 @@ async function getLineStatsByLineIdAndShift(lineId, shiftEnd,customerId,shiftId)
                 CONVERT(date, ValidationResults.ScanDate) = $todayDate and ValidationResults.CustomerId = $customerId 
             GROUP BY ValidationResults.OrderIdentifier,ValidationResults.OrderId,Materials.ProductionRate,ValidationResults.MaterialId`,
             {
-              bind: { lineId: lineId, shiftId: shiftId, shiftEnd: shiftEnd, customerId: customerId, todayDate: format(dateValue, pattern) },
+              bind: { lineId: lineId, shiftId: shiftId, shiftEnd: shiftEnd, shiftStart: shiftStart, customerId: customerId, todayDate: format(dateValue, pattern) },
               raw: true,
               type: QueryTypes.SELECT
             }
@@ -374,8 +374,8 @@ async function getProductionLineImpl(line, today) {
     }
 }
 function formatProductionLineLiveStats(lines, currentLine, validationResults) {   
-    const adjustedShiftStart = lib.getShiftHour(currentLine.shiftStartStr);
-    const adjustedShiftEnd = lib.getShiftHour(currentLine.shiftEndStr);
+    const adjustedShiftStart = lib.getShiftHour(currentLine.ShiftStartStr);
+    const adjustedShiftEnd = lib.getShiftHour(currentLine.ShiftEndStr);
     let active = true;
     let hours = [];
     let results = [];
@@ -385,52 +385,45 @@ function formatProductionLineLiveStats(lines, currentLine, validationResults) {
         // there is no validations for this shift at this current moment
 
     }else if (validationResults.length === 1) {
-        // //get worked minutes
-        // let maxUtcDateScanedMinutes  = 0;
-        // // get the max date of the last barcode scaned, this means it is the last time the order was used
-        // const maxUtcDateScaned = zonedTimeToUtc(validations[0].maxDate, "America/Mexico_City")
-        // if (isValid(maxUtcDateScaned)) {
-        //     maxUtcDateScanedMinutes = getMinutes(maxUtcDateScaned);
-        // }
-
-        // let rate = Math.ceil( (parseInt(validations[0].ProductionRate) * maxUtcDateScanedMinutes)/60 );
-        // console.log(maxUtcDateScanedMinutes);
-        rates.push(firstOrder.ProductionRate || 0);
-        results.push(validations[0].validationResults);
-
+        
         // list to store the current production for all stations of the line passed as parameter
-    lines.push( {
-        id: currentLine.ProductionLineId,
-        lineName: currentLine.LineName,
-        active: active,
-        blocked: !!currentLine.isBlocked,
-        customerId: currentLine.CustomerId,
-        customerName: currentLine.CustomerName,
-        validationResultCount: validations[0].validationResults, // sum fo all stations scanned materials
-        //goal: parent(validations[0].validationResults) * , // sum of goals for all stations
-        rate: _.sumBy(currentProduction, 'rate') // sum of all percentages completition vs goal
-    });
+        let goal = (adjustedShiftEnd -  adjustedShiftStart) * validationResults[0].ProductionRate;
+        lines.push( {
+            id: currentLine.ProductionLineId,
+            lineName: currentLine.LineName,
+            active: active,
+            blocked: !!currentLine.isBlocked,
+            customerId: currentLine.CustomerId,
+            customerName: currentLine.CustomerName,
+            validationResultCount: validationResults[0].validationResults, // sum fo all stations scanned materials
+            goal: goal, // sum of goals for all stations
+            rate: getCurrentProductionByRate(validationResults[0].validationResults, goal) // sum of all percentages completition vs goal
+        });
 
     } else if(validationResults.length === 2) {
-        // when we have just two different material in the same hour
-        //get worked minutes
-        let minUtcDateScanedMinutes,maxUtcDateScanedMinutes  = 0;
+        let usedHours = lib.Round(validationResults[0].minutesUsed / 60 );
+        let reaminingHours = lib.Round(validationResults[0].shiftRemaningMinutes / 60 );
         
-        // get the min date of the first barcode scaned, this means it is the first time the order was used
-        const maxUtcDateScaned = zonedTimeToUtc(validations[0].maxDate, "America/Mexico_City")
-        const minUtcDateScaned = zonedTimeToUtc(validations[1].minDate, "America/Mexico_City")
-        if (isValid(minUtcDateScaned) && isValid(maxUtcDateScaned)) {
-            minUtcDateScanedMinutes = getMinutes(minUtcDateScaned);
-            maxUtcDateScanedMinutes = getMinutes(maxUtcDateScaned);
-        }
         // rate for the first material
-        let firstRate = Math.ceil( (parseInt(validations[0].ProductionRate) * maxUtcDateScanedMinutes) / 60 );
+        let firstGoal = Math.ceil( parseInt(validationResults[0].ProductionRate) * usedHours);
         // rate for the last material, because the such hour just two orders were processed
-        let lastRate = Math.ceil( ( ( 60 - minUtcDateScanedMinutes ) * parseInt(validations[1].ProductionRate) ) / 60 );
+        let lastGoal = Math.ceil( parseInt(validationResults[1].ProductionRate) *  reaminingHours);
         // calculate the total of validation resualts
-        let totalOfValidations = parseInt(validations[0].validationResults) + parseInt(validations[1].validationResults);
-        results.push(totalOfValidations);
-        rates.push(firstRate + lastRate);
+        let totalOfValidations = parseInt(validationResults[0].validationResults) + parseInt(validationResults[1].validationResults);
+
+        let finalGoal = (firstGoal + lastGoal); 
+
+        lines.push( {
+            id: currentLine.ProductionLineId,
+            lineName: currentLine.LineName,
+            active: active,
+            blocked: !!currentLine.isBlocked,
+            customerId: currentLine.CustomerId,
+            customerName: currentLine.CustomerName,
+            validationResultCount: totalOfValidations, // sum fo all stations scanned materials
+            goal: finalGoal, // sum of goals for all stations
+            rate: getCurrentProductionByRate(totalOfValidations, finalGoal) // sum of all percentages completition vs goal
+        });
     }
     else{
         // when we have more that two different materials processed in the same hour
