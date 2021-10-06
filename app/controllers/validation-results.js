@@ -9,7 +9,6 @@ const { internalServerError }= require("./core");
 const services = require('../services');
 const { getDatePartConversion } = require('../helpers/sequelize');
 const { ValidationResult, Order, Shift, Material } = require('../models');
-const lib = require('../helpers/lib');
 
 async function getValidationResultsPerHour(req, res) {
     try {
