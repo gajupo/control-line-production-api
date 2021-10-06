@@ -4,6 +4,7 @@ const models = require("../models");
 const _ = require('lodash/');
 const { utcToZonedTime, format, zonedTimeToUtc } = require('date-fns-tz');
 const { isValid, parseISO, parse, getMinutes  } = require('date-fns');
+const differenceInMinutes = require('date-fns/differenceInMinutes');
 const lib = require('../helpers/lib');
 async function getProductionLinesPerCustomer(customerId) {
     try {
@@ -402,7 +403,7 @@ function formatProductionLineLiveStats(lines, currentLine, validationResults) {
 
     } else if(validationResults.length === 2) {
         let usedHours = lib.Round(validationResults[0].minutesUsed / 60 );
-        let reaminingHours = lib.Round(validationResults[0].shiftRemaningMinutes / 60 );
+        let reaminingHours = lib.Round(validationResults[1].shiftRemaningMinutes / 60 );
         
         // rate for the first material
         let firstGoal = Math.ceil( parseInt(validationResults[0].ProductionRate) * usedHours);
@@ -426,42 +427,42 @@ function formatProductionLineLiveStats(lines, currentLine, validationResults) {
         });
     }
     else{
-        // when we have more that two different materials processed in the same hour
-        //get worked minutes
-        let minUtcDateScanedMinutes = 0,
-        maxUtcDateScanedMinutes = 0, 
-        sumMiddleMaterialRates = 0, 
-        globalRate = 0 , 
+        let sumMiddleMaterialGoals = 0, 
+        globalGoal = 0 , 
         globalValidationResults = 0, 
         sumMiddleValidationResults  = 0;
-        
-        // get the min date of the first barcode scaned, this means it is the first time the order was used
-        const maxUtcDateScaned = zonedTimeToUtc(validations[0].maxDate, "America/Mexico_City")
-        const minUtcDateScaned = zonedTimeToUtc(validations[validations.length - 1].minDate, "America/Mexico_City")
-        if (isValid(minUtcDateScaned) && isValid(maxUtcDateScaned)) {
-            minUtcDateScanedMinutes = getMinutes(minUtcDateScaned);
-            maxUtcDateScanedMinutes = getMinutes(maxUtcDateScaned);
-        }
-            // rate for the first material
-            let firstRate = Math.ceil( (parseInt(validations[0].ProductionRate) * maxUtcDateScanedMinutes) / 60 ) ;
-            // rate for the last material, because the such hour just two orders were processed
-            let lastRate = Math.ceil( ( ( 60 - minUtcDateScanedMinutes ) * parseInt(validations[validations.length - 1].ProductionRate) ) / 60 );
-            let count = 0;
-            for (let index = 1; index < validations.length - 1; index++) {
-            let maxUtcDateScaned = zonedTimeToUtc(validations[index].maxDate, "America/Mexico_City")
-            let minUtcDateScaned = zonedTimeToUtc(validations[index].minDate, "America/Mexico_City")
-            let difference = differenceInMinutes(maxUtcDateScaned,minUtcDateScaned,{roundingMethod:'ceil'});
-            console.log(difference);
-            console.log(parseInt(validations[index].ProductionRate));
-            console.log(sumMiddleMaterialRates);
-            sumMiddleMaterialRates += Math.floor( (difference * parseInt(validations[index].ProductionRate)) / 60);
-            sumMiddleValidationResults += parseInt(validations[index].validationResults);
-            }
 
-            globalRate = firstRate + sumMiddleMaterialRates + lastRate;
-            globalValidationResults = parseInt(validations[0].validationResults) + sumMiddleValidationResults + parseInt(validations[validations.length - 1].validationResults);
-            results.push(globalValidationResults);
-            rates.push(globalRate);
+        let usedHoursFirstOrders = lib.Round(validationResults[0].minutesUsed / 60 );
+        let reaminingHoursLastOrder = lib.Round(validationResults[validationResults.length - 1].shiftRemaningMinutes / 60 );
+        
+        // rate for the first material
+        let firstGoal = Math.ceil( parseInt(validationResults[0].ProductionRate) * usedHoursFirstOrders);
+        // rate for the last material, because the such hour just two orders were processed
+        let lastGoal = Math.ceil( parseInt(validationResults[validationResults.length - 1].ProductionRate) *  reaminingHoursLastOrder);
+        // we will iterate from 1 order to total of order - 1
+        for (let index = 1; index < validationResults.length - 1; index++) {
+                let diffInMinutes = differenceInMinutes(new Date(validationResults[index].maxDate), new Date(validationResults[index].minDate),{roundingMethod:'ceil'});
+                let reaminingHours = lib.Round(diffInMinutes / 60);
+                console.log(reaminingHours);
+                console.log(parseInt(validationResults[index].ProductionRate));
+                sumMiddleMaterialGoals += Math.floor( reaminingHours * parseInt(validationResults[index].ProductionRate) );
+                sumMiddleValidationResults += parseInt(validationResults[index].validationResults);
+                console.log(sumMiddleMaterialGoals);
+        }
+        globalGoal = firstGoal + sumMiddleMaterialGoals + lastGoal;
+        globalValidationResults = parseInt(validationResults[0].validationResults) + sumMiddleValidationResults + parseInt(validationResults[validationResults.length - 1].validationResults);
+
+        lines.push( {
+            id: currentLine.ProductionLineId,
+            lineName: currentLine.LineName,
+            active: active,
+            blocked: !!currentLine.isBlocked,
+            customerId: currentLine.CustomerId,
+            customerName: currentLine.CustomerName,
+            validationResultCount: globalValidationResults, // sum fo all stations scanned materials
+            goal: globalGoal, // sum of goals for all stations
+            rate: getCurrentProductionByRate(globalValidationResults, globalGoal) // sum of all percentages completition vs goal
+        });        
     }
 }
 module.exports.getProductionLinesPerCustomer = getProductionLinesPerCustomer;
