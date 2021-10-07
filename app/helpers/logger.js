@@ -1,23 +1,48 @@
 'use strict';
 
 const config = require('config');
-const {createLogger, format, transports} = require('winston');
+const {createLogger, format, transports, error} = require('winston');
+const DailyRotateFile = require('winston-daily-rotate-file');
+
+const logFormat = format.combine(
+    format.timestamp({format: config.get("logger.dateFormat")}),
+    format.align(),
+    format.json(),
+    );
+
+const transportDaylyError = new DailyRotateFile({
+    filename: config.get("logger.errorFile"),
+    datePattern: 'YYYY-MM-DD-HH',
+    zippedArchive: true,
+    maxSize: '20m',
+    maxFiles: '7d',
+    prepend: true,
+   level: 'error',
+   });
+
+const transportDaylyCombines = new DailyRotateFile({
+    filename: config.get("logger.combinedFile"),
+    datePattern: 'YYYY-MM-DD-HH',
+    zippedArchive: true,
+    maxSize: '20m',
+    maxFiles: '7d',
+    prepend: true,
+   level: 'info',
+   });
+
+//    format: format.combine(
+//     format.timestamp({
+//         format: config.get("logger.dateFormat")
+//     }),
+//     format.splat(),
+//     format.json()
+//     //format.prettyPrint()
+//     )
 
 const logger = createLogger({
-    level: 'info',
-    format: format.combine(
-        format.timestamp({
-            format: config.get("logger.dateFormat")
-        }),
-        format.splat(),
-        format.json(),
-        format.prettyPrint()
-    ),
+    format:logFormat,
     defaultMeta: { service: config.get("name") },
-    transports: [
-        new transports.File({ filename: config.get("logger.errorFile"), level: 'error' }),
-        new transports.File({ filename: config.get("logger.combinedFile") }),
-    ],
+    transports: [transportDaylyError,transportDaylyCombines],
 });
 
 function logError(message, error, payload = undefined) {
