@@ -56,7 +56,7 @@ async function getProductionLinesPerCustomerCurrentShift(req, res) {
         if(libs.isArray(productionLines))
         {
             for (const entry of productionLines) {
-                if(libs.isObject(entry) && !!entry.ShiftId)
+                if(libs.isObject(entry) && !!entry.ShiftId && !!entry.ShiftStartStr && !!entry.ShiftEndStr)
                 {
                     let lineResults = await services.ProductionLines.getLineStatsByLineIdAndShift(entry.ProductionLineId, entry.ShiftEndStr, entry.ShiftStartStr,customer.id, entry.ShiftId);
                     if(libs.isArray(lineResults) && lineResults.length > 0)
@@ -70,7 +70,8 @@ async function getProductionLinesPerCustomerCurrentShift(req, res) {
                 }
                 else
                 {
-                    logError("NO SHIFT FOUND", "The Production Line does not have a shift")
+                    logError("SHIFT ERROR", "Check the error assigned to the line");
+                    logError("Line-Shift Content", entry);
                     services.ProductionLines.transformProductionLineDefault(lines,entry);
                 }
                     

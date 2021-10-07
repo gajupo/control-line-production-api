@@ -104,7 +104,7 @@ async function getProductionLinesAndShiftsByCustomer(customerId) {
                     Customers.CustomerName, 
                     count(ProductionLines.Id) as NumberOfLines,
                     (case when (count(OperatingStations.id) = count(StopCauseLogs.id)) then 1 else 0 end) as isBlocked,
-                    row_number() OVER(PARTITION BY ProductionLineShifts.ProductionLineId ORDER BY ProductionLineShifts.ShiftId desc) AS rn
+                    row_number() OVER(PARTITION BY ProductionLineShifts.ProductionLineId ORDER BY Shifts.ShiftStartStr desc) AS rn
                 from ProductionLines
                 left join ProductionLineShifts on ProductionLines.Id = ProductionLineShifts.ProductionLineId
                 left join Shifts on Shifts.Id = ProductionLineShifts.ShiftId and 
