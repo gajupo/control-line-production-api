@@ -141,6 +141,9 @@ function joinValidationsAndProductionRate(validationResults, shiftStartStr, shif
             // get the min date of the first barcode scaned, this means it is the first time the order was used
             const maxUtcDateScaned = zonedTimeToUtc(validations[0].maxDate, "America/Mexico_City")
             const minUtcDateScaned = zonedTimeToUtc(validations[validations.length - 1].minDate, "America/Mexico_City")
+            //check if all order scanned the same material
+            var countSameProductionRate = validations.filter(result => result.ProductionRate == validations[0].ProductionRate).length;
+
             if (isValid(minUtcDateScaned) && isValid(maxUtcDateScaned)) {
                 minUtcDateScanedMinutes = getMinutes(minUtcDateScaned);
                 maxUtcDateScanedMinutes = getMinutes(maxUtcDateScaned);
@@ -149,7 +152,6 @@ function joinValidationsAndProductionRate(validationResults, shiftStartStr, shif
              let firstRate = Math.ceil( (parseInt(validations[0].ProductionRate) * maxUtcDateScanedMinutes) / 60 ) ;
              // rate for the last material, because the such hour just two orders were processed
              let lastRate = Math.ceil( ( ( 60 - minUtcDateScanedMinutes ) * parseInt(validations[validations.length - 1].ProductionRate) ) / 60 );
-              let count = 0;
              for (let index = 1; index < validations.length - 1; index++) {
                 let maxUtcDateScaned = zonedTimeToUtc(validations[index].maxDate, "America/Mexico_City")
                 let minUtcDateScaned = zonedTimeToUtc(validations[index].minDate, "America/Mexico_City")
@@ -157,15 +159,21 @@ function joinValidationsAndProductionRate(validationResults, shiftStartStr, shif
                 console.log(difference);
                 console.log(parseInt(validations[index].ProductionRate));
                 console.log(sumMiddleMaterialRates);
-                sumMiddleMaterialRates += Math.floor( (difference * parseInt(validations[index].ProductionRate)) / 60);
                 sumMiddleValidationResults += parseInt(validations[index].validationResults);
-                count++;
+                // if the same, it is the same material so it is the same production rate
+                if(countSameProductionRate === countByHour)
+                    continue;
+                sumMiddleMaterialRates += Math.floor( (difference * parseInt(validations[index].ProductionRate)) / 60);
              }
-             console.log(`Total of middle orders ${count}`);
              console.log(`first order results = ${validations[0].validationResults}`)
              console.log(`Last order results = ${validations[validations.length - 1].validationResults}`)
-
-             globalRate = firstRate + sumMiddleMaterialRates + lastRate;
+             
+             if(countSameProductionRate === countByHour){
+                 globalRate = validations[0].ProductionRate
+             }
+             else{
+                 globalRate = firstRate + sumMiddleMaterialRates + lastRate;
+             }
              globalValidationResults = parseInt(validations[0].validationResults) + sumMiddleValidationResults + parseInt(validations[validations.length - 1].validationResults);
              results.push(globalValidationResults);
              rates.push(globalRate);
