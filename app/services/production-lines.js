@@ -396,17 +396,24 @@ function formatProductionLineLiveStats(lines, currentLine, validationResults) {
         });
 
     } else if(validationResults.length === 2) {
-        // rate for the first material, from the beging of the shift to the last scan of the order
-        let firstGoal = Math.floor( (  validationResults[0].minutesUsed * parseInt(validationResults[0].ProductionRate) ) / 60);
-        // obtain the real reamining minutes from the first order to the end of the shift is case the user start new order some minutes after the last one
-        let minutesRemainingToTheEnd = shiftDurationInMinutes - validationResults[0].minutesUsed;
-        // we use the remaining minutes in case the user do not start the new imediatly
-        let lastGoal = Math.floor( ( minutesRemainingToTheEnd * parseInt(validationResults[1].ProductionRate) ) / 60 );
+        let finalGoal = 0;
+        //check if all orders scanned have the same material
+        var countSameProductionRate = validationResults.filter(result => result.ProductionRate == validationResults[0].ProductionRate).length;
+        if(countSameProductionRate === validationResults.length){
+            finalGoal = Math.floor( (shiftDurationInMinutes * validationResults[0].ProductionRate) / 60);
+        }
+        else{
+            
+            // rate for the first material, from the beging of the shift to the last scan of the order
+            let firstGoal = Math.floor( (  validationResults[0].minutesUsed * parseInt(validationResults[0].ProductionRate) ) / 60);
+            // obtain the real reamining minutes from the first order to the end of the shift is case the user start new order some minutes after the last one
+            let minutesRemainingToTheEnd = shiftDurationInMinutes - validationResults[0].minutesUsed;
+            // we use the remaining minutes in case the user do not start the new imediatly
+            let lastGoal = Math.floor( ( minutesRemainingToTheEnd * parseInt(validationResults[1].ProductionRate) ) / 60 );
+            finalGoal = (firstGoal + lastGoal); 
+        }
         // calculate the total of validation resualts
-        let totalOfValidations = parseInt(validationResults[0].validationResults) + parseInt(validationResults[1].validationResults);
-
-        let finalGoal = (firstGoal + lastGoal); 
-
+        let totalOfValidations = _.sumBy(validationResults, 'validationResults');
         lines.push( {
             id: currentLine.ProductionLineId,
             lineName: currentLine.LineName,
@@ -422,35 +429,40 @@ function formatProductionLineLiveStats(lines, currentLine, validationResults) {
     else{
         let sumMiddleMaterialGoals = 0, 
         globalGoal = 0 , 
-        globalValidationResults = 0, 
-        sumMiddleValidationResults  = 0;
+        globalValidationResults = 0;
         
-        // rate for the first material, from the beging of the shift to the last scan of the order
-        let firstGoal = Math.floor( (  validationResults[0].minutesUsed * parseInt(validationResults[0].ProductionRate) ) / 60);
-
-         // obtain the real reamining minutes from the first order to the end of the shift is case the user start new order some minutes after the last one
-         let minutesRemainingToTheEnd = shiftDurationInMinutes - validationResults[validationResults.length - 2].minutesUsed;
-         // we use the remaining minutes in case the user do not start the new imediatly
-         let lastGoal = Math.floor( ( minutesRemainingToTheEnd * parseInt(validationResults[validationResults.length - 1].ProductionRate) ) / 60 );
-
-        // // rate for the first material
-        // let firstGoal = Math.ceil( parseInt(validationResults[0].ProductionRate) * usedHoursFirstOrders);
-        // // rate for the last material, because the such hour just two orders were processed
-        // let lastGoal = Math.ceil( parseInt(validationResults[validationResults.length - 1].ProductionRate) *  reaminingHoursLastOrder);
-
-        for (let index = 1; index < validationResults.length - 1; index++) {
-                let diffInMinutes = differenceInMinutes(new Date(validationResults[index].maxDate), new Date(validationResults[index - 1].maxDate),{roundingMethod:'ceil'});
-                console.log(diffInMinutes);
-
-                sumMiddleValidationResults += parseInt(validationResults[index].validationResults);
-                // it means the difference is less than 1 then do not count for the goal
-                //if(diffInMinutes === 1){continue;}
-                sumMiddleMaterialGoals += Math.ceil( (diffInMinutes * parseInt(validationResults[index].ProductionRate)) / 60 );
-                console.log(sumMiddleMaterialGoals);
+        //check if all orders scanned have the same material
+        var countSameProductionRate = validationResults.filter(result => result.ProductionRate == validationResults[0].ProductionRate).length;
+        if(countSameProductionRate === validationResults.length)
+        {
+            globalGoal = Math.floor( (shiftDurationInMinutes * validationResults[0].ProductionRate) / 60);
         }
-        globalGoal = firstGoal + sumMiddleMaterialGoals + lastGoal;
-        globalValidationResults = parseInt(validationResults[0].validationResults) + sumMiddleValidationResults + parseInt(validationResults[validationResults.length - 1].validationResults);
+        else
+        {
+            // rate for the first material, from the beging of the shift to the last scan of the order
+            let firstGoal = Math.floor( (  validationResults[0].minutesUsed * parseInt(validationResults[0].ProductionRate) ) / 60);
 
+            // obtain the real reamining minutes from the first order to the end of the shift in case the user start new order some minutes after the last one
+            let minutesRemainingToTheEnd = shiftDurationInMinutes - validationResults[validationResults.length - 2].minutesUsed;
+            // we use the remaining minutes in case the user do not start the new imediatly
+            let lastGoal = Math.floor( ( minutesRemainingToTheEnd * parseInt(validationResults[validationResults.length - 1].ProductionRate) ) / 60 );
+
+            for (let index = 1; index < validationResults.length - 1; index++) {
+                    let diffInMinutes = differenceInMinutes(new Date(validationResults[index].maxDate), new Date(validationResults[index - 1].maxDate), {roundingMethod:'ceil'});
+                    console.log(diffInMinutes);
+                    // it means the difference is less than 1 then do not count for the goal
+                    if(diffInMinutes < 1){
+                        continue;
+                    }
+                    else{
+                        sumMiddleMaterialGoals += Math.floor( (diffInMinutes * parseInt(validationResults[index].ProductionRate)) / 60 );
+                    }
+            }
+            globalGoal = firstGoal + sumMiddleMaterialGoals + lastGoal;      
+        }
+        
+        //get sum of all material scanned 
+        globalValidationResults = _.sumBy(validationResults, 'validationResults');
         lines.push( {
             id: currentLine.ProductionLineId,
             lineName: currentLine.LineName,
