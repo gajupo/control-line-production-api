@@ -30,7 +30,18 @@ const ReportParameterSchema = Joi.object ({
         to: Joi.date().iso().required()
     })
 }).or('pasPN', 'scanDate');
-
+const ProductionLinesAndShiftsByCustomerSchema = Joi.array().items(Joi.object({
+    ShiftStartStr: Joi.string().required(),
+    ShiftEndStr: Joi.string().required(),
+    ProductionLineId:  Joi.number().integer().positive().required(),
+    ShiftId: Joi.number().integer().positive().required(),
+    Active: Joi.number().optional(),
+    LineName: Joi.string().optional(),
+    CustomerId: Joi.number().optional(),
+    CustomerName: Joi.string().optional(),
+    NumberOfStations: Joi.number().optional(),
+    isBlocked: Joi.number().integer().required()
+ })).min(1);    
 function addMessageErrorIfNotValid(returned, error) {
     if (error) {
         returned.isValid = false;
@@ -118,6 +129,22 @@ module.exports.validateReportParameters = function validateReportParameters(body
         isValid: true,
         errorList: []
     };
+    addMessageErrorIfNotValid(returned, error);
+    return returned;
+}
+/**
+ * Validates that the given query result with lines and its shift are correct according the schema
+ * Every line must have a valid shift and all field are requiered
+ * @param {*} queryResult 
+ * @returns 
+ */
+module.exports.validateLinesAndShifts = function validateLinesAndShifts(queryResult) {
+    
+    var returned = {
+        isValid: true,
+        errorList: []
+    };
+    const {error} = ProductionLinesAndShiftsByCustomerSchema.validate(queryResult);
     addMessageErrorIfNotValid(returned, error);
     return returned;
 }

@@ -41,7 +41,6 @@ function getShiftSeconds(shiftStringTime) {
         const isoDate = datefns.formatISO(today, { representation: 'date' }) + ' ' + shiftStringTime;
         minutes = new Date(isoDate).getSeconds();
     }
-    console.log(minutes);
     return minutes;
 }
 function getShiftDifferenceInMinutes(shiftStrStartTime, shiftStrEndTime) {

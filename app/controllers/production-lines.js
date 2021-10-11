@@ -53,28 +53,18 @@ async function getProductionLinesPerCustomerCurrentShift(req, res) {
         }
         var lines = [];
         const productionLines = await services.ProductionLines.getProductionLinesAndShiftsByCustomer(customer.id);
-        if(libs.isArray(productionLines) && productionLines.length)
+        console.log(productionLines);
+        if(libs.isArray(productionLines) && !!productionLines)
         {
             for (const entry of productionLines) {
-                if(libs.isObject(entry) && !!entry.ShiftId && !!entry.ShiftStartStr && !!entry.ShiftEndStr)
-                {
-                    let lineResults = await services.ProductionLines.getLineStatsByLineIdAndShift(entry.ProductionLineId, entry.ShiftEndStr, entry.ShiftStartStr,customer.id, entry.ShiftId);
-                    if(libs.isArray(lineResults) && lineResults.length > 0)
-                        services.ProductionLines.formatProductionLineLiveStats(lines,entry,lineResults);
-                    else
-                    {
-                        logMessage("NO ROWS FOUND", "The Production Line does not have scanned material in the current shift")
-                        services.ProductionLines.transformProductionLineDefault(lines,entry);
-                    }
-                        
-                }
+                let lineResults = await services.ProductionLines.getLineStatsByLineIdAndShift(entry.ProductionLineId, entry.ShiftEndStr, entry.ShiftStartStr,customer.id, entry.ShiftId);
+                if(libs.isArray(lineResults) && lineResults.length > 0)
+                    services.ProductionLines.formatProductionLineLiveStats(lines,entry,lineResults);
                 else
                 {
-                    logError("SHIFT ERROR", "Check the shift assigned to the line");
-                    logError("Line-Shift Content", entry);
+                    logMessage("NO ROWS FOUND", "The Production Line does not have scanned material in the current shift")
                     services.ProductionLines.transformProductionLineDefault(lines,entry);
                 }
-                    
             }
         }
         res.json(lines);

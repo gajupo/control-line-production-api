@@ -13,7 +13,6 @@ const logFormat = format.combine(
 const transportDaylyError = new DailyRotateFile({
     filename: config.get("logger.errorFile"),
     datePattern: 'YYYY-MM-DD-HH',
-    zippedArchive: true,
     maxSize: '20m',
     maxFiles: '7d',
     prepend: true,
@@ -23,7 +22,6 @@ const transportDaylyError = new DailyRotateFile({
 const transportDaylyCombines = new DailyRotateFile({
     filename: config.get("logger.combinedFile"),
     datePattern: 'YYYY-MM-DD-HH',
-    zippedArchive: true,
     maxSize: '20m',
     maxFiles: '7d',
     prepend: true,

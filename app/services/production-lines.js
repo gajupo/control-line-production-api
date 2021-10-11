@@ -6,6 +6,7 @@ const { utcToZonedTime, format, zonedTimeToUtc } = require('date-fns-tz');
 const { isValid, parseISO, parse, getMinutes  } = require('date-fns');
 const differenceInMinutes = require('date-fns/differenceInMinutes');
 const lib = require('../helpers/lib');
+const { logError, logger, logMessage } = require('../helpers/logger');
 async function getProductionLinesPerCustomer(customerId) {
     try {
 
@@ -101,9 +102,9 @@ async function getProductionLinesAndShiftsByCustomer(customerId) {
                 ProductionLines.LineName,
                 Customers.Id as CustomerId,
                 Customers.CustomerName, 
-                count(ProductionLines.Id) as NumberOfLines,
-                (case when (count(OperatingStations.id) = count(StopCauseLogs.id)) then 1 else 0 end) as isBlocked,
-                row_number() OVER(PARTITION BY ProductionLineShifts.ProductionLineId ORDER BY Shifts.ShiftStartStr desc) AS rn
+                count(OperatingStations.Id) as NumberOfStations,
+                (case when (count(OperatingStations.id) = count(StopCauseLogs.id)) then 1 else 0 end) as isBlocked
+                --row_number() OVER(PARTITION BY ProductionLineShifts.ProductionLineId ORDER BY Shifts.ShiftStartStr desc) AS rn
             from ProductionLines
             left join ProductionLineShifts on ProductionLines.Id = ProductionLineShifts.ProductionLineId
             left join Shifts on Shifts.Id = ProductionLineShifts.ShiftId and Shifts.Active = 1 
@@ -129,11 +130,14 @@ async function getProductionLinesAndShiftsByCustomer(customerId) {
               type: QueryTypes.SELECT
             }
           );
-          if(productionLinesCurrentShift.length > 0){
+          let valResult = models.validateLinesAndShifts(productionLinesCurrentShift);
+          if(valResult.isValid){
               let groupedByLine = _(productionLinesCurrentShift).groupBy('ProductionLineId').map(GroupByLine).value();
               return groupedByLine; 
-          }else{
-              return []; 
+          }
+          else
+          {
+              logger.error("getProductionLinesAndShiftsByCustomer - " + valResult.errorList);
           }
     } catch (error) {
         throw new Error(error);
@@ -142,34 +146,24 @@ async function getProductionLinesAndShiftsByCustomer(customerId) {
 function GroupByLine(items, productionLineId){
     // validate next day shifts
     const today = utcToZonedTime(new Date(), "America/Mexico_City");
-    let hasShift = true;
     for (const lineShift of items) {
-        //validate that the line has a shift
-        console.log(typeof(lineShift.ShiftStartStr));
-        console.log(lineShift.ShiftStartStr);
-        if (lineShift.ShiftStartStr === null && lineShift.ShiftEndStr === null) {
-            hasShift = false;
-            continue;
-        }
         let shiftStartTotalSeconds = lib.getShiftSeconds(lineShift.ShiftStartStr);
         let shiftEndTotalSeconds = lib.getShiftSeconds(lineShift.ShiftEndStr);
         if(shiftStartTotalSeconds > shiftEndTotalSeconds){
             let maxDaySeconds = lib.getShiftSeconds('23:59:59');
             let shiftEndTotalSeconds = maxDaySeconds + shiftEndTotalSeconds;
             if(today.getSeconds() < shiftEndTotalSeconds){
-              return lineShift;
+                logger.info(`The selected shift will be end the next day ${lineShift.ShiftStartStr} - ${lineShift.ShiftEndStr}`);
+                return lineShift;
             }
         }else{
           if(today.getSeconds() >= shiftStartTotalSeconds && today.getSeconds() < shiftEndTotalSeconds)
           {
-              return lineShift;
+                logger.info(`Selected shift is ${lineShift.ShiftStartStr} - ${lineShift.ShiftEndStr}`);
+                return lineShift;
           }
         }
         
-    }
-    // line does not have a shift
-    if(!hasShift){
-        return items[0];
     }
 }
 function GroupByStationId(items, StationId){
