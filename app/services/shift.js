@@ -7,6 +7,7 @@ async function getCurrentShift(productionLine) {
 
     //const fractionalHours = dateTime.getHours() + (dateTime.getMinutes() / 60);
     try {
+      //TODO: This implementation is obsolete, take as an example the funtion getProductionLinesAndShiftsByCustomeron production line services
         const shift = await sequelize.query(
             `select TOP 1 Shifts.*
             from ProductionLines
