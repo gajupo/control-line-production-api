@@ -5,7 +5,7 @@ const { Op } = require("sequelize");
 const { sequelize, getDatePartConversion } = require("../helpers/sequelize");
 const { logError, logMessage } = require('../helpers/logger');
 const { ValidationResult, Material, OperatingStation, Order, Shift, validateReportParameters,
-    validatePaginationPage } = require("../models");
+    validatePaginationPage,ProductionLine } = require("../models");
 const { badRequestError, internalServerError } = require("./core");
 
 async function getPaginatedScannedReportList(req, res) {
@@ -69,6 +69,10 @@ function getScannedReportImpl(report) {
                 include: [{
                     model: Shift,
                     attributes: ['shiftDescription']
+                },
+                {
+                    model: ProductionLine,
+                    attributes: ['LineName']
                 }],
             }
         ],
