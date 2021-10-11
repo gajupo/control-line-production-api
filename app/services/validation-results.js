@@ -79,7 +79,7 @@ function joinValidationsAndProductionRate(validationResults, shiftStartStr, shif
     let results = [];
     let rates = [];
     // we need the first order to get the production rate in case some hours does not have production, but however we need to put some production rate
-    const firstOrder = validationResults.find(result => result.validationResults > 0);
+    const firstOrder = validationResults[validationResults.length - 1];
     // loop from the first hour of the shift to last one
     for (let i = adjustedShiftStart; i <= adjustedShiftEnd; i++) {
         hours.push(i);
