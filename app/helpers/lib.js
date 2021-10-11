@@ -31,7 +31,18 @@ function getShiftMinutes(shiftStringTime) {
     }
     console.log(minutes);
     return minutes;
-
+}
+function getShiftSeconds(shiftStringTime) {
+    let re = /^([0-1]?\d|2[0-3])(?::([0-5]?\d))?(?::([0-5]?\d))?$/;
+    let timeArray = shiftStringTime.toString().match(re);
+    let minutes = 0;
+    if(timeArray){
+        const today = utcToZonedTime(new Date(), "America/Mexico_City");
+        const isoDate = datefns.formatISO(today, { representation: 'date' }) + ' ' + shiftStringTime;
+        minutes = new Date(isoDate).getSeconds();
+    }
+    console.log(minutes);
+    return minutes;
 }
 function getShiftDifferenceInMinutes(shiftStrStartTime, shiftStrEndTime) {
     let re = /^([0-1]?\d|2[0-3])(?::([0-5]?\d))?(?::([0-5]?\d))?$/;
@@ -60,3 +71,4 @@ module.exports.getShiftHour = getShiftHour;
 module.exports.getShiftMinutes = getShiftMinutes;
 module.exports.Round = Round;
 module.exports.getShiftDifferenceInMinutes = getShiftDifferenceInMinutes;
+module.exports.getShiftSeconds = getShiftSeconds;

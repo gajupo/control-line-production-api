@@ -92,49 +92,84 @@ async function getLineStatsByLineIdAndShift(lineId, shiftEnd, shiftStart,custome
 async function getProductionLinesAndShiftsByCustomer(customerId) {
     try {
         const productionLinesCurrentShift = await sequelize.query(
-            `select * from (
-                select 
-                    max(ProductionLineShifts.ShiftId) as ShiftId, 
-                    Shifts.ShiftStartStr, 
-                    Shifts.ShiftEndStr, 
-                    ProductionLineShifts.ProductionLineId as ProductionLineId,
-                    ProductionLines.Status as Active,
-                    ProductionLines.LineName,
-                    Customers.Id as CustomerId,
-                    Customers.CustomerName, 
-                    count(ProductionLines.Id) as NumberOfLines,
-                    (case when (count(OperatingStations.id) = count(StopCauseLogs.id)) then 1 else 0 end) as isBlocked,
-                    row_number() OVER(PARTITION BY ProductionLineShifts.ProductionLineId ORDER BY Shifts.ShiftStartStr desc) AS rn
-                from ProductionLines
-                left join ProductionLineShifts on ProductionLines.Id = ProductionLineShifts.ProductionLineId
-                left join Shifts on Shifts.Id = ProductionLineShifts.ShiftId and 
-                    CAST(CONCAT(FORMAT(getdate(),'yyyy-MM-dd'),' ',  Shifts.ShiftStartStr) AS DATETIME) <= GETDATE() and
-                    CAST(CONCAT(FORMAT(getdate(),'yyyy-MM-dd'),' ', Shifts.ShiftEndStr) AS DATETIME) >= GETDATE()
-                inner join Customers on ProductionLines.CustomerId = Customers.Id
-                inner join OperatingStations on OperatingStations.LineId = ProductionLines.Id
-                left join StopCauseLogs on StopCauseLogs.StationId = OperatingStations.Id  and StopCauseLogs.status = 1
-                where 
-                    ProductionLines.CustomerId = $customerId and ProductionLines.Status = 1
-                group by 
-                    Shifts.ShiftStartStr, 
-                    Shifts.ShiftEndStr, 
-                    ProductionLineShifts.ProductionLineId,
-                    ProductionLines.Status,
-                    ProductionLines.LineName,
-                    Customers.Id,
-                    Customers.CustomerName,
-                    ProductionLineShifts.ShiftId
-                ) as result
-                where result.rn = 1`,
+            `select 
+                max(ProductionLineShifts.ShiftId) as ShiftId, 
+                Shifts.ShiftStartStr, 
+                Shifts.ShiftEndStr, 
+                ProductionLineShifts.ProductionLineId as ProductionLineId,
+                ProductionLines.Status as Active,
+                ProductionLines.LineName,
+                Customers.Id as CustomerId,
+                Customers.CustomerName, 
+                count(ProductionLines.Id) as NumberOfLines,
+                (case when (count(OperatingStations.id) = count(StopCauseLogs.id)) then 1 else 0 end) as isBlocked,
+                row_number() OVER(PARTITION BY ProductionLineShifts.ProductionLineId ORDER BY Shifts.ShiftStartStr desc) AS rn
+            from ProductionLines
+            left join ProductionLineShifts on ProductionLines.Id = ProductionLineShifts.ProductionLineId
+            left join Shifts on Shifts.Id = ProductionLineShifts.ShiftId and Shifts.Active = 1 
+                --CAST(CONCAT(FORMAT(getdate(),'yyyy-MM-dd'),' ',  Shifts.ShiftStartStr) AS DATETIME) <= GETDATE() and
+                --CAST(CONCAT(FORMAT(getdate(),'yyyy-MM-dd'),' ', Shifts.ShiftEndStr) AS DATETIME) >= GETDATE()
+            inner join Customers on ProductionLines.CustomerId = Customers.Id
+            inner join OperatingStations on OperatingStations.LineId = ProductionLines.Id
+            left join StopCauseLogs on StopCauseLogs.StationId = OperatingStations.Id  and StopCauseLogs.status = 1
+            where 
+                ProductionLines.CustomerId = $customerId and ProductionLines.Status = 1
+            group by 
+                Shifts.ShiftStartStr, 
+                Shifts.ShiftEndStr, 
+                ProductionLineShifts.ProductionLineId,
+                ProductionLines.Status,
+                ProductionLines.LineName,
+                Customers.Id,
+                Customers.CustomerName,
+                ProductionLineShifts.ShiftId`,
             {
               bind: { customerId: customerId},
               raw: true,
               type: QueryTypes.SELECT
             }
           );
-          return productionLinesCurrentShift;
+          if(productionLinesCurrentShift.length > 0){
+              let groupedByLine = _(productionLinesCurrentShift).groupBy('ProductionLineId').map(GroupByLine).value();
+              return groupedByLine; 
+          }else{
+              return []; 
+          }
     } catch (error) {
         throw new Error(error);
+    }
+}
+function GroupByLine(items, productionLineId){
+    // validate next day shifts
+    const today = utcToZonedTime(new Date(), "America/Mexico_City");
+    let hasShift = true;
+    for (const lineShift of items) {
+        //validate that the line has a shift
+        console.log(typeof(lineShift.ShiftStartStr));
+        console.log(lineShift.ShiftStartStr);
+        if (lineShift.ShiftStartStr === null && lineShift.ShiftEndStr === null) {
+            hasShift = false;
+            continue;
+        }
+        let shiftStartTotalSeconds = lib.getShiftSeconds(lineShift.ShiftStartStr);
+        let shiftEndTotalSeconds = lib.getShiftSeconds(lineShift.ShiftEndStr);
+        if(shiftStartTotalSeconds > shiftEndTotalSeconds){
+            let maxDaySeconds = lib.getShiftSeconds('23:59:59');
+            let shiftEndTotalSeconds = maxDaySeconds + shiftEndTotalSeconds;
+            if(today.getSeconds() < shiftEndTotalSeconds){
+              return lineShift;
+            }
+        }else{
+          if(today.getSeconds() >= shiftStartTotalSeconds && today.getSeconds() < shiftEndTotalSeconds)
+          {
+              return lineShift;
+          }
+        }
+        
+    }
+    // line does not have a shift
+    if(!hasShift){
+        return items[0];
     }
 }
 function GroupByStationId(items, StationId){

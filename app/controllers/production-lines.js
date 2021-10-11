@@ -53,7 +53,7 @@ async function getProductionLinesPerCustomerCurrentShift(req, res) {
         }
         var lines = [];
         const productionLines = await services.ProductionLines.getProductionLinesAndShiftsByCustomer(customer.id);
-        if(libs.isArray(productionLines))
+        if(libs.isArray(productionLines) && productionLines.length)
         {
             for (const entry of productionLines) {
                 if(libs.isObject(entry) && !!entry.ShiftId && !!entry.ShiftStartStr && !!entry.ShiftEndStr)
@@ -70,7 +70,7 @@ async function getProductionLinesPerCustomerCurrentShift(req, res) {
                 }
                 else
                 {
-                    logError("SHIFT ERROR", "Check the error assigned to the line");
+                    logError("SHIFT ERROR", "Check the shift assigned to the line");
                     logError("Line-Shift Content", entry);
                     services.ProductionLines.transformProductionLineDefault(lines,entry);
                 }
