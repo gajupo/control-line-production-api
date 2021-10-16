@@ -24,44 +24,44 @@ async function getValidationResultsPerHour(req, res) {
 
 }
 
-async function getValidationResultsPerHourImpl(params) {
-    const today = utcToZonedTime(params.date, "America/Mexico_City");
+// async function getValidationResultsPerHourImpl(params) {
+//     const today = utcToZonedTime(params.date, "America/Mexico_City");
     
-    const validations = await ValidationResult.findAll({
-        attributes:[
-            [Sequelize.fn('DATEPART', Sequelize.literal('HOUR'), Sequelize.col('ValidationResult.ScanDate')), 'hour'],
-            [Sequelize.fn('COUNT', Sequelize.col('ValidationResult.Id')), 'validationResultsCount']],
-        include: [{
-            model: Order,
-            required: true,
-            attributes: [],
-            include: [{
-                model: Shift,
-                required: true,
-                attributes: [],
-                where: {
-                    id: params.shiftId,
-                    active: true
-                }
-            }],
-            where: {
-                [Op.and]: [
-                    Sequelize.where(Sequelize.col('Order.ProductionLineId'), '=', params.productionLineId),
-                    Sequelize.where(getDatePartConversion('Order.CreatedAt'), '=', today)        
-                ]
-            }
-        }],
-        where: {
-            [Op.and]: [
-                Sequelize.where(Sequelize.col('ValidationResult.CustomerId'), '=', params.customerId),
-                Sequelize.where(getDatePartConversion('ValidationResult.ScanDate'), '=', today)
-            ]
-        },
-        group: [Sequelize.fn('DATEPART', Sequelize.literal('HOUR'), Sequelize.col('ValidationResult.ScanDate'))],
-        raw: true
-    });
-    return validations;
-}
+//     const validations = await ValidationResult.findAll({
+//         attributes:[
+//             [Sequelize.fn('DATEPART', Sequelize.literal('HOUR'), Sequelize.col('ValidationResult.ScanDate')), 'hour'],
+//             [Sequelize.fn('COUNT', Sequelize.col('ValidationResult.Id')), 'validationResultsCount']],
+//         include: [{
+//             model: Order,
+//             required: true,
+//             attributes: [],
+//             include: [{
+//                 model: Shift,
+//                 required: true,
+//                 attributes: [],
+//                 where: {
+//                     id: params.shiftId,
+//                     active: true
+//                 }
+//             }],
+//             where: {
+//                 [Op.and]: [
+//                     Sequelize.where(Sequelize.col('Order.ProductionLineId'), '=', params.productionLineId),
+//                     Sequelize.where(getDatePartConversion('Order.CreatedAt'), '=', today)        
+//                 ]
+//             }
+//         }],
+//         where: {
+//             [Op.and]: [
+//                 Sequelize.where(Sequelize.col('ValidationResult.CustomerId'), '=', params.customerId),
+//                 Sequelize.where(getDatePartConversion('ValidationResult.ScanDate'), '=', today)
+//             ]
+//         },
+//         group: [Sequelize.fn('DATEPART', Sequelize.literal('HOUR'), Sequelize.col('ValidationResult.ScanDate'))],
+//         raw: true
+//     });
+//     return validations;
+// }
 
 async function getProductionRatePerHourImpl(params) {
     const today = utcToZonedTime(params.date, "America/Mexico_City");

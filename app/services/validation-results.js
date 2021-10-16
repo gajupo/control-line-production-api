@@ -5,6 +5,7 @@ const differenceInMinutes = require('date-fns/differenceInMinutes');
 const { sequelize } = require("../helpers/sequelize");
 const models = require("../models");
 const lib = require('../helpers/lib');
+const shiftServices = require('../services/shift');
 async function getProductionComplianceImpl(line, today) {
     try {
         const validationResults = await models.ValidationResult.findAll({
@@ -41,9 +42,10 @@ async function getProductionComplianceImpl(line, today) {
 }
 async function getValidationResultsPerHourImpl(params) {
     try {
-        const dateValue = utcToZonedTime(params.date,'America/Mexico_City');
+        const currentDate = utcToZonedTime(params.date,'America/Mexico_City');
+        let dateTimeShiftEnd = shiftServices.GetShiftEndAsDateTime(shiftStart, shiftEnd);
         const pattern = 'yyyy-MM-dd HH:mm:ss';
-        console.log(format(dateValue, pattern));
+        console.log(format(currentDate, pattern));
         const validations = await sequelize.query(
             `select 
             count(ValidationResults.id) as validationResults,
@@ -61,7 +63,7 @@ async function getValidationResultsPerHourImpl(params) {
             CONVERT(date, ValidationResults.ScanDate) = $dateValue and ValidationResults.CustomerId = $customerId 
             GROUP BY DATEPART(HOUR, ValidationResults.ScanDate), ValidationResults.OrderIdentifier,Materials.ProductionRate`,
             {
-            bind: { dateValue: format(dateValue, pattern), productionLineId: params.productionLineId, shiftId: params.shiftId, customerId: params.customerId},
+            bind: { dateValue: format(currentDate, pattern), productionLineId: params.productionLineId, shiftId: params.shiftId, customerId: params.customerId},
             raw: true,
             type: QueryTypes.SELECT
             }
@@ -73,14 +75,15 @@ async function getValidationResultsPerHourImpl(params) {
     
 }
 function joinValidationsAndProductionRate(validationResults, shiftStartStr, shiftEndStr) {   
-    const adjustedShiftStart = lib.getShiftHour(shiftStartStr);
-    const adjustedShiftEnd = lib.getShiftHour(shiftEndStr);
+    const adjustedShiftStart = shiftServices.getShiftHour(shiftStartStr);
+    const adjustedShiftEnd = shiftServices.getShiftHour(shiftEndStr);
     let hours = [];
     let results = [];
     let rates = [];
     // we need the first order to get the production rate in case some hours does not have production, but however we need to put some production rate
     const firstOrder = validationResults[validationResults.length - 1];
     // loop from the first hour of the shift to last one
+    //TODO: if the shift is a next day shift the adjustedShiftEnd could be zero '00:30:00' when getting hour, add support for next day shifts
     for (let i = adjustedShiftStart; i <= adjustedShiftEnd; i++) {
         hours.push(i);
         const countByHour = validationResults.filter(result => result.hour == i).length;

@@ -7,6 +7,7 @@ const datefns = require('date-fns');
 const differenceInMinutes = require('date-fns/differenceInMinutes');
 const lib = require('../helpers/lib');
 const { logError, logger, logMessage } = require('../helpers/logger');
+const shiftServices = require('../services/shift');
 async function getProductionLinesPerCustomer(customerId) {
     try {
 
@@ -57,22 +58,7 @@ async function getLineStatsByLineIdAndShift(lineId, shiftEnd, shiftStart,custome
                 )
             group by ValidationResults.StationId, ValidationResults.MaterialId, ValidationResults.OrderIdentifier,Materials.ProductionRate, ValidationResults.OrderId
             order by ValidationResults.OrderId desc` */
-        let todayTZ = utcToZonedTime(new Date(), "America/Mexico_City");
-        let todayUTCShort = datefns.formatISO(todayTZ, { representation: 'date' });
-        let dateTimeShiftEnd = '';
-        let shiftStartTotalMinutes = lib.getShifTimeTotaltSeconds(shiftStart);
-        let shiftEndTotalMinutes = lib.getShifTimeTotaltSeconds(shiftEnd);
-        let currentTotalMinutes = lib.getShifTimeTotaltSeconds(datefns.format(todayTZ,'HH:mm:ss'));
-        if(shiftStartTotalMinutes > shiftEndTotalMinutes && currentTotalMinutes >= shiftStartTotalMinutes){
-            //we add one day to current date beacuse the end of the shift will on the next day
-            let newDatePlus1Day = datefns.addDays(datefns.parseISO(todayUTCShort),1);
-            // the date time when the shift will finish if the shift ends on the next day
-            dateTimeShiftEnd = datefns.formatISO(newDatePlus1Day, { representation: 'date' }) + ' ' + shiftEnd;
-        }
-        else
-        {
-            dateTimeShiftEnd = datefns.formatISO(todayTZ, { representation: 'date' }) + ' ' + shiftEnd;
-        }
+        let dateTimeShiftEnd = shiftServices.GetShiftEndAsDateTime(shiftStart, shiftEnd);
         const dateValue = utcToZonedTime(new Date().toISOString(),'America/Mexico_City');
         const pattern = 'yyyy-MM-dd HH:mm:ss';
         const productionLineStats = await sequelize.query(
@@ -172,11 +158,11 @@ function GroupByLine(items, productionLineId){
     // validate next day shifts
     const today = utcToZonedTime(new Date(), "America/Mexico_City");
     for (const lineShift of items) {
-        const shiftStartTotalSeconds = lib.getShifTimeTotaltSeconds(lineShift.ShiftStartStr);
-        let shiftEndTotalSeconds = lib.getShifTimeTotaltSeconds(lineShift.ShiftEndStr);
-        const currentTotalSeconds = lib.getShifTimeTotaltSeconds(datefns.format(today,'HH:mm:ss'))
+        const shiftStartTotalSeconds = shiftServices.getShifTimeTotaltSeconds(lineShift.ShiftStartStr);
+        let shiftEndTotalSeconds = shiftServices.getShifTimeTotaltSeconds(lineShift.ShiftEndStr);
+        const currentTotalSeconds = shiftServices.getShifTimeTotaltSeconds(datefns.format(today,'HH:mm:ss'))
         if(shiftStartTotalSeconds > shiftEndTotalSeconds && currentTotalSeconds >= shiftStartTotalSeconds){
-            let maxDaySeconds = lib.getShifTimeTotaltSeconds('23:59:59');
+            let maxDaySeconds = shiftServices.getShifTimeTotaltSeconds('23:59:59');
             shiftEndTotalSeconds = maxDaySeconds + shiftEndTotalSeconds;
             if(currentTotalSeconds < shiftEndTotalSeconds){
                 logger.debug(`The selected shift will be end the next day ${lineShift.ShiftStartStr} - ${lineShift.ShiftEndStr}`);
@@ -429,27 +415,14 @@ async function getProductionLineImpl(line, today) {
         throw new Error(error);
     }
 }
-function formatProductionLineLiveStats(lines, currentLine, validationResults) {   
+function formatProductionLineLiveStats(lines, currentLine, validationResults) {
+    //TODO: CREATE A NEW WAY OF CONTROL START AND END SHIFT BECAUSE WHEN IT IS THE NEXT DATE THIS getShiftDifferenceInMinutes WILL RETURNO A WRONG (LESS THAN EXPECTED) VALUE
+    //      IT WILL NOT REPRESENT THE ENTIRE SHIFT
     let todayTZ = utcToZonedTime(new Date(), "America/Mexico_City");
-    let todayUTCShort = datefns.formatISO(todayTZ, { representation: 'date' });
-    let dateTimeShiftEnd = '';
-    let dateTimeShiftStart = '';
-    let shiftStartTotalMinutes = lib.getShifTimeTotaltSeconds(currentLine.ShiftStartStr);
-    let shiftEndTotalMinutes = lib.getShifTimeTotaltSeconds(currentLine.ShiftEndStr);
-    let currentTotalMinutes = lib.getShifTimeTotaltSeconds(datefns.format(todayTZ,'HH:mm:ss'));
-    if(shiftStartTotalMinutes > shiftEndTotalMinutes && currentTotalMinutes >= shiftStartTotalMinutes){
-        //we add one day to current date beacuse the end of the shift will on the next day
-        let newDatePlus1Day = datefns.addDays(datefns.parseISO(todayUTCShort),1);
-        // the date time when the shift will finish if the shift ends on the next day
-        dateTimeShiftEnd = datefns.formatISO(newDatePlus1Day, { representation: 'date' }) + ' ' + currentLine.ShiftEndStr;
-    }
-    else
-    {
-        dateTimeShiftEnd = datefns.formatISO(todayTZ, { representation: 'date' }) + ' ' + currentLine.ShiftEndStr;
-    }
-    dateTimeShiftStart = datefns.formatISO(todayTZ, { representation: 'date' }) + ' ' + currentLine.ShiftStartStr;
+    let dateTimeShiftEnd = shiftServices.GetShiftEndAsDateTime(currentLine.ShiftStartStr,currentLine.ShiftEndStr);
+    let dateTimeShiftStart = datefns.formatISO(todayTZ, { representation: 'date' }) + ' ' + currentLine.ShiftStartStr;
     // get difference in seconds from start to end shift
-    let shiftDurationInMinutes = lib.getShiftDifferenceInMinutes(dateTimeShiftEnd, dateTimeShiftStart); 
+    let shiftDurationInMinutes = shiftServices.getShiftDifferenceInMinutes(dateTimeShiftEnd, dateTimeShiftStart); 
     let active = true;
     if(validationResults.length === 0){
         // there is no validations for this shift at this current moment
