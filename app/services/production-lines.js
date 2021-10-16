@@ -422,6 +422,7 @@ function formatProductionLineLiveStats(lines, currentLine, validationResults) {
     let dateTimeShiftEnd = shiftServices.GetShiftEndAsDateTime(currentLine.ShiftStartStr,currentLine.ShiftEndStr);
     let dateTimeShiftStart = datefns.formatISO(todayTZ, { representation: 'date' }) + ' ' + currentLine.ShiftStartStr;
     // get difference in seconds from start to end shift
+    //TODO: Use the real start and end datetime, we will need to register some data to know in wich date and time every shift should start and end
     let shiftDurationInMinutes = shiftServices.getShiftDifferenceInMinutes(dateTimeShiftEnd, dateTimeShiftStart); 
     let active = true;
     if(validationResults.length === 0){

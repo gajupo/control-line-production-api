@@ -35,45 +35,46 @@ async function getCurrentShift(productionLine) {
     //const shift = shifts.find(s => fractionalHours >= s.shiftStart && fractionalHours <= s.shiftEnd);
    
 }
-function GetShiftEndAsDateTime(shiftStartStr,shiftEndStr)
+function GetShiftEndAsDateTime(shiftStartDateTime, shiftStartTimeStr,shiftEndTimeStr)
 {
-    let todayTZ = utcToZonedTime(new Date(), "America/Mexico_City");
-    let todayUTCShort = datefns.formatISO(todayTZ, { representation: 'date' });
+  //TODO: if the report is generated in the next day prior to finish the shift the report will generate bad information
+  //      because is taken the current date but not the real start and end shift time
+    let shiftStartDateTimeUTCShort = datefns.formatISO(shiftStartDateTime, { representation: 'date' });
     let dateTimeShiftEnd = '';
-    let shiftStartTotalMinutes = getShifTimeTotaltSeconds(shiftStartStr);
-    let shiftEndTotalMinutes = getShifTimeTotaltSeconds(shiftEndStr);
-    let currentTotalMinutes = getShifTimeTotaltSeconds(datefns.format(todayTZ,'HH:mm:ss'));
-    if(shiftStartTotalMinutes > shiftEndTotalMinutes && currentTotalMinutes >= shiftStartTotalMinutes){
+    let shiftStartTotalMinutes = getShifTimeTotaltSeconds(shiftStartTimeStr);
+    let shiftEndTotalMinutes = getShifTimeTotaltSeconds(shiftEndTimeStr);
+    if(shiftStartTotalMinutes > shiftEndTotalMinutes){
         //we add one day to current date beacuse the end of the shift will on the next day
-        let newDatePlus1Day = datefns.addDays(datefns.parseISO(todayUTCShort),1);
+        let newDatePlus1Day = datefns.addDays(datefns.parseISO(shiftStartDateTimeUTCShort),1);
         // the date time when the shift will finish if the shift ends on the next day
-        dateTimeShiftEnd = datefns.formatISO(newDatePlus1Day, { representation: 'date' }) + ' ' + shiftEnd;
+        dateTimeShiftEnd = datefns.formatISO(newDatePlus1Day, { representation: 'date' }) + ' ' + shiftEndTimeStr;
     }
     else
     {
-        dateTimeShiftEnd = datefns.formatISO(todayTZ, { representation: 'date' }) + ' ' + shiftEnd;
+        dateTimeShiftEnd = datefns.formatISO(shiftStartDateTime, { representation: 'date' }) + ' ' + shiftEndTimeStr;
     }
     return dateTimeShiftEnd;
 }
 function GetShiftStartAsDateTime(shiftStartStr,shiftEndStr)
 {
+  //TODO: if the report is generated in the next day prior to finish the shift the report will generate bad information
+  //      because is taken the current date but not the real start and end shift time
     let todayTZ = utcToZonedTime(new Date(), "America/Mexico_City");
-    let todayUTCShort = datefns.formatISO(todayTZ, { representation: 'date' });
-    let dateTimeShiftEnd = '';
+    let dateTimeShiftStart = '';
+    let dateTimeShiftEnd = GetShiftEndAsDateTime(shiftStartStr,shiftEndStr);
     let shiftStartTotalMinutes = getShifTimeTotaltSeconds(shiftStartStr);
     let shiftEndTotalMinutes = getShifTimeTotaltSeconds(shiftEndStr);
-    let currentTotalMinutes = getShifTimeTotaltSeconds(datefns.format(todayTZ,'HH:mm:ss'));
-    if(shiftStartTotalMinutes > shiftEndTotalMinutes && currentTotalMinutes >= shiftStartTotalMinutes){
+    if(shiftStartTotalMinutes > shiftEndTotalMinutes ){
         //we add one day to current date beacuse the end of the shift will on the next day
-        let newDatePlus1Day = datefns.addDays(datefns.parseISO(todayUTCShort),1);
+        let newDatePlus1Day = datefns.addDays(datefns.parseISO(dateTimeShiftEnd),-1);
         // the date time when the shift will finish if the shift ends on the next day
-        dateTimeShiftEnd = datefns.formatISO(newDatePlus1Day, { representation: 'date' }) + ' ' + shiftEnd;
+        dateTimeShiftStart = datefns.formatISO(newDatePlus1Day, { representation: 'date' }) + ' ' + shiftStartStr;
     }
     else
     {
-        dateTimeShiftEnd = datefns.formatISO(todayTZ, { representation: 'date' }) + ' ' + shiftEnd;
+        dateTimeShiftStart = datefns.formatISO(todayTZ, { representation: 'date' }) + ' ' + shiftStartStr;
     }
-    return dateTimeShiftEnd;
+    return dateTimeShiftStart;
 }
 function getShiftDifferenceInMinutes(shiftStrStartTime, shiftStrEndTime) {
   let minutes = 0;

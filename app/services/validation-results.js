@@ -43,9 +43,10 @@ async function getProductionComplianceImpl(line, today) {
 async function getValidationResultsPerHourImpl(params) {
     try {
         const currentDate = utcToZonedTime(params.date,'America/Mexico_City');
-        let dateTimeShiftEnd = shiftServices.GetShiftEndAsDateTime(shiftStart, shiftEnd);
+        let dateTimeShiftEnd = shiftServices.GetShiftEndAsDateTime(currentDate, params.shiftStart,params.shiftEnd);
         const pattern = 'yyyy-MM-dd HH:mm:ss';
-        console.log(format(currentDate, pattern));
+        console.log(currentDate);
+        console.log(dateTimeShiftEnd);
         const validations = await sequelize.query(
             `select 
             count(ValidationResults.id) as validationResults,
@@ -60,10 +61,16 @@ async function getValidationResultsPerHourImpl(params) {
             inner join Materials on Materials.ID = ValidationResults.MaterialId
             inner join Orders on Orders.Id = ValidationResults.OrderId and Orders.ProductionLineId = $productionLineId and Orders.ShiftId = $shiftId
             where 
-            CONVERT(date, ValidationResults.ScanDate) = $dateValue and ValidationResults.CustomerId = $customerId 
+            CONVERT(date, ValidationResults.ScanDate) >= $startdate and CONVERT(date, ValidationResults.ScanDate) <= $enddate and ValidationResults.CustomerId = $customerId 
             GROUP BY DATEPART(HOUR, ValidationResults.ScanDate), ValidationResults.OrderIdentifier,Materials.ProductionRate`,
             {
-            bind: { dateValue: format(currentDate, pattern), productionLineId: params.productionLineId, shiftId: params.shiftId, customerId: params.customerId},
+            bind: { 
+                startdate: format(currentDate, pattern), 
+                enddate: dateTimeShiftEnd, 
+                productionLineId: params.productionLineId, 
+                shiftId: params.shiftId, 
+                customerId: params.customerId
+            },
             raw: true,
             type: QueryTypes.SELECT
             }
