@@ -20,7 +20,7 @@ async function getCurrentShift(productionLine) {
         mapToModel: true,
         bind: { productionLineId: productionLine },
         type: QueryTypes.SELECT,
-      },
+      }
     );
 
     if ((Object.keys(shift).length > 0)) return Object.values(shift)[0];
@@ -48,7 +48,7 @@ function getShifTimeTotaltSeconds(shiftStringTime) {
     const todayISOWithTime = `${todayTZ} 00:00:00`;
     const shiftTimeIsoDate = `${todayTZ} ${shiftStringTime}`;
     seconds = datefns.differenceInSeconds(
-      datefns.parseISO(shiftTimeIsoDate), datefns.parseISO(todayISOWithTime),
+      datefns.parseISO(shiftTimeIsoDate), datefns.parseISO(todayISOWithTime)
     );
   }
   return seconds;

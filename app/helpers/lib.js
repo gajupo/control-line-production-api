@@ -1,6 +1,3 @@
-const _ = require('lodash/core');
-const { utcToZonedTime,format } = require('date-fns-tz');
-const datefns = require('date-fns');
 function isObject(obj) {
   return (!!obj) && (obj.constructor === Object);
 }

@@ -1,181 +1,181 @@
-'use strict';
-
 const { DataTypes } = require('sequelize');
-const { sequelize } = require("../helpers/sequelize");
+const { sequelize } = require('../helpers/sequelize');
 
-const OperatingStation = require("./operating-station");
-const ProductionLine = require("./production-line");
-const Order = require("./order");
-const Shift = require("./shift");
-const Customer = require("./customer");
-const UserType = require("./user-type");
-const User = require("./user");
-const StopCauseLog = require("./stop-cause-log");
-const StopCause = require("./stop-cause");
-const Supplier = require("./supplier");
-const Material = require("./material");
-const ValidationResult = require("./validation-result");
+const OperatingStation = require('./operating-station');
+const ProductionLine = require('./production-line');
+const Order = require('./order');
+const Shift = require('./shift');
+const Customer = require('./customer');
+const UserType = require('./user-type');
+const User = require('./user');
+const StopCauseLog = require('./stop-cause-log');
+const StopCause = require('./stop-cause');
+const Supplier = require('./supplier');
+const Material = require('./material');
+const ValidationResult = require('./validation-result');
 
-const { ReportParameterSchema, validateModelId, validateOrderParameters,
-    validateLineParameters, validateLinePerCustomerParameters, 
-    validateReportParameters, validateLinesAndShifts } = require("./schemas");
+const {
+  ReportParameterSchema, validateModelId, validateOrderParameters,
+  validateLineParameters, validateLinePerCustomerParameters,
+  validateReportParameters, validateLinesAndShifts,
+} = require('./schemas');
 
 ProductionLine.hasMany(OperatingStation, {
-    foreignKey: 'LineId'
+  foreignKey: 'LineId',
 });
 OperatingStation.belongsTo(ProductionLine, {
-    foreignKey: 'LineId'
+  foreignKey: 'LineId',
 });
 
 ProductionLine.hasMany(Order, {
-    foreignKey: 'ProductionLineId'
+  foreignKey: 'ProductionLineId',
 });
 Order.belongsTo(ProductionLine, {
-    foreignKey: 'ProductionLineId'
+  foreignKey: 'ProductionLineId',
 });
 
 Customer.hasOne(ProductionLine, {
-    foreignKey: 'CustomerId'
+  foreignKey: 'CustomerId',
 });
 ProductionLine.belongsTo(Customer, {
-    foreignKey: 'CustomerId'
+  foreignKey: 'CustomerId',
 });
 
 Shift.hasMany(Order, {
-    foreignKey: 'ShiftId'
-})
+  foreignKey: 'ShiftId',
+});
 Order.belongsTo(Shift, {
-    foreignKey: 'ShiftId'
+  foreignKey: 'ShiftId',
 });
 
 User.hasMany(UserType, {
-    foreignKey: 'UserTypeId'
+  foreignKey: 'UserTypeId',
 });
 UserType.belongsTo(User, {
-    foreignKey: 'UserTypeId'
+  foreignKey: 'UserTypeId',
 });
 
 User.hasMany(StopCauseLog, {
-    foreignKey: 'UserId'
+  foreignKey: 'UserId',
 });
 StopCauseLog.belongsTo(User, {
-    foreignKey: 'UserId',
-    as: 'User'
+  foreignKey: 'UserId',
+  as: 'User',
 });
 
 OperatingStation.hasMany(StopCauseLog, {
-    foreignKey: 'StationId'
+  foreignKey: 'StationId',
 });
 StopCauseLog.belongsTo(OperatingStation, {
-    foreignKey: 'StationId'
+  foreignKey: 'StationId',
 });
 
 User.hasMany(StopCauseLog, {
-    foreignKey: 'ResolverId'
+  foreignKey: 'ResolverId',
 });
 StopCauseLog.belongsTo(User, {
-    foreignKey: 'ResolverId',
-    as: 'Resolver'
+  foreignKey: 'ResolverId',
+  as: 'Resolver',
 });
 
 Order.hasMany(StopCauseLog, {
-    foreignKey: 'OrderId'
+  foreignKey: 'OrderId',
 });
 StopCauseLog.belongsTo(Order, {
-    foreignKey: 'OrderId'
+  foreignKey: 'OrderId',
 });
 
 Supplier.hasMany(Material, {
-    foreignKey: 'SupplierId'
+  foreignKey: 'SupplierId',
 });
 Material.belongsTo(Supplier, {
-    foreignKey: 'SupplierId'
+  foreignKey: 'SupplierId',
 });
 
 Customer.hasMany(ValidationResult, {
-    foreignKey: 'CustomerId'
+  foreignKey: 'CustomerId',
 });
 ValidationResult.belongsTo(Customer, {
-    foreignKey: 'CustomerId'
+  foreignKey: 'CustomerId',
 });
 
 Material.hasMany(ValidationResult, {
-    foreignKey: 'MaterialId'
+  foreignKey: 'MaterialId',
 });
 ValidationResult.belongsTo(Material, {
-    foreignKey: 'MaterialId'
+  foreignKey: 'MaterialId',
 });
 
 OperatingStation.hasMany(ValidationResult, {
-    foreignKey: 'StationId'
+  foreignKey: 'StationId',
 });
 ValidationResult.belongsTo(OperatingStation, {
-    foreignKey: 'StationId'
+  foreignKey: 'StationId',
 });
 
 User.hasMany(ValidationResult, {
-    foreignKey: 'UserId'
+  foreignKey: 'UserId',
 });
 ValidationResult.belongsTo(User, {
-    foreignKey: 'UserId'
+  foreignKey: 'UserId',
 });
 
 Order.hasMany(ValidationResult, {
-    foreignKey: 'OrderId'
+  foreignKey: 'OrderId',
 });
 ValidationResult.belongsTo(Order, {
-    foreignKey: 'OrderId'
+  foreignKey: 'OrderId',
 });
 
 const ProductionLineShift = sequelize.define('ProductionLineShifts', {
-    shiftId: {
-        type: DataTypes.INTEGER,
-        field: 'ShiftId',
-        references: {
-            model: Shift,
-            key:
-            'Id'
-        }
+  shiftId: {
+    type: DataTypes.INTEGER,
+    field: 'ShiftId',
+    references: {
+      model: Shift,
+      key:
+            'Id',
     },
-    productionLineId: {
-        type: DataTypes.INTEGER,
-        field: 'ProductionLineId',
-        references: {
-            model: ProductionLine,
-            key: 'Id'
-        }
-    }
+  },
+  productionLineId: {
+    type: DataTypes.INTEGER,
+    field: 'ProductionLineId',
+    references: {
+      model: ProductionLine,
+      key: 'Id',
+    },
+  },
 }, {
-    tableName: 'ProductionLineShifts',
-    timestamps: false,
-    sequelize
+  tableName: 'ProductionLineShifts',
+  timestamps: false,
+  sequelize: sequelize,
 });
 ProductionLine.belongsToMany(Shift, {
-    through: ProductionLineShift
+  through: ProductionLineShift,
 });
 Shift.belongsToMany(ProductionLine, {
-    through: ProductionLineShift
+  through: ProductionLineShift,
 });
 
 StopCause.hasMany(StopCauseLog, {
-    foreignKey: 'StopCausesKeys'
+  foreignKey: 'StopCausesKeys',
 });
 StopCauseLog.belongsTo(StopCause, {
-    foreignKey: 'StopCausesKeys'
+  foreignKey: 'StopCausesKeys',
 });
 
 Material.hasMany(Order, {
-    foreignKey: 'MaterialId'
+  foreignKey: 'MaterialId',
 });
 Order.belongsTo(Material, {
-    foreignKey: 'MaterialId'
-})
+  foreignKey: 'MaterialId',
+});
 
 Customer.hasMany(Material, {
-    foreignKey: 'CustomerId'
+  foreignKey: 'CustomerId',
 });
 Material.belongsTo(Customer, {
-    foreignKey: 'CustomerId'
+  foreignKey: 'CustomerId',
 });
 
 module.exports.Order = Order;

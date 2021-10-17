@@ -9,5 +9,25 @@
         "ecmaVersion": 2018
     },
     "rules": {
+        "comma-dangle": ["error", {
+            "arrays": "always-multiline",
+            "objects": "always-multiline",
+            "imports": "never",
+            "exports": "never",
+            "functions": "never"
+        }],
+        "object-shorthand": ["error", "never"],
+        "max-len": ["error", {
+            "code": 120,
+            "tabWidth": 4,
+            "ignoreComments": true,
+            "ignoreStrings": true,
+            "ignoreRegExpLiterals": true,
+            "ignoreTemplateLiterals": true
+        }],
+        "no-plusplus": ["error", {
+            "allowForLoopAfterthoughts": true
+        }],
+        "no-underscore-dangle":"off"
     }
 }

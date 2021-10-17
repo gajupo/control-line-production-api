@@ -11,20 +11,18 @@ const shiftServices = require('./shift');
 
 async function getProductionLinesPerCustomer(customerId) {
   try {
-
     const productionLines = await models.ProductionLine.findAll({
       attributes: ['id', 'lineName'],
       include: [{
         model: models.Customer,
         required: true,
         attributes: [],
-        where: { id: customerId }
-      }]
+        where: { id: customerId },
+      }],
     });
 
     return productionLines;
-  }
-  catch (error) {
+  } catch (error) {
     throw new Error(error);
   }
 }
@@ -40,26 +38,6 @@ async function getLineStatsByLineIdAndShift(lineId, shiftEnd, shiftStart, custom
   try {
     // eslint-disable-next-line prefer-rest-params
     logger.debug(`getLineStatsByLineIdAndShift arguments ${arguments}`);
-    // OLD QUERY JUST KEEP IT FOR A WHILE
-    /* `select
-                ValidationResults.StationId,
-                ValidationResults.MaterialId,
-                ValidationResults.OrderIdentifier,
-                ValidationResults.OrderId,
-                count(ValidationResults.id)  as countValidationResult,
-                DATEDIFF(MINUTE,min(ValidationResults.ScanDate), CONCAT(CONVERT (DATE, SYSDATETIME()) ,' ', $shiftEnd)) as remaningMinutes,
-                Materials.ProductionRate
-            from ValidationResults 
-            inner join OperatingStations on OperatingStations.Id = ValidationResults.StationId
-            inner join ProductionLines on ProductionLines.Id = OperatingStations.LineId
-            inner join Customers on Customers.Id = ProductionLines.Id
-            inner join Materials on Materials.ID = ValidationResults.MaterialId
-            where ValidationResults.ScanDate >= CONCAT(CONVERT (DATE, SYSDATETIME()) ,' ', $shiftStart) and ValidationResults.ScanDate <= CONCAT(CONVERT (DATE, SYSDATETIME()) ,' ', $shiftEnd)
-            and ValidationResults.StationId in (
-                    select ps.Id from OperatingStations AS ps inner join ProductionLines AS pl on ps.LineId = pl.Id inner join Customers AS co on pl.CustomerId = co.Id where pl.Id = $lineId
-                )
-            group by ValidationResults.StationId, ValidationResults.MaterialId, ValidationResults.OrderIdentifier,Materials.ProductionRate, ValidationResults.OrderId
-            order by ValidationResults.OrderId desc` */
     const dateTimeShiftEnd = shiftServices.GetShiftEndAsDateTime(shiftStart, shiftEnd);
     const dateValue = utcToZonedTime(new Date().toISOString(), 'America/Mexico_City');
     const pattern = 'yyyy-MM-dd HH:mm:ss';
@@ -96,7 +74,7 @@ async function getLineStatsByLineIdAndShift(lineId, shiftEnd, shiftStart, custom
         },
         raw: true,
         type: QueryTypes.SELECT,
-      },
+      }
     );
     return productionLineStats;
   } catch (error) {
@@ -107,25 +85,25 @@ async function getLineStatsByLineIdAndShift(lineId, shiftEnd, shiftStart, custom
 function GroupByLine(items, productionLineId) {
   // validate next day shifts
   const today = utcToZonedTime(new Date(), 'America/Mexico_City');
+  // eslint-disable-next-line no-restricted-syntax
   for (const lineShift of items) {
     const shiftStartTotalSeconds = shiftServices.getShifTimeTotaltSeconds(lineShift.ShiftStartStr);
     let shiftEndTotalSeconds = shiftServices.getShifTimeTotaltSeconds(lineShift.ShiftEndStr);
-    const currentTotalSeconds = shiftServices.getShifTimeTotaltSeconds(datefns.format(today,'HH:mm:ss'))
-    if(shiftStartTotalSeconds > shiftEndTotalSeconds && currentTotalSeconds >= shiftStartTotalSeconds){
-      let maxDaySeconds = shiftServices.getShifTimeTotaltSeconds('23:59:59');
+    const currentTotalSeconds = shiftServices.getShifTimeTotaltSeconds(datefns.format(today, 'HH:mm:ss'));
+    if (shiftStartTotalSeconds > shiftEndTotalSeconds
+        && currentTotalSeconds >= shiftStartTotalSeconds) {
+      const maxDaySeconds = shiftServices.getShifTimeTotaltSeconds('23:59:59');
       shiftEndTotalSeconds = maxDaySeconds + shiftEndTotalSeconds;
-      if(currentTotalSeconds < shiftEndTotalSeconds){
+      if (currentTotalSeconds < shiftEndTotalSeconds) {
         logger.debug(`The selected shift will be end the next day ${lineShift.ShiftStartStr} - ${lineShift.ShiftEndStr}`);
         return lineShift;
       }
-    }else{
-      if(currentTotalSeconds >= shiftStartTotalSeconds && currentTotalSeconds < shiftEndTotalSeconds)
-      {
-        logger.debug(`Selected shift is ${lineShift.ShiftStartStr} - ${lineShift.ShiftEndStr}`);
-        return lineShift;
-      }
     }
-          
+    if (currentTotalSeconds >= shiftStartTotalSeconds
+    && currentTotalSeconds < shiftEndTotalSeconds) {
+      logger.debug(`Selected shift is ${lineShift.ShiftStartStr} - ${lineShift.ShiftEndStr}`);
+      return lineShift;
+    }
   }
 }
 /**
@@ -172,7 +150,7 @@ async function getProductionLinesAndShiftsByCustomer(customerId) {
         bind: { customerId: customerId },
         raw: true,
         type: QueryTypes.SELECT,
-      },
+      }
     );
     const valResult = models.validateLinesAndShifts(productionLinesCurrentShift);
     let groupedByLine = {};
@@ -186,7 +164,31 @@ async function getProductionLinesAndShiftsByCustomer(customerId) {
     throw new Error(error);
   }
 }
-
+/**
+ * Calculates the percentage based on goal and sum of materials scanned
+ */
+function getCurrentProductionByRate(validationResultCount, goal) {
+  if (goal === 0) {
+    return 0;
+  }
+  const rate = Math.ceil((validationResultCount / goal) * 100);
+  console.log(`[ El avance actual es ${rate} ]`);
+  return (rate > 100) ? 100 : rate;
+}
+function getValidationResultCount(stations) {
+  let count = 0;
+  stations.forEach((station) => {
+    count += station.dataValues.validationResultCount;
+  });
+  return count;
+}
+function checkIfLineHasOrders(line) {
+  if ('Orders' in line) {
+    const orders = line.Orders;
+    return orders.length > 0;
+  }
+  return false;
+}
 function GroupByStationId(items, StationId) {
   let validationResultCountMeta = 0;
   let validationResultCount = 0;
@@ -201,7 +203,7 @@ function GroupByStationId(items, StationId) {
   // we take the last scanned material and get the production rate
   // to obtain the remaining hours of the shift
   const shiftHours = items[0].remaningMinutes / 60;
-  // calculate the goal (remainig hours * materials production rate) + total of scanned material 
+  // calculate the goal (remainig hours * materials production rate) + total of scanned material
   // except the last one material
   // the goal will change until the materia changes
   goal = Math.floor(shiftHours * items[0].ProductionRate) + validationResultCountMeta;
@@ -264,33 +266,6 @@ function transformProductionLineDefault(lines, line) {
     rate: 0,
   });
 }
-/**
- * Calculates the percentage based on goal and sum of materials scanned
- */
-function getCurrentProductionByRate(validationResultCount, goal) {
-  if (goal === 0) {
-    return 0;
-  }
-  const rate = Math.ceil((validationResultCount / goal) * 100);
-  console.log(`[ El avance actual es ${rate} ]`);
-  return (rate > 100) ? 100 : rate;
-}
-function getValidationResultCount(stations) {
-  let count = 0;
-  stations.forEach((station) => {
-    count += station.dataValues.validationResultCount;
-  });
-  return count;
-}
-
-function checkIfLineHasOrders(line) {
-  if ('Orders' in line) {
-    const orders = line.Orders;
-    return orders.length > 0;
-  }
-  return false;
-}
-
 function checkIfLineHasShifts(line) {
   if ('Shifts' in line) {
     const shifts = line.Shifts;
@@ -333,13 +308,13 @@ async function getProductionLineByCustomerIdAndShift(customerId, today) {
         where: {
           active: true,
           shiftStart: {
-            [Op.lte]: today.getHours()
+            [Op.lte]: today.getHours(),
           },
           shiftEnd: {
-            [Op.gte]: today.getHours()
-          }
-        }
-      }]
+            [Op.gte]: today.getHours(),
+          },
+        },
+      }],
     });
     return productionlines;
   } catch (error) {
@@ -348,13 +323,13 @@ async function getProductionLineByCustomerIdAndShift(customerId, today) {
 }
 async function getProductionLineById(productionLineId) {
   try {
-    var productionLine = await models.ProductionLine.findOne({
+    const productionLine = await models.ProductionLine.findOne({
       where: { id: productionLineId },
       include: [{
         model: models.OperatingStation,
-        attributes: ['id', 'stationIdentifier']
+        attributes: ['id', 'stationIdentifier'],
       }],
-      attributes: ['id']
+      attributes: ['id'],
     });
     return productionLine;
   } catch (error) {
@@ -374,30 +349,31 @@ async function getProductionLineImpl(line, today) {
         where: {
           active: true,
           shiftStart: {
-            [Op.lte]: today.getHours()
+            [Op.lte]: today.getHours(),
           },
           shiftEnd: {
-            [Op.gte]: today.getHours()
-          }
-        }
+            [Op.gte]: today.getHours(),
+          },
+        },
       }, {
         model: models.OperatingStation,
         attributes: [
           'id',
           'stationIdentifier',
-          [Sequelize.fn('count', Sequelize.col('OperatingStations.ValidationResults.Id')), 'validationResultCount']
+          [Sequelize.fn('count', Sequelize.col('OperatingStations.ValidationResults.Id')), 'validationResultCount'],
         ],
         include: [{
           model: models.StopCauseLog,
           required: false,
           where: { status: true },
-          attributes: ['id']
+          attributes: ['id'],
         }, {
           model: models.ValidationResult,
           attributes: [],
           required: false,
-          where: Sequelize.where(getDatePartConversion('OperatingStations.ValidationResults.ScanDate'), '=', today)
-        }]
+          // eslint-disable-next-line no-undef
+          where: Sequelize.where(getDatePartConversion('OperatingStations.ValidationResults.ScanDate'), '=', today),
+        }],
       }, {
         model: models.Order,
         required: false,
@@ -405,20 +381,21 @@ async function getProductionLineImpl(line, today) {
         where: {
           [Op.and]: [
             Sequelize.where(Sequelize.col('Orders.IsIncomplete'), '=', true),
-            Sequelize.where(getDatePartConversion('Orders.CreatedAt'), '<=', today)
-          ]
+            // eslint-disable-next-line no-undef
+            Sequelize.where(getDatePartConversion('Orders.CreatedAt'), '<=', today),
+          ],
         },
         include: [{
           model: models.Material,
           required: true,
-          attributes: ['id', 'productionRate']
-        }]
+          attributes: ['id', 'productionRate'],
+        }],
       }],
-      group: ['ProductionLine.id', 'ProductionLine.lineName', 
-        'OperatingStations.id','OperatingStations.stationIdentifier',
+      group: ['ProductionLine.id', 'ProductionLine.lineName',
+        'OperatingStations.id', 'OperatingStations.stationIdentifier',
         'OperatingStations.StopCauseLogs.id', 'Orders.id', 'Orders.Material.id',
         'Orders.Material.productionRate', 'Shifts.id', 'Shifts.shiftStart',
-        'Shifts.shiftEnd', 'Shifts.shiftDescription']
+        'Shifts.shiftEnd', 'Shifts.shiftDescription'],
     });
     return productionLine;
   } catch (error) {
@@ -426,21 +403,26 @@ async function getProductionLineImpl(line, today) {
   }
 }
 function formatProductionLineLiveStats(lines, currentLine, validationResults) {
-  //TODO: CREATE A NEW WAY OF CONTROL START AND END SHIFT BECAUSE WHEN IT IS THE NEXT DATE THIS getShiftDifferenceInMinutes WILL RETURNO A WRONG (LESS THAN EXPECTED) VALUE
+  // TODO: CREATE A NEW WAY OF CONTROL START AND END SHIFT BECAUSE WHEN IT IS THE NEXT DATE
+  // THIS getShiftDifferenceInMinutes WILL RETURNO A WRONG (LESS THAN EXPECTED) VALUE
   //      IT WILL NOT REPRESENT THE ENTIRE SHIFT
-  let todayTZ = utcToZonedTime(new Date(), 'America/Mexico_City');
-  let dateTimeShiftEnd = shiftServices.GetShiftEndAsDateTime(currentLine.ShiftStartStr,currentLine.ShiftEndStr);
-  let dateTimeShiftStart = datefns.formatISO(todayTZ, { representation: 'date' }) + ' ' + currentLine.ShiftStartStr;
+  const todayTZ = utcToZonedTime(new Date(), 'America/Mexico_City');
+  // eslint-disable-next-line max-len
+  const dateTimeShiftEnd = shiftServices.GetShiftEndAsDateTime(currentLine.ShiftStartStr, currentLine.ShiftEndStr);
+  const dateTimeShiftStart = `${datefns.formatISO(todayTZ, { representation: 'date' })} ${currentLine.ShiftStartStr}`;
   // get difference in seconds from start to end shift
-  //TODO: Use the real start and end datetime, we will need to register some data to know in wich date and time every shift should start and end
-  let shiftDurationInMinutes = shiftServices.getShiftDifferenceInMinutes(dateTimeShiftEnd, dateTimeShiftStart); 
-  let active = true;
-  if(validationResults.length === 0){
+  // TODO: Use the real start and end datetime, we will need to register some data to know
+  // in wich date and time every shift should start and end
+  const shiftDurationInMinutes = shiftServices.getShiftDifferenceInMinutes(
+    dateTimeShiftEnd, dateTimeShiftStart
+  );
+  const active = true;
+  if (validationResults.length === 0) {
     // there is no validations for this shift at this current moment
-  }else if (validationResults.length === 1) {
-    let goal =Math.floor( (shiftDurationInMinutes * validationResults[0].ProductionRate) / 60);
+  } else if (validationResults.length === 1) {
+    const goal = Math.floor((shiftDurationInMinutes * validationResults[0].ProductionRate) / 60);
 
-    lines.push( {
+    lines.push({
       id: currentLine.ProductionLineId,
       lineName: currentLine.LineName,
       active: active,
@@ -449,29 +431,32 @@ function formatProductionLineLiveStats(lines, currentLine, validationResults) {
       customerName: currentLine.CustomerName,
       validationResultCount: validationResults[0].validationResults, // sum fo all stations scanned materials
       goal: goal, // sum of goals for all stations
-      rate: getCurrentProductionByRate(validationResults[0].validationResults, goal) // sum of all percentages completition vs goal
+      rate: getCurrentProductionByRate(validationResults[0].validationResults, goal), // sum of all percentages completition vs goal
     });
-
-  } else if(validationResults.length === 2) {
+  } else if (validationResults.length === 2) {
     let finalGoal = 0;
-    //check if all orders scanned have the same material
-    var countSameProductionRate = validationResults.filter(result => result.ProductionRate == validationResults[0].ProductionRate).length;
-    if(countSameProductionRate === validationResults.length){
-      finalGoal = Math.floor( (shiftDurationInMinutes * validationResults[0].ProductionRate) / 60);
-    }
-    else{
-            
+    // check if all orders scanned have the same material
+    const countSameProductionRate = validationResults.filter(
+      (result) => result.ProductionRate === validationResults[0].ProductionRate
+    ).length;
+    if (countSameProductionRate === validationResults.length) {
+      finalGoal = Math.floor((shiftDurationInMinutes * validationResults[0].ProductionRate) / 60);
+    } else {
       // rate for the first material, from the beging of the shift to the last scan of the order
-      let firstGoal = Math.floor( (  validationResults[0].minutesUsed * parseInt(validationResults[0].ProductionRate) ) / 60);
+      const firstGoal = Math.floor(
+        (validationResults[0].minutesUsed * parseInt(validationResults[0].ProductionRate, 10)) / 60
+      );
       // obtain the real reamining minutes from the first order to the end of the shift is case the user start new order some minutes after the last one
-      let minutesRemainingToTheEnd = shiftDurationInMinutes - validationResults[0].minutesUsed;
+      const minutesRemainingToTheEnd = shiftDurationInMinutes - validationResults[0].minutesUsed;
       // we use the remaining minutes in case the user do not start the new imediatly
-      let lastGoal = Math.floor( ( minutesRemainingToTheEnd * parseInt(validationResults[1].ProductionRate) ) / 60 );
-      finalGoal = (firstGoal + lastGoal); 
+      const lastGoal = Math.floor(
+        (minutesRemainingToTheEnd * parseInt(validationResults[1].ProductionRate, 10)) / 60
+      );
+      finalGoal = (firstGoal + lastGoal);
     }
     // calculate the total of validation resualts
-    let totalOfValidations = _.sumBy(validationResults, 'validationResults');
-    lines.push( {
+    const totalOfValidations = _.sumBy(validationResults, 'validationResults');
+    lines.push({
       id: currentLine.ProductionLineId,
       lineName: currentLine.LineName,
       active: active,
@@ -480,47 +465,51 @@ function formatProductionLineLiveStats(lines, currentLine, validationResults) {
       customerName: currentLine.CustomerName,
       validationResultCount: totalOfValidations, // sum fo all stations scanned materials
       goal: finalGoal, // sum of goals for all stations
-      rate: getCurrentProductionByRate(totalOfValidations, finalGoal) // sum of all percentages completition vs goal
+      rate: getCurrentProductionByRate(totalOfValidations, finalGoal), // sum of all percentages completition vs goal
     });
-  }
-  else{
-    let sumMiddleMaterialGoals = 0, 
-      globalGoal = 0 , 
-      globalValidationResults = 0;
-        
-    //check if all orders scanned have the same material
-    var countSameProductionRate = validationResults.filter(result => result.ProductionRate == validationResults[0].ProductionRate).length;
-    if(countSameProductionRate === validationResults.length)
-    {
-      globalGoal = Math.floor( (shiftDurationInMinutes * validationResults[0].ProductionRate) / 60);
-    }
-    else
-    {
+  } else {
+    let sumMiddleMaterialGoals = 0;
+    let globalGoal = 0;
+    let globalValidationResults = 0;
+    // check if all orders scanned have the same material
+    const countSameProductionRate = validationResults.filter(
+      (result) => result.ProductionRate === validationResults[0].ProductionRate
+    ).length;
+    if (countSameProductionRate === validationResults.length) {
+      globalGoal = Math.floor((shiftDurationInMinutes * validationResults[0].ProductionRate) / 60);
+    } else {
       // rate for the first material, from the beging of the shift to the last scan of the order
-      let firstGoal = Math.floor( (  validationResults[0].minutesUsed * parseInt(validationResults[0].ProductionRate) ) / 60);
+      const firstGoal = Math.floor(
+        (validationResults[0].minutesUsed * parseInt(validationResults[0].ProductionRate, 10)) / 60
+      );
 
       // obtain the real reamining minutes from the first order to the end of the shift in case the user start new order some minutes after the last one
-      let minutesRemainingToTheEnd = shiftDurationInMinutes - validationResults[validationResults.length - 2].minutesUsed;
+      // eslint-disable-next-line max-len
+      const minutesRemainingToTheEnd = shiftDurationInMinutes - validationResults[validationResults.length - 2].minutesUsed;
       // we use the remaining minutes in case the user do not start the new imediatly
-      let lastGoal = Math.floor( ( minutesRemainingToTheEnd * parseInt(validationResults[validationResults.length - 1].ProductionRate) ) / 60 );
+      const lastGoal = Math.floor(
+        (minutesRemainingToTheEnd
+            * parseInt(validationResults[validationResults.length - 1].ProductionRate, 10)
+        ) / 60
+      );
 
-      for (let index = 1; index < validationResults.length - 1; index++) {
-        let diffInMinutes = differenceInMinutes(new Date(validationResults[index].maxDate), new Date(validationResults[index - 1].maxDate), {roundingMethod:'ceil'});
+      for (let index = 1; index < validationResults.length - 1; index += 1) {
+        const diffInMinutes = differenceInMinutes(new Date(validationResults[index].maxDate), new Date(validationResults[index - 1].maxDate), { roundingMethod: 'ceil' });
         console.log(diffInMinutes);
         // it means the difference is less than 1 then do not count for the goal
-        if(diffInMinutes < 1){
-          continue;
-        }
-        else{
-          sumMiddleMaterialGoals += Math.floor( (diffInMinutes * parseInt(validationResults[index].ProductionRate)) / 60 );
+        if (diffInMinutes >= 1) {
+          sumMiddleMaterialGoals += Math.floor(
+            (
+              diffInMinutes * parseInt(validationResults[index].ProductionRate, 10)
+            ) / 60
+          );
+          globalGoal = firstGoal + sumMiddleMaterialGoals + lastGoal;
         }
       }
-      globalGoal = firstGoal + sumMiddleMaterialGoals + lastGoal;      
     }
-        
-    //get sum of all material scanned 
+    // get sum of all material scanned
     globalValidationResults = _.sumBy(validationResults, 'validationResults');
-    lines.push( {
+    lines.push({
       id: currentLine.ProductionLineId,
       lineName: currentLine.LineName,
       active: active,
@@ -529,8 +518,8 @@ function formatProductionLineLiveStats(lines, currentLine, validationResults) {
       customerName: currentLine.CustomerName,
       validationResultCount: globalValidationResults, // sum fo all stations scanned materials
       goal: globalGoal, // sum of goals for all stations
-      rate: getCurrentProductionByRate(globalValidationResults, globalGoal) // sum of all percentages completition vs goal
-    });        
+      rate: getCurrentProductionByRate(globalValidationResults, globalGoal), // sum of all percentages completition vs goal
+    });
   }
 }
 module.exports.getProductionLinesPerCustomer = getProductionLinesPerCustomer;

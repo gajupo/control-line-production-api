@@ -1,32 +1,30 @@
-'use strict';
-
 const config = require('config');
-const {createLogger, format, transports, error} = require('winston');
+const { createLogger, format } = require('winston');
 const DailyRotateFile = require('winston-daily-rotate-file');
 
 const logFormat = format.combine(
-    format.timestamp({format: config.get("logger.dateFormat")}),
-    format.align(),
-    format.json(),
-    );
+  format.timestamp({ format: config.get('logger.dateFormat') }),
+  format.align(),
+  format.json()
+);
 
 const transportDaylyError = new DailyRotateFile({
-    filename: config.get("logger.errorFile"),
-    datePattern: 'YYYY-MM-DD-HH',
-    maxSize: '20m',
-    maxFiles: '7d',
-    prepend: true,
-   level: 'error',
-   });
+  filename: config.get('logger.errorFile'),
+  datePattern: 'YYYY-MM-DD-HH',
+  maxSize: '20m',
+  maxFiles: '7d',
+  prepend: true,
+  level: 'error',
+});
 
 const transportDaylyCombines = new DailyRotateFile({
-    filename: config.get("logger.combinedFile"),
-    datePattern: 'YYYY-MM-DD-HH',
-    maxSize: '20m',
-    maxFiles: '7d',
-    prepend: true,
-   level: 'info',
-   });
+  filename: config.get('logger.combinedFile'),
+  datePattern: 'YYYY-MM-DD-HH',
+  maxSize: '20m',
+  maxFiles: '7d',
+  prepend: true,
+  level: 'info',
+});
 
 //    format: format.combine(
 //     format.timestamp({
@@ -38,27 +36,25 @@ const transportDaylyCombines = new DailyRotateFile({
 //     )
 
 const logger = createLogger({
-    format:logFormat,
-    defaultMeta: { service: config.get("name") },
-    transports: [transportDaylyError,transportDaylyCombines],
+  format: logFormat,
+  defaultMeta: { service: config.get('name') },
+  transports: [transportDaylyError, transportDaylyCombines],
 });
 
 function logError(message, error, payload = undefined) {
-
-    var log = { 'message': message, 'error': error };
-    if (payload) {
-        log.payload = payload;
-    }
-    logger.error(log);
+  const log = { message: message, error: error };
+  if (payload) {
+    log.payload = payload;
+  }
+  logger.error(log);
 }
 
 function logMessage(message, payload = undefined) {
-
-    var log = { 'message': message };
-    if (payload) {
-        log.payload = payload;
-    }
-    logger.info(log);
+  const log = { message: message };
+  if (payload) {
+    log.payload = payload;
+  }
+  logger.info(log);
 }
 
 module.exports.logger = logger;

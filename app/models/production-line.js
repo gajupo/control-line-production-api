@@ -1,31 +1,29 @@
-'use strict';
-
-const {DataTypes} = require('sequelize');
-const {sequelize} = require("../helpers/sequelize");
+const { DataTypes } = require('sequelize');
+const { sequelize } = require('../helpers/sequelize');
 
 module.exports = sequelize.define('ProductionLine', {
-    lineName: {
-        type: DataTypes.STRING,
-        allowNull: false,
-        field: 'LineName'
-    },
-    lineDescription: {
-        type: DataTypes.STRING,
-        allowNull: true,
-        field: 'LineDescription'
-    },
-    status: {
-        type: DataTypes.BOOLEAN,
-        allowNull: false,
-        field: 'Status'
-    },
-    orderType: {
-        type: DataTypes.TINYINT,
-        allowNull: false,
-        field: 'OrderType'
-    }
+  lineName: {
+    type: DataTypes.STRING,
+    allowNull: false,
+    field: 'LineName',
+  },
+  lineDescription: {
+    type: DataTypes.STRING,
+    allowNull: true,
+    field: 'LineDescription',
+  },
+  status: {
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+    field: 'Status',
+  },
+  orderType: {
+    type: DataTypes.TINYINT,
+    allowNull: false,
+    field: 'OrderType',
+  },
 }, {
-    tableName: 'ProductionLines',
-    timestamps: false,
-    sequelize
+  tableName: 'ProductionLines',
+  timestamps: false,
+  sequelize: sequelize,
 });

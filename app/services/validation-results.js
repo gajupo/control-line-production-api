@@ -32,8 +32,9 @@ async function getProductionComplianceImpl(line, today) {
         }],
         where: { productionLineId: line.id },
       }],
+      // eslint-disable-next-line no-undef
       where: Sequelize.where(getDatePartConversion('ValidationResult.ScanDate'), '=', today),
-      group: [Sequelize.fn('DATEPART', Sequelize.literal('HOUR'), Sequelize.col('ValidationResult.ScanDate'))]
+      group: [Sequelize.fn('DATEPART', Sequelize.literal('HOUR'), Sequelize.col('ValidationResult.ScanDate'))],
     });
     return validationResults;
   } catch (error) {
@@ -44,7 +45,7 @@ async function getValidationResultsPerHourImpl(params) {
   try {
     const shiftStartDateTime = utcToZonedTime(params.date, 'America/Mexico_City');
     const dateTimeShiftEnd = shiftServices.GetShiftEndAsDateTime(
-      shiftStartDateTime, params.shiftStart, params.shiftEnd,
+      shiftStartDateTime, params.shiftStart, params.shiftEnd
     );
     const pattern = 'yyyy-MM-dd HH:mm:ss';
     console.log(shiftStartDateTime);
@@ -75,7 +76,7 @@ async function getValidationResultsPerHourImpl(params) {
         },
         raw: true,
         type: QueryTypes.SELECT,
-      },
+      }
     );
     return validations;
   } catch (error) {
@@ -151,7 +152,7 @@ function joinValidationsAndProductionRate(validationResults, shiftStartStr, shif
       let minUtcDateScaned = zonedTimeToUtc(validations[validations.length - 1].minDate, 'America/Mexico_City');
       // check if all order scanned the same material
       const countSameProductionRate = validations.filter(
-        (result) => result.ProductionRate === validations[0].ProductionRate,
+        (result) => result.ProductionRate === validations[0].ProductionRate
       ).length;
 
       if (isValid(minUtcDateScaned) && isValid(maxUtcDateScaned)) {
@@ -160,7 +161,7 @@ function joinValidationsAndProductionRate(validationResults, shiftStartStr, shif
       }
       // rate for the first material
       const firstRate = Math.ceil(
-        (parseInt(validations[0].ProductionRate, 10) * maxUtcDateScanedMinutes) / hourValue,
+        (parseInt(validations[0].ProductionRate, 10) * maxUtcDateScanedMinutes) / hourValue
       );
       // rate for the last material, because the such hour just two orders were processed
       // eslint-disable-next-line max-len
@@ -176,7 +177,7 @@ function joinValidationsAndProductionRate(validationResults, shiftStartStr, shif
         // if the same, it is the same material so it is the same production rate
         if (countSameProductionRate !== countByHour) {
           sumMiddleMaterialRates += Math.floor(
-            (difference * parseInt(validations[index].ProductionRate, 10)) / hourValue,
+            (difference * parseInt(validations[index].ProductionRate, 10)) / hourValue
           );
         }
       }
