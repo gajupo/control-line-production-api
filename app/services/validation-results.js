@@ -1,3 +1,4 @@
+'use strict';
 const { Sequelize, Op, QueryTypes } = require('sequelize');
 const { utcToZonedTime,format,zonedTimeToUtc } = require('date-fns-tz');
 const { isValid, parseISO, parse, getMinutes  } = require('date-fns');
@@ -42,10 +43,10 @@ async function getProductionComplianceImpl(line, today) {
 }
 async function getValidationResultsPerHourImpl(params) {
     try {
-        const currentDate = utcToZonedTime(params.date,'America/Mexico_City');
-        let dateTimeShiftEnd = shiftServices.GetShiftEndAsDateTime(currentDate, params.shiftStart,params.shiftEnd);
+        const shiftStartDateTime = utcToZonedTime(params.date,'America/Mexico_City');
+        let dateTimeShiftEnd = shiftServices.GetShiftEndAsDateTime(shiftStartDateTime, params.shiftStart,params.shiftEnd);
         const pattern = 'yyyy-MM-dd HH:mm:ss';
-        console.log(currentDate);
+        console.log(shiftStartDateTime);
         console.log(dateTimeShiftEnd);
         const validations = await sequelize.query(
             `select 
@@ -65,7 +66,7 @@ async function getValidationResultsPerHourImpl(params) {
             GROUP BY DATEPART(HOUR, ValidationResults.ScanDate), ValidationResults.OrderIdentifier,Materials.ProductionRate`,
             {
             bind: { 
-                startdate: format(currentDate, pattern), 
+                startdate: format(shiftStartDateTime, pattern), 
                 enddate: dateTimeShiftEnd, 
                 productionLineId: params.productionLineId, 
                 shiftId: params.shiftId, 
@@ -87,10 +88,14 @@ function joinValidationsAndProductionRate(validationResults, shiftStartStr, shif
     let hours = [];
     let results = [];
     let rates = [];
+    let hourValue  = 60;
+    let startHourValue;
+    let endHourValue;
     // we need the first order to get the production rate in case some hours does not have production, but however we need to put some production rate
     const firstOrder = validationResults[validationResults.length - 1];
     // loop from the first hour of the shift to last one
-    //TODO: if the shift is a next day shift the adjustedShiftEnd could be zero '00:30:00' when getting hour, add support for next day shifts
+    //TODO: agrupar por hora y fecha, procesar cada grupo por separado
+    //TODO: validar si el inicio y fin del turno no es a al minuto 0, tomar lo que corresponda, por ejemplo el turno puede iniciar al 06:30:00, de la hora 6 solo tomar 30m
     for (let i = adjustedShiftStart; i <= adjustedShiftEnd; i++) {
         hours.push(i);
         const countByHour = validationResults.filter(result => result.hour == i).length;
@@ -130,9 +135,9 @@ function joinValidationsAndProductionRate(validationResults, shiftStartStr, shif
                 maxUtcDateScanedMinutes = getMinutes(maxUtcDateScaned);
             }
             // rate for the first material
-            let firstRate = Math.ceil( (parseInt(validations[0].ProductionRate) * maxUtcDateScanedMinutes) / 60 );
+            let firstRate = Math.ceil( (parseInt(validations[0].ProductionRate) * maxUtcDateScanedMinutes) / hourValue );
             // rate for the last material, because the such hour just two orders were processed
-            let lastRate = Math.ceil( ( ( 60 - minUtcDateScanedMinutes ) * parseInt(validations[1].ProductionRate) ) / 60 );
+            let lastRate = Math.ceil( ( ( hourValue - minUtcDateScanedMinutes ) * parseInt(validations[1].ProductionRate) ) / hourValue );
             // calculate the total of validation resualts
             let totalOfValidations = parseInt(validations[0].validationResults) + parseInt(validations[1].validationResults);
             results.push(totalOfValidations);
@@ -159,9 +164,9 @@ function joinValidationsAndProductionRate(validationResults, shiftStartStr, shif
                 maxUtcDateScanedMinutes = getMinutes(maxUtcDateScaned);
             }
              // rate for the first material
-             let firstRate = Math.ceil( (parseInt(validations[0].ProductionRate) * maxUtcDateScanedMinutes) / 60 ) ;
+             let firstRate = Math.ceil( (parseInt(validations[0].ProductionRate) * maxUtcDateScanedMinutes) / hourValue ) ;
              // rate for the last material, because the such hour just two orders were processed
-             let lastRate = Math.ceil( ( ( 60 - minUtcDateScanedMinutes ) * parseInt(validations[validations.length - 1].ProductionRate) ) / 60 );
+             let lastRate = Math.ceil( ( ( hourValue - minUtcDateScanedMinutes ) * parseInt(validations[validations.length - 1].ProductionRate) ) / hourValue );
              for (let index = 1; index < validations.length - 1; index++) {
                 let maxUtcDateScaned = zonedTimeToUtc(validations[index].maxDate, "America/Mexico_City")
                 let minUtcDateScaned = zonedTimeToUtc(validations[index].minDate, "America/Mexico_City")
@@ -173,7 +178,7 @@ function joinValidationsAndProductionRate(validationResults, shiftStartStr, shif
                 // if the same, it is the same material so it is the same production rate
                 if(countSameProductionRate === countByHour)
                     continue;
-                sumMiddleMaterialRates += Math.floor( (difference * parseInt(validations[index].ProductionRate)) / 60);
+                sumMiddleMaterialRates += Math.floor( (difference * parseInt(validations[index].ProductionRate)) / hourValue);
              }
              console.log(`first order results = ${validations[0].validationResults}`)
              console.log(`Last order results = ${validations[validations.length - 1].validationResults}`)

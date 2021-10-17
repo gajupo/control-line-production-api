@@ -1,5 +1,3 @@
-'use strict';
-
 const { logError, logger, logMessage } = require('../helpers/logger');
 const services = require('../services');
 const libs = require('../helpers/lib');
