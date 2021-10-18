@@ -39,6 +39,20 @@ function getShiftDifferenceInMinutes(shiftStrStartTime, shiftStrEndTime) {
   }
   return minutes;
 }
+function getShiftDifferenceInDays(strStartDate, strEndDate) {
+  let days = 0;
+  if (strStartDate && strEndDate) {
+    days = datefns.differenceInDays(datefns.parseISO(strStartDate), datefns.parseISO(strEndDate), { roundingMethod: 'floor' });
+  }
+  return days;
+}
+function getShiftDifferenceInHours(strStartDate, strEndDate) {
+  let days = 0;
+  if (strStartDate && strEndDate) {
+    days = datefns.differenceInHours(datefns.parseISO(strStartDate), datefns.parseISO(strEndDate), { roundingMethod: 'floor' });
+  }
+  return days;
+}
 function getShifTimeTotaltSeconds(shiftStringTime) {
   const re = /^([0-1]?\d|2[0-3])(?::([0-5]?\d))?(?::([0-5]?\d))?$/;
   const timeArray = shiftStringTime.toString().match(re);
@@ -67,28 +81,13 @@ function GetShiftEndAsDateTime(shiftStartDateTime, shiftStartTimeStr, shiftEndTi
     // the date time when the shift will finish if the shift ends on the next day
     dateTimeShiftEnd = `${datefns.formatISO(newDatePlus1Day, { representation: 'date' })} ${shiftEndTimeStr}`;
   } else {
-    dateTimeShiftEnd = `${datefns.formatISO(shiftStartDateTime, { representation: 'date' })} ${shiftEndTimeStr}`;
+    dateTimeShiftEnd = `${shiftStartDateTimeUTCShort} ${shiftEndTimeStr}`;
   }
   return dateTimeShiftEnd;
 }
-function GetShiftStartAsDateTime(shiftStartStr, shiftEndStr) {
-  // eslint-disable-next-line max-len
-  // TODO: if the report is generated in the next day prior to finish the shift the report will generate bad information
-  //      because is taken the current date but not the real start and end shift time
-  const todayTZ = utcToZonedTime(new Date(), 'America/Mexico_City');
-  let dateTimeShiftStart = '';
-  const dateTimeShiftEnd = GetShiftEndAsDateTime(shiftStartStr, shiftEndStr);
-  const shiftStartTotalMinutes = getShifTimeTotaltSeconds(shiftStartStr);
-  const shiftEndTotalMinutes = getShifTimeTotaltSeconds(shiftEndStr);
-  if (shiftStartTotalMinutes > shiftEndTotalMinutes) {
-    // we add one day to current date beacuse the end of the shift will on the next day
-    const newDatePlus1Day = datefns.addDays(datefns.parseISO(dateTimeShiftEnd), -1);
-    // the date time when the shift will finish if the shift ends on the next day
-    dateTimeShiftStart = `${datefns.formatISO(newDatePlus1Day, { representation: 'date' })} ${shiftStartStr}`;
-  } else {
-    dateTimeShiftStart = `${datefns.formatISO(todayTZ, { representation: 'date' })} ${shiftStartStr}`;
-  }
-  return dateTimeShiftStart;
+function GetShiftStartAsDateTime(reportDate, shiftStartStr) {
+  // const rDate = utcToZonedTime(reportDate, 'America/Mexico_City');
+  return `${datefns.formatISO(reportDate, { representation: 'date' })} ${shiftStartStr}`;
 }
 function getShiftHour(shiftStringTime) {
   const re = /^([0-1]?\d|2[0-3])(?::([0-5]?\d))?(?::([0-5]?\d))?$/;
@@ -108,3 +107,5 @@ module.exports.getShiftDifferenceInMinutes = getShiftDifferenceInMinutes;
 module.exports.getShifTimeTotaltSeconds = getShifTimeTotaltSeconds;
 module.exports.getShiftHour = getShiftHour;
 module.exports.GetShiftStartAsDateTime = GetShiftStartAsDateTime;
+module.exports.getShiftDifferenceInDays = getShiftDifferenceInDays;
+module.exports.getShiftDifferenceInHours = getShiftDifferenceInHours;

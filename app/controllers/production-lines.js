@@ -73,7 +73,7 @@ async function getProductionLinesPerCustomerCurrentShift(req, res) {
     }
     return res.json(lines);
   } catch (error) {
-    logError('Error in getProductionLinesPerCustomerCurrentShift', error);
+    logError('Error in getProductionLinesPerCustomerCurrentShift', error.stack);
     return internalServerError('Internal server error', res);
   }
 }

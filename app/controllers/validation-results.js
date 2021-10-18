@@ -15,7 +15,9 @@ async function getValidationResultsPerHour(req, res) {
     const productionPerHour = await services.ValidationResults.getValidationResultsPerHourImpl(params);
     const joined = services.ValidationResults.joinValidationsAndProductionRate(
       productionPerHour,
-      params.shiftStart, params.shiftEnd
+      params.shiftStart,
+      params.shiftEnd,
+      params.date
     );
     return res.json(joined);
   } catch (error) {
