@@ -4,10 +4,9 @@ const { Sequelize, Op, QueryTypes } = require('sequelize');
 const { utcToZonedTime, zonedTimeToUtc } = require('date-fns-tz');
 const { isValid, getMinutes } = require('date-fns');
 const differenceInMinutes = require('date-fns/differenceInMinutes');
-const { sequelize } = require('../helpers/sequelize');
+const { sequelize, getDatePartConversion } = require('../helpers/sequelize');
 const models = require('../models');
 const shiftServices = require('./shift');
-const { DailyRotateFileTransportOptions } = require('winston/lib/winston/transports');
 
 async function getProductionComplianceImpl(line, today) {
   try {

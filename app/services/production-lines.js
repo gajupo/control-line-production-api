@@ -5,7 +5,7 @@ const { utcToZonedTime, format } = require('date-fns-tz');
 const datefns = require('date-fns');
 const differenceInMinutes = require('date-fns/differenceInMinutes');
 const models = require('../models');
-const { sequelize } = require('../helpers/sequelize');
+const { sequelize, getDatePartConversion } = require('../helpers/sequelize');
 const { logger } = require('../helpers/logger');
 const shiftServices = require('./shift');
 

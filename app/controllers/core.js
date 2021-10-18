@@ -43,7 +43,7 @@ function getHoursPerShift(line) {
 
 function getProductionGoal(line, shiftHours) {
   let goal = 0;
-  if (Object.prototype.call(line, 'Orders')) {
+  if (Object.prototype.hasOwnProperty.call(line, 'Orders')) {
     const orders = line.Orders;
     orders.forEach((order) => {
       const material = order.Material;
