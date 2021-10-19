@@ -41,7 +41,6 @@ async function getLineStatsByLineIdAndShift(line, customerId) {
     // return in case the shift for this particular line have not started, because there is any record in the table ProductionLineShiftHistories
     // al leats one operating station should scan one material to register the start of the shift in that table
     if (!line.ShiftStartedDatetime) return {};
-    console.log(line.ShiftStartedDatetime);
     const dateTimeShiftStart = shiftServices.GetShiftStartAsDateTime(
       line.ShiftStartedDatetime,
       line.ShiftStartStr
@@ -183,7 +182,6 @@ function getCurrentProductionByRate(validationResultCount, goal) {
     return 0;
   }
   const rate = Math.ceil((validationResultCount / goal) * 100);
-  console.log(`[ El avance actual es ${rate} ]`);
   return (rate > 100) ? 100 : rate;
 }
 function getValidationResultCount(stations) {
@@ -504,7 +502,6 @@ function formatProductionLineLiveStats(lines, currentLine, validationResults) {
 
       for (let index = 1; index < validationResults.length - 1; index += 1) {
         const diffInMinutes = differenceInMinutes(new Date(validationResults[index].maxDate), new Date(validationResults[index - 1].maxDate), { roundingMethod: 'ceil' });
-        console.log(diffInMinutes);
         // it means the difference is less than 1 then do not count for the goal
         if (diffInMinutes >= 1) {
           sumMiddleMaterialGoals += Math.floor(

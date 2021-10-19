@@ -1,5 +1,5 @@
 const _ = require('lodash');
-const { logError, logMessage } = require('../helpers/logger');
+const { logError, logMessage, logger } = require('../helpers/logger');
 const services = require('../services');
 const libs = require('../helpers/lib');
 const { internalServerError, badRequestError } = require('./core');
@@ -52,7 +52,7 @@ async function getProductionLinesPerCustomerCurrentShift(req, res) {
     if (_.isEmpty(productionLines)) {
       return res.json(linesInformation);
     }
-    console.log(productionLines);
+    logger.debug(productionLines);
     if (libs.isArray(productionLines) && !!productionLines) {
       // eslint-disable-next-line no-restricted-syntax
       for (const entry of productionLines) {

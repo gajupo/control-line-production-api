@@ -4,6 +4,7 @@ const cors = require('cors');
 const app = express();
 const http = require('http').Server(app);
 const io = require('socket.io')(http);
+const { logger } = require('./app/helpers/logger');
 const { getCustomerList } = require('./app/controllers/customer');
 const {
   getCurrentOrders, createNewOrder, getCustomerOrders,
@@ -26,7 +27,6 @@ const {
   getProductionCompliance: ldGetProductionCompliance,
 } = require('./app/controllers/line-dashboard');
 const { getValidationResultsPerHour } = require('./app/controllers/validation-results');
-
 const PORT = process.env.PORT || 3000;
 const HOST = process.env.SERVER_HOST || '0.0.0.0';
 
@@ -225,9 +225,9 @@ app.get('/api/line-dashboard/productioncompliance/:lineId', async (req, res) => 
 });
 
 io.on('connection', () => {
-  console.log('User connected...');
+  logger.info('User connected throught socker.io');
 });
 
 http.listen(PORT, HOST, () => {
-  console.log(`SIMPL Dashboard API listening at http://localhost:${PORT}`);
+  logger.info(`SIMPL Dashboard API listening at http://localhost:${PORT}`);
 });

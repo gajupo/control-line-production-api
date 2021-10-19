@@ -1,7 +1,7 @@
 const Hoek = require('@hapi/hoek');
 
 const { sequelize } = require('../helpers/sequelize');
-const { logError, logMessage } = require('../helpers/logger');
+const { logError, logMessage, logger } = require('../helpers/logger');
 const {
   StopCauseLog, Order, OperatingStation, Shift, StopCause, ProductionLine, Material,
   Customer, validateModelId,
@@ -20,7 +20,7 @@ async function updateStoppedLine(stopCauseLogId) {
     }, {
       where: { id: stopCauseLogId },
     });
-    console.log('Paro actualizado');
+    logger.info(`Paro de estacion liberado id ${stopCauseLogId}`);
     return actualizados;
   } catch (error) {
     logError('Error in unblockLine', error);
@@ -207,8 +207,6 @@ async function getStopCauseLogsRecordByCustomer(req, res) {
 async function unblockLine(req, res, io) {
   try {
     const stationIdentifier = Hoek.escapeHtml(req.params.stationIdentifier);
-    console.log('Params....');
-    console.info(req.params);
     const stoppedLine = await StopCauseLog.findOne({
       include: [{
         model: OperatingStation,
@@ -219,8 +217,7 @@ async function unblockLine(req, res, io) {
       }],
       where: { status: true },
     });
-    console.log('Paro encontrado');
-    console.info(stoppedLine);
+    logger.debug(`Linea detenida ${stoppedLine}`);
     if (stoppedLine) {
       const actualizados = await updateStoppedLine(stoppedLine.id);
       if (actualizados) {

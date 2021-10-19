@@ -15,7 +15,6 @@ async function getCurrentShift(productionLineId) {
       },
       mapToModel: true,
     });
-    console.log(Object.values(shiftHistory));
     return _.first(shiftHistory);
   } catch (error) {
     throw new Error(error);
@@ -87,7 +86,6 @@ function getShiftHour(shiftStringTime) {
     const isoDate = `${datefns.formatISO(today, { representation: 'date' })} ${shiftStringTime}`;
     hour = new Date(isoDate).getHours();
   }
-  console.log(hour);
   return hour;
 }
 module.exports.getCurrentShift = getCurrentShift;

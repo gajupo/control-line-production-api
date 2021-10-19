@@ -50,8 +50,6 @@ async function getValidationResultsPerHourImpl(params) {
     const dateTimeShiftEnd = shiftServices.GetShiftEndAsDateTime(
       reportDate.toISOString(), params.shiftStart, params.shiftEnd
     );
-    console.log(shiftStartDateTime);
-    console.log(dateTimeShiftEnd);
     const validations = await sequelize.query(
       `select 
         count(ValidationResults.id) as validationResults,
