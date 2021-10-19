@@ -1,7 +1,7 @@
 /* eslint-disable prefer-rest-params */
 const { Sequelize, Op, QueryTypes } = require('sequelize');
 const _ = require('lodash/');
-const { utcToZonedTime, format } = require('date-fns-tz');
+const { utcToZonedTime } = require('date-fns-tz');
 const datefns = require('date-fns');
 const differenceInMinutes = require('date-fns/differenceInMinutes');
 const models = require('../models');
@@ -34,13 +34,21 @@ async function getProductionLinesPerCustomer(customerId) {
  * @param customerId
  * @param shiftId
  */
-async function getLineStatsByLineIdAndShift(lineId, shiftEnd, shiftStart, customerId, shiftId) {
+async function getLineStatsByLineIdAndShift(line, customerId) {
   try {
     // eslint-disable-next-line prefer-rest-params
     logger.debug(`getLineStatsByLineIdAndShift arguments ${arguments}`);
-    const dateTimeShiftEnd = shiftServices.GetShiftEndAsDateTime(shiftStart, shiftEnd);
-    const dateValue = utcToZonedTime(new Date().toISOString(), 'America/Mexico_City');
-    const pattern = 'yyyy-MM-dd HH:mm:ss';
+    // return in case the shift for this particular line have not started, because there is any record in the table ProductionLineShiftHistories
+    // al leats one operating station should scan one material to register the start of the shift in that table
+    if (!line.ShiftStartedDatetime) return {};
+    console.log(line.ShiftStartedDatetime);
+    const dateTimeShiftStart = shiftServices.GetShiftStartAsDateTime(
+      line.ShiftStartedDatetime,
+      line.ShiftStartStr
+    );
+    const dateTimeShiftEnd = shiftServices.GetShiftEndAsDateTime(
+      line.ShiftStartedDatetime, line.ShiftStartStr, line.ShiftEndStr
+    );
     const productionLineStats = await sequelize.query(
       `SELECT 
             COUNT(ValidationResults.id) as validationResults,
@@ -56,26 +64,28 @@ async function getLineStatsByLineIdAndShift(lineId, shiftEnd, shiftStart, custom
             inner join Materials on Materials.ID = ValidationResults.MaterialId
             inner join Orders on Orders.Id = ValidationResults.OrderId and Orders.ProductionLineId = $lineId and Orders.ShiftId = $shiftId
             WHERE 
-                CONVERT(date, ValidationResults.ScanDate) = $todayDate and ValidationResults.CustomerId = $customerId 
-            GROUP BY ValidationResults.OrderIdentifier,ValidationResults.OrderId,Materials.ProductionRate,ValidationResults.MaterialId`,
+                CONVERT(date, ValidationResults.ScanDate) >= $dateTimeShiftStart
+                and CONVERT(date, ValidationResults.ScanDate) <= $dateTimeShiftEnd 
+                and ValidationResults.CustomerId = $customerId 
+            GROUP BY ValidationResults.OrderIdentifier,
+            ValidationResults.OrderId,
+            Materials.ProductionRate,
+            ValidationResults.MaterialId`,
       {
         bind: {
-          // eslint-disable-next-line object-shorthand
-          lineId: lineId,
-          // eslint-disable-next-line object-shorthand
-          shiftId: shiftId,
-          // eslint-disable-next-line object-shorthand
+          lineId: line.ProductionLineId,
+          shiftId: line.ShiftId,
+          dateTimeShiftStart: dateTimeShiftStart,
           dateTimeShiftEnd: dateTimeShiftEnd,
-          // eslint-disable-next-line object-shorthand
-          shiftStart: shiftStart,
-          // eslint-disable-next-line object-shorthand
+          shiftStart: line.ShiftStartStr,
           customerId: customerId,
-          todayDate: format(dateValue, pattern),
         },
         raw: true,
         type: QueryTypes.SELECT,
       }
     );
+    // pass line object to the next function
+    productionLineStats.line = line;
     return productionLineStats;
   } catch (error) {
     throw new Error(error);
@@ -124,16 +134,17 @@ async function getProductionLinesAndShiftsByCustomer(customerId) {
                 Customers.Id as CustomerId,
                 Customers.CustomerName, 
                 count(OperatingStations.Id) as NumberOfStations,
-                (case when (count(OperatingStations.id) = count(StopCauseLogs.id)) then 1 else 0 end) as isBlocked
+                (case when (count(OperatingStations.id) = count(StopCauseLogs.id)) then 1 else 0 end) as isBlocked,
+                convert(varchar ,max(ProductionLineShiftHistories.ShiftStartDateTime), 20) as ShiftStartedDatetime
                 --row_number() OVER(PARTITION BY ProductionLineShifts.ProductionLineId ORDER BY Shifts.ShiftStartStr desc) AS rn
             from ProductionLines
             left join ProductionLineShifts on ProductionLines.Id = ProductionLineShifts.ProductionLineId
             left join Shifts on Shifts.Id = ProductionLineShifts.ShiftId and Shifts.Active = 1 
-                --CAST(CONCAT(FORMAT(getdate(),'yyyy-MM-dd'),' ',  Shifts.ShiftStartStr) AS DATETIME) <= GETDATE() and
-                --CAST(CONCAT(FORMAT(getdate(),'yyyy-MM-dd'),' ', Shifts.ShiftEndStr) AS DATETIME) >= GETDATE()
             inner join Customers on ProductionLines.CustomerId = Customers.Id
             inner join OperatingStations on OperatingStations.LineId = ProductionLines.Id
             left join StopCauseLogs on StopCauseLogs.StationId = OperatingStations.Id  and StopCauseLogs.status = 1
+            left join ProductionLineShiftHistories on ProductionLineShiftHistories.ProductionLineId = ProductionLines.id 
+                      and ProductionLineShiftHistories.ShiftId = Shifts.Id
             where 
                 ProductionLines.CustomerId = $customerId and ProductionLines.Status = 1
             group by 
@@ -153,13 +164,13 @@ async function getProductionLinesAndShiftsByCustomer(customerId) {
       }
     );
     const valResult = models.validateLinesAndShifts(productionLinesCurrentShift);
-    let groupedByLine = {};
+    let currentLineShift = {};
     if (valResult.isValid) {
-      groupedByLine = _(productionLinesCurrentShift).groupBy('ProductionLineId').map(GroupByLine).value();
-      return groupedByLine;
+      currentLineShift = _(productionLinesCurrentShift).groupBy('ProductionLineId').map(GroupByLine).value();
+      return currentLineShift;
     }
     logger.error(`getProductionLinesAndShiftsByCustomer - ${valResult.errorList}`);
-    return groupedByLine;
+    return currentLineShift;
   } catch (error) {
     throw new Error(error);
   }
@@ -403,16 +414,14 @@ async function getProductionLineImpl(line, today) {
   }
 }
 function formatProductionLineLiveStats(lines, currentLine, validationResults) {
-  // TODO: CREATE A NEW WAY OF CONTROL START AND END SHIFT BECAUSE WHEN IT IS THE NEXT DATE
-  // THIS getShiftDifferenceInMinutes WILL RETURNO A WRONG (LESS THAN EXPECTED) VALUE
-  //      IT WILL NOT REPRESENT THE ENTIRE SHIFT
-  const todayTZ = utcToZonedTime(new Date(), 'America/Mexico_City');
   // eslint-disable-next-line max-len
-  const dateTimeShiftEnd = shiftServices.GetShiftEndAsDateTime(currentLine.ShiftStartStr, currentLine.ShiftEndStr);
-  const dateTimeShiftStart = `${datefns.formatISO(todayTZ, { representation: 'date' })} ${currentLine.ShiftStartStr}`;
+  const dateTimeShiftStart = shiftServices.GetShiftStartAsDateTime(currentLine.ShiftStartedDatetime, currentLine.ShiftStartStr);
+  const dateTimeShiftEnd = shiftServices.GetShiftEndAsDateTime(
+    currentLine.ShiftStartedDatetime,
+    currentLine.ShiftStartStr,
+    currentLine.ShiftEndStr
+  );
   // get difference in seconds from start to end shift
-  // TODO: Use the real start and end datetime, we will need to register some data to know
-  // in wich date and time every shift should start and end
   const shiftDurationInMinutes = shiftServices.getShiftDifferenceInMinutes(
     dateTimeShiftEnd, dateTimeShiftStart
   );

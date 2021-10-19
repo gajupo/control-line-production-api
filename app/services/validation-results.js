@@ -45,10 +45,10 @@ async function getProductionComplianceImpl(line, today) {
 }
 async function getValidationResultsPerHourImpl(params) {
   try {
-    const reportDate = utcToZonedTime(params.date, 'America/Mexico_City');
-    const shiftStartDateTime = shiftServices.GetShiftStartAsDateTime(reportDate, params.shiftStart);
+    const reportDate = zonedTimeToUtc(params.date, 'America/Mexico_City');
+    const shiftStartDateTime = shiftServices.GetShiftStartAsDateTime(reportDate.toISOString(), params.shiftStart);
     const dateTimeShiftEnd = shiftServices.GetShiftEndAsDateTime(
-      reportDate, params.shiftStart, params.shiftEnd
+      reportDate.toISOString(), params.shiftStart, params.shiftEnd
     );
     console.log(shiftStartDateTime);
     console.log(dateTimeShiftEnd);
@@ -98,9 +98,9 @@ function joinValidationsAndProductionRate(validationResults, shiftStart, shiftEn
   // we need the last order to get the production rate in case some hours does not have production,
   // but however we need to put some production rate
   const lastOrder = validationResults[validationResults.length - 1];
-  const paramDate = utcToZonedTime(reportDate, 'America/Mexico_City');
-  const shiftStartDate = shiftServices.GetShiftStartAsDateTime(paramDate, shiftStart);
-  const shiftEndDate = shiftServices.GetShiftEndAsDateTime(paramDate, shiftStart, shiftEnd);
+  const paramDate = zonedTimeToUtc(reportDate, 'America/Mexico_City');
+  const shiftStartDate = shiftServices.GetShiftStartAsDateTime(paramDate.toISOString(), shiftStart);
+  const shiftEndDate = shiftServices.GetShiftEndAsDateTime(paramDate.toISOString(), shiftStart, shiftEnd);
   const totalShiftHours = shiftServices.getShiftDifferenceInHours(shiftEndDate, shiftStartDate);
   // if start and date are not in the same day, we will look for hours in the next day starting by 0 = 12 AM
   if (!datefns.isSameDay(datefns.parseISO(shiftEndDate), datefns.parseISO(shiftStartDate))) {

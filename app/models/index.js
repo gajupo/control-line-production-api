@@ -13,6 +13,7 @@ const StopCause = require('./stop-cause');
 const Supplier = require('./supplier');
 const Material = require('./material');
 const ValidationResult = require('./validation-result');
+const ProductionLineShiftHistory = require('./production-line-shift-history');
 
 const {
   ReportParameterSchema, validateModelId, validateOrderParameters,
@@ -127,6 +128,27 @@ ValidationResult.belongsTo(Order, {
   foreignKey: 'OrderId',
 });
 
+Customer.hasMany(ProductionLineShiftHistory, {
+  foreignKey: 'CustomerId',
+});
+ProductionLineShiftHistory.belongsTo(Customer, {
+  foreignKey: 'CustomerId',
+});
+
+ProductionLine.hasMany(ProductionLineShiftHistory, {
+  foreignKey: 'ProductionLineId',
+});
+ProductionLineShiftHistory.belongsTo(ProductionLine, {
+  foreignKey: 'ProductionLineId',
+});
+
+Shift.hasMany(ProductionLineShiftHistory, {
+  foreignKey: 'ShiftId',
+});
+ProductionLineShiftHistory.belongsTo(Shift, {
+  foreignKey: 'ShiftId',
+});
+
 const ProductionLineShift = sequelize.define('ProductionLineShifts', {
   shiftId: {
     type: DataTypes.INTEGER,
@@ -198,3 +220,4 @@ module.exports.validateLineParameters = validateLineParameters;
 module.exports.validateLinePerCustomerParameters = validateLinePerCustomerParameters;
 module.exports.validateReportParameters = validateReportParameters;
 module.exports.validateLinesAndShifts = validateLinesAndShifts;
+module.exports.ProductionLineShiftHistory = ProductionLineShiftHistory;

@@ -1,3 +1,4 @@
+const _ = require('lodash');
 const { logError, logMessage } = require('../helpers/logger');
 const services = require('../services');
 const libs = require('../helpers/lib');
@@ -44,34 +45,36 @@ async function getProductionLinesPerCustomerCurrentShift(req, res) {
     if (!customer.isValid) {
       return badRequestError('Invalid parameter passed', res, customer.errorList);
     }
-    const lines = [];
-    const lineResults = [];
+    const linesInformation = [];
+    const lineResultsPromises = [];
+    let lineResults = [];
     const productionLines = await services.ProductionLines.getProductionLinesAndShiftsByCustomer(customer.id);
+    if (_.isEmpty(productionLines)) {
+      return res.json(linesInformation);
+    }
     console.log(productionLines);
     if (libs.isArray(productionLines) && !!productionLines) {
       // eslint-disable-next-line no-restricted-syntax
       for (const entry of productionLines) {
-        lineResults.push(services.ProductionLines.getLineStatsByLineIdAndShift(
-          entry.ProductionLineId,
-          entry.ShiftEndStr,
-          entry.ShiftStartStr,
-          customer.id,
-          entry.ShiftId
+        lineResultsPromises.push(services.ProductionLines.getLineStatsByLineIdAndShift(
+          entry,
+          customer.id
         ));
       }
       // await all calls
-      await Promise.all(lineResults);
+      lineResults = await Promise.all(lineResultsPromises);
+      if (_.isEmpty(lineResults[0])) return res.json({});
       for (let index = 0; index < lineResults.length; index++) {
-        const element = lineResults[index];
+        const orderList = lineResults[index];
         if (libs.isArray(lineResults[index]) && lineResults[index].length > 0) {
-          services.ProductionLines.formatProductionLineLiveStats(lines, element, lineResults);
+          services.ProductionLines.formatProductionLineLiveStats(linesInformation, orderList.line, orderList);
         } else {
           logMessage('NO ROWS FOUND', 'The Production Line does not have scanned material in the current shift');
-          services.ProductionLines.transformProductionLineDefault(lines, element);
+          services.ProductionLines.transformProductionLineDefault(linesInformation, orderList.line);
         }
       }
     }
-    return res.json(lines);
+    return res.json(linesInformation);
   } catch (error) {
     logError('Error in getProductionLinesPerCustomerCurrentShift', error.stack);
     return internalServerError('Internal server error', res);

@@ -1,36 +1,25 @@
+const _ = require('lodash');
 const { utcToZonedTime } = require('date-fns-tz');
 const datefns = require('date-fns');
-const { QueryTypes } = require('sequelize');
-const { sequelize } = require('../helpers/sequelize');
-const models = require('../models');
+const { Op, Sequelize } = require('sequelize');
+const { ProductionLineShiftHistory } = require('../models');
 
-async function getCurrentShift(productionLine) {
-  // const fractionalHours = dateTime.getHours() + (dateTime.getMinutes() / 60);
+async function getCurrentShift(productionLineId) {
   try {
-    // TODO: This implementation is obsolete, take as an example the funtion
-    // getProductionLinesAndShiftsByCustomeron production line services
-    const shift = await sequelize.query(
-      `select TOP 1 Shifts.*
-            from ProductionLines
-            inner join ProductionLineShifts on ProductionLines.Id = ProductionLineShifts.ProductionLineId
-            inner join Shifts on Shifts.Id = ProductionLineShifts.ShiftId
-            where ProductionLines.Id = $productionLineId and CAST(Shifts.ShiftStart AS FLOAT) <= CAST(FORMAT(GETDATE(),'HH.mm') AS FLOAT) and CONVERT(FLOAT, Shifts.ShiftEnd) >= CAST(FORMAT(GETDATE(),'HH.mm') AS FLOAT)`,
-      {
-        model: models.Shift,
-        mapToModel: true,
-        bind: { productionLineId: productionLine },
-        type: QueryTypes.SELECT,
-      }
-    );
-
-    if ((Object.keys(shift).length > 0)) return Object.values(shift)[0];
+    const shiftHistory = await ProductionLineShiftHistory.findAll({
+      attributes: [
+        [Sequelize.fn('MAX', Sequelize.col('ShiftStartDateTime')), 'shiftStartDateTime'],
+      ],
+      where: {
+        ProductionLineId: productionLineId,
+      },
+      mapToModel: true,
+    });
+    console.log(Object.values(shiftHistory));
+    return _.first(shiftHistory);
   } catch (error) {
     throw new Error(error);
   }
-  // const shifts = await getShiftsPerProductionLineImpl(productionLine);
-  // eslint-disable-next-line max-len
-  // const shift = shifts.find(s => fractionalHours >= s.shiftStart && fractionalHours <= s.shiftEnd);
-  return {};
 }
 function getShiftDifferenceInMinutes(shiftStrStartTime, shiftStrEndTime) {
   let minutes = 0;
@@ -71,7 +60,7 @@ function GetShiftEndAsDateTime(shiftStartDateTime, shiftStartTimeStr, shiftEndTi
   // TODO: if the report is generated in the next day
   // prior to finish the shift the report will generate bad information
   //      because is taken the current date but not the real start and end shift time
-  const shiftStartDateTimeUTCShort = datefns.formatISO(shiftStartDateTime, { representation: 'date' });
+  const shiftStartDateTimeUTCShort = datefns.formatISO(datefns.parseISO(shiftStartDateTime), { representation: 'date' });
   let dateTimeShiftEnd = '';
   const shiftStartTotalMinutes = getShifTimeTotaltSeconds(shiftStartTimeStr);
   const shiftEndTotalMinutes = getShifTimeTotaltSeconds(shiftEndTimeStr);
@@ -87,7 +76,7 @@ function GetShiftEndAsDateTime(shiftStartDateTime, shiftStartTimeStr, shiftEndTi
 }
 function GetShiftStartAsDateTime(reportDate, shiftStartStr) {
   // const rDate = utcToZonedTime(reportDate, 'America/Mexico_City');
-  return `${datefns.formatISO(reportDate, { representation: 'date' })} ${shiftStartStr}`;
+  return `${datefns.formatISO(datefns.parseISO(reportDate), { representation: 'date' })} ${shiftStartStr}`;
 }
 function getShiftHour(shiftStringTime) {
   const re = /^([0-1]?\d|2[0-3])(?::([0-5]?\d))?(?::([0-5]?\d))?$/;
