@@ -1,7 +1,7 @@
 const _ = require('lodash');
 const { utcToZonedTime } = require('date-fns-tz');
 const datefns = require('date-fns');
-const { Op, Sequelize } = require('sequelize');
+const { Sequelize } = require('sequelize');
 const { ProductionLineShiftHistory } = require('../models');
 
 async function getCurrentShift(productionLineId) {
