@@ -18,6 +18,6 @@ COPY . .
 # Tells our container who owns the copied content
 COPY --chown=node:node . .
 # Port for production environments
-EXPOSE 80
+EXPOSE 3000
 # An array of commands our container needs to run when we start it
 CMD [ "npm", "run", "dev" ]

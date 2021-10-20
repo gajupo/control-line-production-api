@@ -17,9 +17,6 @@ RUN npm install
 COPY dist/api.bundle.js .
 # Tells our container who owns the copied content
 COPY --chown=node:node . .
-# Exposes the port "3000" from our container
-# This is also how we can connect to our container from our host machine (the one you're reading this from now)
-EXPOSE 3000
 # Port for production environments
 EXPOSE 80
 # An array of commands our container needs to run when we start it
