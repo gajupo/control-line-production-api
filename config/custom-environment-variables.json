@@ -4,6 +4,6 @@
         "port": "DATABASE_PORT",
         "name": "DATABASE_NAME",
         "user": "DATABASE_USER",
-        "password": "DATABASE_PASSWORD"
+        "password": "MSSQL_DATABASE_PASSWORD"
     }
 }

@@ -14,13 +14,10 @@ USER node
 # Installs our NPM packages from the "package.json" file we moved from local in to our container
 RUN npm install
 # Bundle app source
-COPY dist/api.bundle.js .
+COPY . .
 # Tells our container who owns the copied content
 COPY --chown=node:node . .
-# Exposes the port "3000" from our container
-# This is also how we can connect to our container from our host machine (the one you're reading this from now)
-EXPOSE 3000
 # Port for production environments
 EXPOSE 80
 # An array of commands our container needs to run when we start it
-CMD [ "npm", "run", "prod" ]
+CMD [ "npm", "run", "dev" ]

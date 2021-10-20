@@ -8,6 +8,6 @@ const HOST = process.env.SERVER_HOST || '0.0.0.0';
 
 const server = httpServer.createServer(app);
 server.listen(PORT, HOST, () => {
-  logger.info(`SIMPL Dashboard API listening at http://localhost:${PORT}`);
-  console.log(`SIMPL Dashboard API listening at http://localhost:${PORT}`);
+  logger.info(`SIMPL Dashboard API listening at http://${HOST}:${PORT}`);
+  console.info(`SIMPL Dashboard API listening at http://${HOST}:${PORT}`);
 });

@@ -6,7 +6,10 @@
   "scripts": {
     "test": "test",
     "start": "node www.js",
-    "dev": "nodemon --inspect=0.0.0.0:9229 www.js"
+    "dev": "nodemon --inspect=0.0.0.0:9229 www.js",
+    "prod": "node dist/api.bundle.js",
+    "build": "webpack --mode production",
+    "builddev": "webpack --mode development"
   },
   "repository": {
     "type": "git",
@@ -44,6 +47,9 @@
   "devDependencies": {
     "eslint": "^7.32.0",
     "eslint-config-airbnb-base": "^14.2.1",
-    "eslint-plugin-import": "^2.25.2"
+    "eslint-plugin-import": "^2.25.2",
+    "webpack": "^5.59.0",
+    "webpack-cli": "^4.9.1",
+    "webpack-node-externals": "^3.0.0"
   }
 }

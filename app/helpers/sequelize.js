@@ -1,5 +1,6 @@
 const config = require('config');
 const { Sequelize } = require('sequelize');
+const { mssql } = require('sequelize/lib/dialects/mssql');
 
 // TODO: Check regularly for an official fix to this issue
 // https://github.com/sequelize/sequelize/issues/7879
@@ -12,6 +13,7 @@ const sequelize = new Sequelize(
   config.get('database.user'),
   config.get('database.password'), {
     dialect: 'mssql',
+    dialectModule: mssql,
     host: config.get('database.host'),
     port: config.get('database.port'),
     dialectOptions: {
