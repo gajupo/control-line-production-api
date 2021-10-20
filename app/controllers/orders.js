@@ -81,7 +81,7 @@ async function getCustomerOrders(req, res) {
 function generateOrderIdentifier(dateTime, productionLine) {
   return `${format(dateTime, 'ddMMyyHHmmss')}${productionLine.OperatingStation.stationIdentifier}-${productionLine.OperatingStation.id}`;
 }
-async function createNewOrder(req, res, io) {
+async function createNewOrder(req, res) {
   try {
     const params = validateOrderParameters(req.body);
     if (!params.isValid) {
@@ -138,7 +138,8 @@ async function createNewOrder(req, res, io) {
           where: { status: true },
         }],
       });
-      io.emit('order-created', fullOrder);
+      // TODO: ENABLE IT WHEN SOCKE IO IS IMPLEMENTED
+      // io.emit('order-created', fullOrder);
       return successfulOperation(`The order with the identifier ${orderIdentifier} was created succesfully.`, res, 'order', order);
     }
     return internalServerError('There was an error saving the new Order', res);
@@ -147,7 +148,7 @@ async function createNewOrder(req, res, io) {
     return internalServerError('Internal server error', res);
   }
 }
-async function scanOrderProduct(req, res, io) {
+async function scanOrderProduct(req, res) {
   try {
     const order = validateModelId(req.params.orderId);
     if (!order.isValid) {
@@ -157,7 +158,8 @@ async function scanOrderProduct(req, res, io) {
       where: { id: order.id },
     });
     if (updated[0] > 0) {
-      io.emit('order-scanned', { orderId: order.id });
+      // ENABLE IT WHEN SOCKER IO IS IMPLEMENTED
+      // io.emit('order-scanned', { orderId: order.id });
       return res.json({ orderId: order.id });
     }
     return res.json({ orderId: 0 });
@@ -167,7 +169,7 @@ async function scanOrderProduct(req, res, io) {
   }
 }
 
-async function closeOrder(req, res, io) {
+async function closeOrder(req, res) {
   try {
     const model = validateModelId(req.params.orderId);
     if (!model.isValid) {
@@ -183,8 +185,8 @@ async function closeOrder(req, res, io) {
     if (order) {
       order.isIncomplete = false;
       order.save();
-
-      io.emit('order-complete', order);
+      // TODO: ENABLE IT WHEM SOCKET IO IS IMPLEMENTED
+      // io.emit('order-complete', order);
       return res.json(order);
     }
     return res.json({ message: `The order with the ID ${model.id} was not found` });

@@ -204,7 +204,7 @@ async function getStopCauseLogsRecordByCustomer(req, res) {
   }
 }
 
-async function unblockLine(req, res, io) {
+async function unblockLine(req, res) {
   try {
     const stationIdentifier = Hoek.escapeHtml(req.params.stationIdentifier);
     const stoppedLine = await StopCauseLog.findOne({
@@ -222,7 +222,8 @@ async function unblockLine(req, res, io) {
       const actualizados = await updateStoppedLine(stoppedLine.id);
       if (actualizados) {
         logMessage('unblockLine consumed', stoppedLine.dataValues);
-        io.emit('line-unblocked', { id: stoppedLine.Order.id });
+        // TODO: enable whem socket io is implemented
+        // io.emit('line-unblocked', { id: stoppedLine.Order.id });
 
         successfulOperation(`The operating station ${stationIdentifier} was unblocked succesfully`, res);
       } else {

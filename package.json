@@ -2,11 +2,11 @@
   "name": "simpl-dashboard-api",
   "version": "0.0.1",
   "description": "REST api to display production information in a dashboard panel",
-  "main": "app.js",
+  "main": "www.js",
   "scripts": {
     "test": "test",
-    "start": "node app.js",
-    "dev": "nodemon --inspect=0.0.0.0:9229 app.js"
+    "start": "node www.js",
+    "dev": "nodemon --inspect=0.0.0.0:9229 www.js"
   },
   "repository": {
     "type": "git",
