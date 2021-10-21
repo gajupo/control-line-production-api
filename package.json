@@ -7,7 +7,7 @@
     "test": "test",
     "start": "node www.js",
     "dev": "nodemon --inspect=0.0.0.0:9229 www.js",
-    "prod": "node dist/api.bundle.js",
+    "prod": "node www.js",
     "build": "webpack --mode production",
     "builddev": "webpack --mode development"
   },

@@ -1,9 +1,9 @@
 {
     "database": {
-        "host": "DATABASE_HOST",
-        "port": "DATABASE_PORT",
-        "name": "DATABASE_NAME",
-        "user": "DATABASE_USER",
+        "host": "MSSQL_DATABASE_HOST",
+        "port": "MSSQL_DATABASE_PORT",
+        "name": "MSSQL_DATABASE_NAME",
+        "user": "MSSQL_DATABASE_USER",
         "password": "MSSQL_DATABASE_PASSWORD"
     }
 }

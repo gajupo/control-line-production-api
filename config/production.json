@@ -1,10 +1,6 @@
 {
     "name": "simpl dashboard api - production",
     "database": {
-        "host": "",
-        "port": "",
-        "name": "",
-        "user": "",
-        "password":""
+        
     }
 }
