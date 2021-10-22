@@ -10,6 +10,22 @@ const { logger } = require('./helpers/logger');
 app.use(express.json());
 app.use(cors());
 
+// allow update log at runtime
+app.get('/updateloglevel/:transportname/:newlevel', (req, res) => {
+  try {
+    for (let index = 0; index < logger.transports.length; index++) {
+      const transport = logger.transports[index];
+      if (transport.options.name === req.params.transportname) {
+        transport.level = req.params.newlevel;
+        return res.json({ message: 'Log level updated' });
+      }
+    }
+    return res.status(400).json({ message: 'transport not found' });
+  } catch (error) {
+    logger.error(error.message);
+    return res.status(500).json({ message: 'unable to change log level' });
+  }
+});
 // api routes
 app.use('/api/customers', require('./routes/customers'));
 app.use('/api/line-dashboard', require('./routes/line-dashboard'));

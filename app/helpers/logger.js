@@ -2,10 +2,19 @@ const config = require('config');
 const { createLogger, format } = require('winston');
 const DailyRotateFile = require('winston-daily-rotate-file');
 
+const prettyJson = format.printf((info) => {
+  if (info.message.constructor === Object) {
+    // eslint-disable-next-line no-param-reassign
+    info.message = JSON.stringify(info.message, null, 4);
+  }
+  return `[${info.timestamp}]-${info.level}: ${info.message}`;
+});
 const logFormat = format.combine(
   format.timestamp({ format: config.get('logger.dateFormat') }),
-  format.align(),
-  format.json()
+  format.prettyPrint(),
+  format.splat(),
+  format.simple(),
+  prettyJson
 );
 
 const transportDaylyError = new DailyRotateFile({
@@ -15,6 +24,7 @@ const transportDaylyError = new DailyRotateFile({
   maxFiles: '7d',
   prepend: true,
   level: 'error',
+  name: 'dailyerror',
 });
 
 const transportDaylyCombines = new DailyRotateFile({
@@ -24,6 +34,7 @@ const transportDaylyCombines = new DailyRotateFile({
   maxFiles: '7d',
   prepend: true,
   level: 'info',
+  name: 'dailyinfo',
 });
 
 //    format: format.combine(

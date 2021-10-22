@@ -52,7 +52,7 @@ async function getProductionLinesPerCustomerCurrentShift(req, res) {
     if (_.isEmpty(productionLines)) {
       return res.json(linesInformation);
     }
-    logger.debug(productionLines);
+    logger.debug('Production line by customer = %o', productionLines);
     if (libs.isArray(productionLines) && !!productionLines) {
       // eslint-disable-next-line no-restricted-syntax
       for (const entry of productionLines) {
@@ -66,6 +66,7 @@ async function getProductionLinesPerCustomerCurrentShift(req, res) {
       if (_.isEmpty(lineResults[0])) return res.json({});
       for (let index = 0; index < lineResults.length; index++) {
         const orderList = lineResults[index];
+        logger.debug('Orders by line =%o', lineResults);
         if (libs.isArray(lineResults[index]) && lineResults[index].length > 0) {
           services.ProductionLines.formatProductionLineLiveStats(linesInformation, orderList.line, orderList);
         } else {
@@ -74,6 +75,7 @@ async function getProductionLinesPerCustomerCurrentShift(req, res) {
         }
       }
     }
+    logger.debug('Lines live stats=%o', linesInformation);
     return res.json(linesInformation);
   } catch (error) {
     logError('Error in getProductionLinesPerCustomerCurrentShift', error.stack);

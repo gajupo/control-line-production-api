@@ -37,7 +37,8 @@ async function getProductionLinesPerCustomer(customerId) {
 async function getLineStatsByLineIdAndShift(line, customerId) {
   try {
     // eslint-disable-next-line prefer-rest-params
-    logger.debug(`getLineStatsByLineIdAndShift arguments ${arguments}`);
+    logger.debug('getLineStatsByLineIdAndShift line=%o', line);
+    logger.debug('getLineStatsByLineIdAndShift customerId=%o', customerId);
     // return in case the shift for this particular line have not started, because there is any record in the table ProductionLineShiftHistories
     // al leats one operating station should scan one material to register the start of the shift in that table
     if (!line.ShiftStartedDatetime) return {};
@@ -121,7 +122,6 @@ function GroupByLine(items, productionLineId) {
  */
 async function getProductionLinesAndShiftsByCustomer(customerId) {
   try {
-    logger.debug(`getProductionLinesAndShiftsByCustomer arguments ${arguments}`);
     const productionLinesCurrentShift = await sequelize.query(
       `select 
                 max(ProductionLineShifts.ShiftId) as ShiftId, 
@@ -166,9 +166,10 @@ async function getProductionLinesAndShiftsByCustomer(customerId) {
     let currentLineShift = {};
     if (valResult.isValid) {
       currentLineShift = _(productionLinesCurrentShift).groupBy('ProductionLineId').map(GroupByLine).value();
+      logger.debug('Shift selected on getProductionLinesAndShiftsByCustomer= %o', currentLineShift);
       return currentLineShift;
     }
-    logger.error(`getProductionLinesAndShiftsByCustomer - ${valResult.errorList}`);
+    logger.error('getProductionLinesAndShiftsByCustomer - %o', valResult.errorList);
     return currentLineShift;
   } catch (error) {
     throw new Error(error);
