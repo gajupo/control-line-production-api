@@ -39,7 +39,8 @@ const ProductionLinesAndShiftsByCustomerSchema = Joi.array().items(Joi.object({
   CustomerName: Joi.string().optional(),
   NumberOfStations: Joi.number().optional(),
   isBlocked: Joi.number().integer().required(),
-  ShiftStartedDatetime: Joi.date().optional().allow(null),
+  ShiftStartedDateTime: Joi.date().required(),
+  ShiftEndDateTime: Joi.date().required(),
 })).min(1);
 function addMessageErrorIfNotValid(returned, error) {
   if (error) {
