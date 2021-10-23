@@ -53,9 +53,9 @@ async function getLineStatsByLineIdAndShift(line, customerId) {
       `SELECT 
             COUNT(ValidationResults.id) as validationResults,
             MIN(ValidationResults.ScanDate) as minDate,
-            MAX(ValidationResults.ScanDate) as maxDate,            
-            DATEDIFF(MINUTE, CONCAT(CONVERT (DATE, GETDATE()) ,' ', $shiftStart), MAX(ValidationResults.ScanDate)) as minutesUsed,
-            DATEDIFF(MINUTE,MIN(ValidationResults.ScanDate), CONVERT (DATE, $dateTimeShiftEnd)) as shiftRemaningMinutes,
+            MAX(ValidationResults.ScanDate) as maxDate,
+            DATEDIFF(MINUTE, CONVERT (datetime, $dateTimeShiftStart), MAX(ValidationResults.ScanDate)) as minutesUsed,            
+            DATEDIFF(MINUTE,MIN(ValidationResults.ScanDate), CONVERT (datetime, $dateTimeShiftEnd)) as shiftRemaningMinutes,
             ValidationResults.OrderIdentifier,
             Materials.ProductionRate,
             ValidationResults.MaterialId,
@@ -64,8 +64,8 @@ async function getLineStatsByLineIdAndShift(line, customerId) {
             inner join Materials on Materials.ID = ValidationResults.MaterialId
             inner join Orders on Orders.Id = ValidationResults.OrderId and Orders.ProductionLineId = $lineId and Orders.ShiftId = $shiftId
             WHERE 
-                CONVERT(date, ValidationResults.ScanDate) >= $dateTimeShiftStart
-                and CONVERT(date, ValidationResults.ScanDate) <= $dateTimeShiftEnd 
+                CONVERT(datetime, ValidationResults.ScanDate) >= CONVERT(datetime, $dateTimeShiftStart)
+                and CONVERT(datetime, ValidationResults.ScanDate) <= CONVERT(datetime, $dateTimeShiftEnd) 
                 and ValidationResults.CustomerId = $customerId 
             GROUP BY ValidationResults.OrderIdentifier,
             ValidationResults.OrderId,
@@ -123,38 +123,52 @@ function GroupByLine(items, productionLineId) {
 async function getProductionLinesAndShiftsByCustomer(customerId) {
   try {
     const productionLinesCurrentShift = await sequelize.query(
-      `select 
-                max(ProductionLineShifts.ShiftId) as ShiftId, 
-                Shifts.ShiftStartStr, 
-                Shifts.ShiftEndStr, 
-                ProductionLineShifts.ProductionLineId as ProductionLineId,
-                ProductionLines.Status as Active,
-                ProductionLines.LineName,
-                Customers.Id as CustomerId,
-                Customers.CustomerName, 
-                count(OperatingStations.Id) as NumberOfStations,
-                (case when (count(OperatingStations.id) = count(StopCauseLogs.id)) then 1 else 0 end) as isBlocked,
-                convert(varchar ,max(ProductionLineShiftHistories.ShiftStartDateTime), 20) as ShiftStartedDatetime
-                --row_number() OVER(PARTITION BY ProductionLineShifts.ProductionLineId ORDER BY Shifts.ShiftStartStr desc) AS rn
-            from ProductionLines
-            left join ProductionLineShifts on ProductionLines.Id = ProductionLineShifts.ProductionLineId
-            left join Shifts on Shifts.Id = ProductionLineShifts.ShiftId and Shifts.Active = 1 
-            inner join Customers on ProductionLines.CustomerId = Customers.Id
-            inner join OperatingStations on OperatingStations.LineId = ProductionLines.Id
-            left join StopCauseLogs on StopCauseLogs.StationId = OperatingStations.Id  and StopCauseLogs.status = 1
-            left join ProductionLineShiftHistories on ProductionLineShiftHistories.ProductionLineId = ProductionLines.id 
-                      and ProductionLineShiftHistories.ShiftId = Shifts.Id
+      `SELECT
+            max(ProductionLineShifts.ShiftId) as ShiftId, 
+            Shifts.ShiftStartStr, 
+            Shifts.ShiftEndStr, 
+            ProductionLines.Id as ProductionLineId,
+            ProductionLines.Status as Active,
+            ProductionLines.LineName,
+            Customers.Id as CustomerId,
+            Customers.CustomerName, 
+            count(OperatingStations.Id) as NumberOfStations,
+            (case when (count(OperatingStations.id) = count(StopCauseLogs.id) and count(OperatingStations.id) > 0) then 1 else 0 end) as isBlocked,
+            convert(varchar , plsHisotiries.ShiftStartDateTime, 20) as ShiftStartedDateTime,
+            convert(varchar , plsHisotiries.ShiftEndDateTime, 20) as ShiftEndDateTime
+      FROM ProductionLines
+        inner join Customers on ProductionLines.CustomerId = Customers.Id
+        inner join OperatingStations on OperatingStations.LineId = ProductionLines.Id
+        inner join ProductionLineShifts on ProductionLines.Id = ProductionLineShifts.ProductionLineId
+        inner join Shifts on Shifts.Id = ProductionLineShifts.ShiftId and Shifts.Active = 1 
+        inner join (
+            select 
+            ProductionLineShiftHistories.ProductionLineId, 
+            ProductionLineShiftHistories.ShiftId, 
+            convert(varchar ,max(ProductionLineShiftHistories.ShiftStartDateTime), 20) as [ShiftStartDateTime],
+            convert(varchar ,max(ProductionLineShiftHistories.ShiftEndDateTime), 20) as ShiftEndDateTime
+            from ProductionLineShiftHistories 
             where 
-                ProductionLines.CustomerId = $customerId and ProductionLines.Status = 1
+            CONVERT(datetime, getdate()) >= CONVERT(datetime, ProductionLineShiftHistories.ShiftStartDateTime)
+            and CONVERT(datetime, getdate()) <= CONVERT(datetime, ProductionLineShiftHistories.ShiftEndDateTime)
             group by 
-                Shifts.ShiftStartStr, 
-                Shifts.ShiftEndStr, 
-                ProductionLineShifts.ProductionLineId,
-                ProductionLines.Status,
-                ProductionLines.LineName,
-                Customers.Id,
-                Customers.CustomerName,
-                ProductionLineShifts.ShiftId`,
+            ProductionLineShiftHistories.ProductionLineId,
+            ProductionLineShiftHistories.ShiftId
+        ) as plsHisotiries on plsHisotiries.ProductionLineId = ProductionLines.Id and plsHisotiries.ShiftId = Shifts.id
+        left join StopCauseLogs on StopCauseLogs.StationId = OperatingStations.Id  and StopCauseLogs.status = 1
+      WHERE 
+            ProductionLines.CustomerId = $customerId and ProductionLines.Status = 1
+      GROUP BY 
+          Shifts.ShiftStartStr, 
+          Shifts.ShiftEndStr, 
+          ProductionLines.id,
+          ProductionLines.Status,
+          ProductionLines.LineName,
+          Customers.Id,
+          Customers.CustomerName,
+          ProductionLineShifts.ShiftId,
+          plsHisotiries.ShiftStartDateTime,
+          plsHisotiries.ShiftEndDateTime`,
       {
         // eslint-disable-next-line object-shorthand
         bind: { customerId: customerId },
@@ -163,14 +177,12 @@ async function getProductionLinesAndShiftsByCustomer(customerId) {
       }
     );
     const valResult = models.validateLinesAndShifts(productionLinesCurrentShift);
-    let currentLineShift = {};
     if (valResult.isValid) {
-      currentLineShift = _(productionLinesCurrentShift).groupBy('ProductionLineId').map(GroupByLine).value();
-      logger.debug('Shift selected on getProductionLinesAndShiftsByCustomer= %o', currentLineShift);
-      return currentLineShift;
+      logger.debug('Shift selected on getProductionLinesAndShiftsByCustomer= %o', productionLinesCurrentShift);
+      return productionLinesCurrentShift;
     }
     logger.error('getProductionLinesAndShiftsByCustomer - %o', valResult.errorList);
-    return currentLineShift;
+    return {};
   } catch (error) {
     throw new Error(error);
   }
@@ -428,7 +440,9 @@ function formatProductionLineLiveStats(lines, currentLine, validationResults) {
   if (validationResults.length === 0) {
     // there is no validations for this shift at this current moment
   } else if (validationResults.length === 1) {
-    const goal = Math.floor((shiftDurationInMinutes * validationResults[0].ProductionRate) / 60);
+    const goal = Math.floor(
+      (shiftDurationInMinutes * validationResults[0].ProductionRate) / 60
+    ) * currentLine.NumberOfStations;
 
     lines.push({
       id: currentLine.ProductionLineId,
@@ -462,6 +476,7 @@ function formatProductionLineLiveStats(lines, currentLine, validationResults) {
       );
       finalGoal = (firstGoal + lastGoal);
     }
+    finalGoal *= currentLine.NumberOfStations;
     // calculate the total of validation resualts
     const totalOfValidations = _.sumBy(validationResults, 'validationResults');
     lines.push({
@@ -514,6 +529,8 @@ function formatProductionLineLiveStats(lines, currentLine, validationResults) {
         }
       }
     }
+    logger.debug('Global goal =%o', globalGoal);
+    logger.debug('Number of station =%o', currentLine.NumberOfStations);
     // get sum of all material scanned
     globalValidationResults = _.sumBy(validationResults, 'validationResults');
     lines.push({
