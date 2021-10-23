@@ -1,5 +1,6 @@
 const _ = require('lodash');
 const datefns = require('date-fns');
+const { utcToZonedTime } = require('date-fns-tz/fp');
 const { Sequelize, Op, QueryTypes } = require('sequelize');
 const { zonedTimeToUtc } = require('date-fns-tz');
 const { isValid, getMinutes } = require('date-fns');
@@ -55,8 +56,8 @@ async function getValidationResultsPerHourImpl(params) {
         count(ValidationResults.id) as validationResults,
         DATEPART(HOUR, ValidationResults.ScanDate) as hour,
         convert(varchar, min(ValidationResults.ScanDate), 23) as scanDate,
-        min(ValidationResults.ScanDate) as minDate,
-        max(ValidationResults.ScanDate) as maxDate,
+        convert(varchar, min(ValidationResults.ScanDate), 120) as minDate,
+        convert(varchar, max(ValidationResults.ScanDate), 120) as maxDate,
         DATEPART(minute,min(ValidationResults.ScanDate)) as minMinute,
         DATEDIFF(SECOND,min(ValidationResults.ScanDate),max(ValidationResults.ScanDate)) as usedSeconds, 
         ValidationResults.OrderIdentifier,
@@ -65,7 +66,7 @@ async function getValidationResultsPerHourImpl(params) {
         inner join Materials on Materials.ID = ValidationResults.MaterialId
         inner join Orders on Orders.Id = ValidationResults.OrderId and Orders.ProductionLineId = $productionLineId and Orders.ShiftId = $shiftId
       where 
-        CONVERT(date, ValidationResults.ScanDate) >= $startdate and CONVERT(date, ValidationResults.ScanDate) <= $enddate and ValidationResults.CustomerId = $customerId 
+        CONVERT(datetime, ValidationResults.ScanDate) >= CONVERT(datetime, $startdate) and CONVERT(datetime, ValidationResults.ScanDate) <= CONVERT(datetime, $enddate) and ValidationResults.CustomerId = $customerId 
         GROUP BY DATEPART(HOUR, ValidationResults.ScanDate), ValidationResults.OrderIdentifier,Materials.ProductionRate 
         ORDER BY convert(varchar, min(ValidationResults.ScanDate), 23)`,
       {
@@ -92,10 +93,7 @@ function joinValidationsAndProductionRate(validationResults, shiftStart, shiftEn
   const rates = [];
   const hourValue = 60;
   const uniqueDateList = [];
-  // eslint-disable-next-line max-len
-  // we need the last order to get the production rate in case some hours does not have production,
-  // but however we need to put some production rate
-  const lastOrder = validationResults[validationResults.length - 1];
+
   const paramDate = zonedTimeToUtc(reportDate, 'America/Mexico_City');
   const shiftStartDate = shiftServices.GetShiftStartAsDateTime(paramDate.toISOString(), shiftStart);
   const shiftEndDate = shiftServices.GetShiftEndAsDateTime(paramDate.toISOString(), shiftStart, shiftEnd);
@@ -110,8 +108,13 @@ function joinValidationsAndProductionRate(validationResults, shiftStart, shiftEn
   }
   // get first hour the shift
   let theVeryfirstHour = shiftServices.getShiftHour(shiftStart);
-  const dayLastHour = 24;
+  const dayLastHour = 23;
   let shiftLastHour = 0;
+
+  // eslint-disable-next-line max-len
+  // we need the last order to get the production rate in case some hours does not have production,
+  // but however we need to put some production rate
+  const lastOrder = validationResults[validationResults.length - 1];
   for (let index = 0; index < uniqueDateList.length; index++) {
     const date = uniqueDateList[index];
     // the shift will start in current day and ends in the next one, that is why we iterate until 23 hour for the current date
@@ -119,15 +122,15 @@ function joinValidationsAndProductionRate(validationResults, shiftStart, shiftEn
       shiftLastHour = dayLastHour;
     } else if (index === 0 && uniqueDateList.length === 1) {
       // start and end shift is in the same day
-      shiftLastHour = (theVeryfirstHour + totalShiftHours) + 1;
+      shiftLastHour = theVeryfirstHour + totalShiftHours;
     } else if (index > 0 && uniqueDateList.length >= 1) {
       // iterate for reamining hours for next day shift
-      shiftLastHour = ((theVeryfirstHour + totalShiftHours) - dayLastHour) + 1;
+      shiftLastHour = shiftServices.getShiftHour(shiftEnd);
       // restart the hour counter to start in 0 for the next day
       theVeryfirstHour = 0;
     }
-    for (let hour = theVeryfirstHour; hour < shiftLastHour; hour++) {
-      // every hour that will be shown on the chart
+
+    for (let hour = theVeryfirstHour; hour <= shiftLastHour; hour++) {
       hours.push(hour);
       // get the count for validation by hour and date
       const countByHour = validationResults.filter((result) => result.hour === hour && result.scanDate === date).length;
@@ -149,8 +152,8 @@ function joinValidationsAndProductionRate(validationResults, shiftStart, shiftEn
         let minUtcDateScanedMinutes;
         let maxUtcDateScanedMinutes = 0;
         // get the min date of the first barcode scaned, this means it is the first time the order was used
-        const maxUtcDateScaned = zonedTimeToUtc(validationsPerHour[0].maxDate, 'America/Mexico_City');
-        const minUtcDateScaned = zonedTimeToUtc(validationsPerHour[1].minDate, 'America/Mexico_City');
+        const maxUtcDateScaned = datefns.parseISO(validationsPerHour[0].maxDate);
+        const minUtcDateScaned = datefns.parseISO(validationsPerHour[1].minDate);
         if (isValid(minUtcDateScaned) && isValid(maxUtcDateScaned)) {
           minUtcDateScanedMinutes = getMinutes(minUtcDateScaned);
           maxUtcDateScanedMinutes = getMinutes(maxUtcDateScaned);
@@ -176,8 +179,8 @@ function joinValidationsAndProductionRate(validationResults, shiftStart, shiftEn
         let sumMiddleValidationResults = 0;
         // eslint-disable-next-line max-len
         // get the min date of the first barcode scaned, this means it is the first time the order was used
-        let maxUtcDateScaned = zonedTimeToUtc(validationsPerHour[0].maxDate, 'America/Mexico_City');
-        let minUtcDateScaned = zonedTimeToUtc(validationsPerHour[validationsPerHour.length - 1].minDate, 'America/Mexico_City');
+        let maxUtcDateScaned = datefns.parseISO(validationsPerHour[0].maxDate);
+        let minUtcDateScaned = datefns.parseISO(validationsPerHour[validationsPerHour.length - 1].minDate);
         // check if all order scanned the same material
         const countSameProductionRate = validationsPerHour.filter(
           (result) => result.ProductionRate === validationsPerHour[0].ProductionRate
@@ -194,8 +197,8 @@ function joinValidationsAndProductionRate(validationResults, shiftStart, shiftEn
           // eslint-disable-next-line max-len
         const lastRate = Math.ceil(((hourValue - minUtcDateScanedMinutes) * parseInt(validationsPerHour[validationsPerHour.length - 1].ProductionRate, 10)) / hourValue);
         for (let iPerHour = 1; iPerHour < validationsPerHour.length - 1; iPerHour += 1) {
-          maxUtcDateScaned = zonedTimeToUtc(validationsPerHour[iPerHour].maxDate, 'America/Mexico_City');
-          minUtcDateScaned = zonedTimeToUtc(validationsPerHour[iPerHour].minDate, 'America/Mexico_City');
+          maxUtcDateScaned = datefns.parseISO(validationsPerHour[iPerHour].maxDate);
+          minUtcDateScaned = datefns.parseISO(validationsPerHour[iPerHour].minDate);
           const difference = differenceInMinutes(maxUtcDateScaned, minUtcDateScaned, { roundingMethod: 'ceil' });
           sumMiddleValidationResults += parseInt(validationsPerHour[iPerHour].validationResults, 10);
           // if the same, it is the same material so it is the same production rate
