@@ -41,13 +41,13 @@ async function getLineStatsByLineIdAndShift(line, customerId) {
     logger.debug('getLineStatsByLineIdAndShift customerId=%o', customerId);
     // return in case the shift for this particular line have not started, because there is any record in the table ProductionLineShiftHistories
     // al leats one operating station should scan one material to register the start of the shift in that table
-    if (!line.ShiftStartedDatetime) return {};
+    if (!line.ShiftStartedDateTime) return {};
     const dateTimeShiftStart = shiftServices.GetShiftStartAsDateTime(
-      line.ShiftStartedDatetime,
+      line.ShiftStartedDateTime,
       line.ShiftStartStr
     );
     const dateTimeShiftEnd = shiftServices.GetShiftEndAsDateTime(
-      line.ShiftStartedDatetime, line.ShiftStartStr, line.ShiftEndStr
+      line.ShiftStartedDateTime, line.ShiftStartStr, line.ShiftEndStr
     );
     const productionLineStats = await sequelize.query(
       `SELECT 
@@ -138,7 +138,7 @@ async function getProductionLinesAndShiftsByCustomer(customerId) {
             convert(varchar , plsHisotiries.ShiftEndDateTime, 20) as ShiftEndDateTime
       FROM ProductionLines
         inner join Customers on ProductionLines.CustomerId = Customers.Id
-        inner join OperatingStations on OperatingStations.LineId = ProductionLines.Id
+        inner join OperatingStations on OperatingStations.LineId = ProductionLines.Id and OperatingStations.Status = 1
         inner join ProductionLineShifts on ProductionLines.Id = ProductionLineShifts.ProductionLineId
         inner join Shifts on Shifts.Id = ProductionLineShifts.ShiftId and Shifts.Active = 1 
         inner join (
@@ -426,9 +426,9 @@ async function getProductionLineImpl(line, today) {
 }
 function formatProductionLineLiveStats(lines, currentLine, validationResults) {
   // eslint-disable-next-line max-len
-  const dateTimeShiftStart = shiftServices.GetShiftStartAsDateTime(currentLine.ShiftStartedDatetime, currentLine.ShiftStartStr);
+  const dateTimeShiftStart = shiftServices.GetShiftStartAsDateTime(currentLine.ShiftStartedDateTime, currentLine.ShiftStartStr);
   const dateTimeShiftEnd = shiftServices.GetShiftEndAsDateTime(
-    currentLine.ShiftStartedDatetime,
+    currentLine.ShiftStartedDateTime,
     currentLine.ShiftStartStr,
     currentLine.ShiftEndStr
   );
@@ -440,6 +440,7 @@ function formatProductionLineLiveStats(lines, currentLine, validationResults) {
   if (validationResults.length === 0) {
     // there is no validations for this shift at this current moment
   } else if (validationResults.length === 1) {
+    // the line at this current moment has only one order
     const goal = Math.floor(
       (shiftDurationInMinutes * validationResults[0].ProductionRate) / 60
     ) * currentLine.NumberOfStations;
@@ -456,6 +457,7 @@ function formatProductionLineLiveStats(lines, currentLine, validationResults) {
       rate: getCurrentProductionByRate(validationResults[0].validationResults, goal), // sum of all percentages completition vs goal
     });
   } else if (validationResults.length === 2) {
+    // the line at this current moment has only two orders
     let finalGoal = 0;
     // check if all orders scanned have the same material
     const countSameProductionRate = validationResults.filter(
@@ -491,6 +493,10 @@ function formatProductionLineLiveStats(lines, currentLine, validationResults) {
       rate: getCurrentProductionByRate(totalOfValidations, finalGoal), // sum of all percentages completition vs goal
     });
   } else {
+    /**
+     * the line at this current moment has more than two order
+     * we will apply a different method to calculate the goal
+     */
     let sumMiddleMaterialGoals = 0;
     let globalGoal = 0;
     let globalValidationResults = 0;
@@ -531,6 +537,8 @@ function formatProductionLineLiveStats(lines, currentLine, validationResults) {
     }
     logger.debug('Global goal =%o', globalGoal);
     logger.debug('Number of station =%o', currentLine.NumberOfStations);
+    // we need to multiply for the number of active stations at the current moment
+    globalGoal *= currentLine.NumberOfStations;
     // get sum of all material scanned
     globalValidationResults = _.sumBy(validationResults, 'validationResults');
     lines.push({
