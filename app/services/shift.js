@@ -6,16 +6,26 @@ const { ProductionLineShiftHistory } = require('../models');
 
 async function getCurrentShift(productionLineId) {
   try {
+    const shiftSDT = await ProductionLineShiftHistory.findAll({
+      attributes: [
+        [Sequelize.fn('MAX', Sequelize.col('ShiftStartDateTime')), 'shiftStartDateTime']
+      ],
+      where: {
+        ProductionLineId: productionLineId
+      }
+    });
     const shiftHistory = await ProductionLineShiftHistory.findAll({
       attributes: [
-        [Sequelize.fn('MAX', Sequelize.col('ShiftStartDateTime')), 'shiftStartDateTime'],
+        'customerId', 'productionLineId', 'shiftId', 'shiftStartDateTime', 'shiftEndDateTime'
       ],
       where: {
         ProductionLineId: productionLineId,
+        shiftStartDateTime: shiftSDT[0].shiftStartDateTime
       },
       mapToModel: true,
     });
     return _.first(shiftHistory);
+    //return shiftSDT[0].shiftStartDateTime;
   } catch (error) {
     throw new Error(error);
   }

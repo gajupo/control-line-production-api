@@ -346,24 +346,25 @@ async function getProductionLineById(productionLineId) {
     throw new Error(error);
   }
 }
-async function getProductionLineImpl(line, today) {
+async function getProductionLineImpl(line,shiftStart,shiftEnd,shiftId) {
   try {
     const productionLine = await models.ProductionLine.findOne({
       where: { id: line.id },
       attributes: ['id', 'lineName'],
       include: [{
         model: models.Shift,
-        attributes: ['id', 'shiftDescription', 'shiftStart', 'shiftEnd'],
+        attributes: ['id', 'shiftDescription', 'shiftStartStr', 'shiftEndStr'],
         through: { attributes: [] },
         required: true,
         where: {
           active: true,
-          shiftStart: {
-            [Op.lte]: today.getHours(),
+          id: shiftId,
+          /*shiftStart: {
+            [Op.lte]: shiftStart.getHours(),
           },
           shiftEnd: {
-            [Op.gte]: today.getHours(),
-          },
+            [Op.gte]: shiftEnd.getHours(),
+          },*/
         },
       }, {
         model: models.OperatingStation,
@@ -382,7 +383,14 @@ async function getProductionLineImpl(line, today) {
           attributes: [],
           required: false,
           // eslint-disable-next-line no-undef
-          where: Sequelize.where(getDatePartConversion('OperatingStations.ValidationResults.ScanDate'), '=', today),
+          //where: Sequelize.where(getDatePartConversion('OperatingStations.ValidationResults.ScanDate'), '=', shiftStart),
+          //where: Sequelize.where(Sequelize.col('OperatingStations.ValidationResults.ScanDate'), '>=', shiftStart),
+          where: {
+            [Op.and]: [
+              Sequelize.where(Sequelize.col('OperatingStations.ValidationResults.ScanDate'), '>=', shiftStart),
+              Sequelize.where(Sequelize.col('OperatingStations.ValidationResults.ScanDate'), '<=', shiftEnd)
+            ],
+          },
         }],
       }, {
         model: models.Order,
@@ -391,8 +399,9 @@ async function getProductionLineImpl(line, today) {
         where: {
           [Op.and]: [
             Sequelize.where(Sequelize.col('Orders.IsIncomplete'), '=', true),
-            // eslint-disable-next-line no-undef
-            Sequelize.where(getDatePartConversion('Orders.CreatedAt'), '<=', today),
+            //Sequelize.where(getDatePartConversion('Orders.CreatedAt'), '<=', shiftEnd),
+            Sequelize.where(Sequelize.col('Orders.CreatedAt'), '>=', shiftStart),
+            Sequelize.where(Sequelize.col('Orders.CreatedAt'), '<=', shiftEnd)
           ],
         },
         include: [{
@@ -404,8 +413,8 @@ async function getProductionLineImpl(line, today) {
       group: ['ProductionLine.id', 'ProductionLine.lineName',
         'OperatingStations.id', 'OperatingStations.stationIdentifier',
         'OperatingStations.StopCauseLogs.id', 'Orders.id', 'Orders.Material.id',
-        'Orders.Material.productionRate', 'Shifts.id', 'Shifts.shiftStart',
-        'Shifts.shiftEnd', 'Shifts.shiftDescription'],
+        'Orders.Material.productionRate', 'Shifts.id', 'Shifts.shiftStartStr',
+        'Shifts.shiftEndStr', 'Shifts.shiftDescription'],
     });
     return productionLine;
   } catch (error) {

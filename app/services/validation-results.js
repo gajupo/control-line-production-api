@@ -8,7 +8,7 @@ const { sequelize, getDatePartConversion } = require('../helpers/sequelize');
 const models = require('../models');
 const shiftServices = require('./shift');
 
-async function getProductionComplianceImpl(line, today) {
+async function getProductionComplianceImpl(line,shiftStart,shiftEnd,shiftId) {
   try {
     const validationResults = await models.ValidationResult.findAll({
       attributes: [
@@ -24,18 +24,28 @@ async function getProductionComplianceImpl(line, today) {
           attributes: [],
           where: {
             active: true,
-            shiftStart: {
+            id: shiftId,
+            /*shiftStart: {
               [Op.lte]: today.getHours(),
             },
             shiftEnd: {
               [Op.gte]: today.getHours(),
-            },
+            },*/
           },
         }],
         where: { productionLineId: line.id },
       }],
       // eslint-disable-next-line no-undef
-      where: Sequelize.where(getDatePartConversion('ValidationResult.ScanDate'), '=', today),
+      //where: Sequelize.where(getDatePartConversion('ValidationResult.ScanDate'), '>=', shiftStart),
+      //where: Sequelize.where(Sequelize.col('ValidationResult.ScanDate'), '>=', shiftStart),
+      where: {
+        [Op.and]: [
+          Sequelize.where(Sequelize.col('ValidationResult.ScanDate'), '>=', shiftStart),
+          // eslint-disable-next-line no-undef
+          //Sequelize.where(getDatePartConversion('Orders.CreatedAt'), '<=', shiftEnd),
+          Sequelize.where(Sequelize.col('ValidationResult.ScanDate'), '<=', shiftEnd)
+        ],
+      },
       group: [Sequelize.fn('DATEPART', Sequelize.literal('HOUR'), Sequelize.col('ValidationResult.ScanDate'))],
     });
     return validationResults;

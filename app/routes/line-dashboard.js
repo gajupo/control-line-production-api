@@ -3,6 +3,8 @@ const {
   getProductionLines: ldGetProductionLines,
   getProductionLine: ldGetProductionLine,
   getProductionCompliance: ldGetProductionCompliance,
+  getCurrentShift: ldGetCurrentShift,
+  getHoursPerShift: ldGetHoursPerShift,
 } = require('../controllers/line-dashboard');
 
 const router = express.Router();
@@ -17,7 +19,7 @@ router.get('/productionlines/customer/:customerId', async (req, res) => {
 /**
    * GET /api/line-dashboard/productionline/1
    */
-router.get('/productionline/:lineId', async (req, res) => {
+router.get('/productionline/:lineId&:shiftStart&:shiftEnd&:shiftId', async (req, res) => {
   await ldGetProductionLine(req, res);
 });
 
@@ -26,5 +28,21 @@ router.get('/productionline/:lineId', async (req, res) => {
    */
 router.get('/productioncompliance/:lineId', async (req, res) => {
   await ldGetProductionCompliance(req, res);
+});
+
+/**
+ * GET /api/line-dashboard/currentshift/1
+ */
+
+router.get('/currentshift/:lineId', async (req, res) =>{
+  await  ldGetCurrentShift(req,res); 
+});
+
+/**
+ * GET /api/line-dashboard/shiftdifference/
+ */
+
+ router.get('/shiftdifference/:startdate&:enddate', async (req, res) =>{
+  await ldGetHoursPerShift(req,res); 
 });
 module.exports = router;

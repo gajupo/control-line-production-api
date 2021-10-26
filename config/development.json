@@ -1,7 +1,7 @@
 {
     "name": "simpl dashboard api - development",
     "database": {
-        "host": "192.168.0.105",
+        "host": "192.168.100.246",
         "port": "1433",
         "name": "SimplProd",
         "user": "sa",

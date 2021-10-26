@@ -8,6 +8,21 @@ module.exports = sequelize.define('ProductionLineShiftHistory', {
     autoIncrement: true,
     field: 'Id',
   },
+  customerId: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    field: 'CustomerId',
+  },
+  productionLineId: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    field: 'ProductionLineId',
+  },
+  shiftId: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    field: 'ShiftId',
+  },
   shiftStartDateTime: {
     type: DataTypes.DATE,
     allowNull: false,
