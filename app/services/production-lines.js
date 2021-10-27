@@ -124,23 +124,23 @@ async function getProductionLinesAndShiftsByCustomer(customerId) {
   try {
     const productionLinesCurrentShift = await sequelize.query(
       `SELECT
-            max(ProductionLineShifts.ShiftId) as ShiftId, 
+            ProductionLineShifts.ShiftId, 
             Shifts.ShiftStartStr, 
             Shifts.ShiftEndStr, 
-            ProductionLines.Id as ProductionLineId,
+            ProductionLineShifts.ProductionLineId,
             ProductionLines.Status as Active,
             ProductionLines.LineName,
             Customers.Id as CustomerId,
             Customers.CustomerName, 
-            count(OperatingStations.Id) as NumberOfStations,
-            (case when (count(OperatingStations.id) = count(StopCauseLogs.id) and count(OperatingStations.id) > 0) then 1 else 0 end) as isBlocked,
+            count(OperatingStations.Id) as [NumberOfStations],
+            (case when (count(OperatingStations.id) = count(stopEvents.StationId) and count(OperatingStations.id) > 0) then 1 else 0 end) as isBlocked,
             convert(varchar , plsHisotiries.ShiftStartDateTime, 20) as ShiftStartedDateTime,
             convert(varchar , plsHisotiries.ShiftEndDateTime, 20) as ShiftEndDateTime
       FROM ProductionLines
         inner join Customers on ProductionLines.CustomerId = Customers.Id
-        inner join OperatingStations on OperatingStations.LineId = ProductionLines.Id and OperatingStations.Status = 1
         inner join ProductionLineShifts on ProductionLines.Id = ProductionLineShifts.ProductionLineId
         inner join Shifts on Shifts.Id = ProductionLineShifts.ShiftId and Shifts.Active = 1 
+        inner join OperatingStations on OperatingStations.LineId = ProductionLines.Id and OperatingStations.Status = 1
         inner join (
             select 
             ProductionLineShiftHistories.ProductionLineId, 
@@ -155,13 +155,21 @@ async function getProductionLinesAndShiftsByCustomer(customerId) {
             ProductionLineShiftHistories.ProductionLineId,
             ProductionLineShiftHistories.ShiftId
         ) as plsHisotiries on plsHisotiries.ProductionLineId = ProductionLines.Id and plsHisotiries.ShiftId = Shifts.id
-        left join StopCauseLogs on StopCauseLogs.StationId = OperatingStations.Id  and StopCauseLogs.status = 1
+        left join (
+            select 
+              StopCauseLogs.StationId
+            from StopCauseLogs 
+            inner join OperatingStations  on 
+              StopCauseLogs.StationId = OperatingStations.Id 
+              and StopCauseLogs.status = 1
+            group by StopCauseLogs.StationId
+      ) as stopEvents on stopEvents.StationId = OperatingStations.Id
       WHERE 
             ProductionLines.CustomerId = $customerId and ProductionLines.Status = 1
       GROUP BY 
           Shifts.ShiftStartStr, 
           Shifts.ShiftEndStr, 
-          ProductionLines.id,
+          ProductionLineShifts.ProductionLineId,
           ProductionLines.Status,
           ProductionLines.LineName,
           Customers.Id,

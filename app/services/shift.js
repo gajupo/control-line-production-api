@@ -1,17 +1,24 @@
 const _ = require('lodash');
 const { utcToZonedTime } = require('date-fns-tz');
 const datefns = require('date-fns');
-const { Sequelize } = require('sequelize');
+const { Sequelize, Op } = require('sequelize');
 const { ProductionLineShiftHistory } = require('../models');
 
-async function getCurrentShift(productionLineId) {
+async function getCurrentShift(productionLineId, customerId) {
   try {
     const shiftHistory = await ProductionLineShiftHistory.findAll({
       attributes: [
-        [Sequelize.fn('MAX', Sequelize.col('ShiftStartDateTime')), 'shiftStartDateTime'],
+        'id', 'CustomerId', 'ProductionLineId', 'ShiftId',
+        [Sequelize.fn('convert', Sequelize.literal('varchar'), Sequelize.col('ShiftStartDateTime'), 20), 'shiftStartDateTime'],
+        [Sequelize.fn('convert', Sequelize.literal('varchar'), Sequelize.col('ShiftEndDateTime'), 20), 'shiftEndDateTime'],
       ],
       where: {
-        ProductionLineId: productionLineId,
+        [Op.and]: [
+          { productionLineId: productionLineId },
+          { CustomerId: customerId },
+          Sequelize.where(Sequelize.fn('GETDATE'), '>=', Sequelize.fn('convert', Sequelize.literal('datetime'), Sequelize.col('ShiftStartDateTime'))),
+          Sequelize.where(Sequelize.fn('GETDATE'), '<=', Sequelize.fn('convert', Sequelize.literal('datetime'), Sequelize.col('ShiftEndDateTime'))),
+        ],
       },
       mapToModel: true,
     });
@@ -56,9 +63,6 @@ function getShifTimeTotaltSeconds(shiftStringTime) {
   return seconds;
 }
 function GetShiftEndAsDateTime(shiftStartDateTime, shiftStartTimeStr, shiftEndTimeStr) {
-  // TODO: if the report is generated in the next day
-  // prior to finish the shift the report will generate bad information
-  //      because is taken the current date but not the real start and end shift time
   const shiftStartDateTimeUTCShort = datefns.formatISO(datefns.parseISO(shiftStartDateTime), { representation: 'date' });
   let dateTimeShiftEnd = '';
   const shiftStartTotalMinutes = getShifTimeTotaltSeconds(shiftStartTimeStr);
@@ -88,6 +92,17 @@ function getShiftHour(shiftStringTime) {
   }
   return hour;
 }
+function getShiftMinutes(shiftStringTime) {
+  const re = /^([0-1]?\d|2[0-3])(?::([0-5]?\d))?(?::([0-5]?\d))?$/;
+  const timeArray = shiftStringTime.toString().match(re);
+  let hour = 0;
+  if (timeArray) {
+    const today = utcToZonedTime(new Date(), 'America/Mexico_City');
+    const isoDate = `${datefns.formatISO(today, { representation: 'date' })} ${shiftStringTime}`;
+    hour = new Date(isoDate).getMinutes();
+  }
+  return hour;
+}
 module.exports.getCurrentShift = getCurrentShift;
 module.exports.GetShiftEndAsDateTime = GetShiftEndAsDateTime;
 module.exports.getShiftDifferenceInMinutes = getShiftDifferenceInMinutes;
@@ -96,3 +111,4 @@ module.exports.getShiftHour = getShiftHour;
 module.exports.GetShiftStartAsDateTime = GetShiftStartAsDateTime;
 module.exports.getShiftDifferenceInDays = getShiftDifferenceInDays;
 module.exports.getShiftDifferenceInHours = getShiftDifferenceInHours;
+module.exports.getShiftMinutes = getShiftMinutes;

@@ -47,9 +47,13 @@ async function getProductionComplianceImpl(line, today) {
 async function getValidationResultsPerHourImpl(params) {
   try {
     const reportDate = zonedTimeToUtc(params.date, 'America/Mexico_City');
-    const shiftStartDateTime = shiftServices.GetShiftStartAsDateTime(reportDate.toISOString(), params.shiftStart);
+    const shiftStartDateTime = shiftServices.GetShiftStartAsDateTime(
+      reportDate.toISOString(),
+      params.shiftStart
+    );
     const dateTimeShiftEnd = shiftServices.GetShiftEndAsDateTime(
-      reportDate.toISOString(), params.shiftStart, params.shiftEnd
+      reportDate.toISOString(),
+      params.shiftStart, params.shiftEnd
     );
     const validations = await sequelize.query(
       `select 
@@ -91,8 +95,16 @@ function joinValidationsAndProductionRate(validationResults, shiftStart, shiftEn
   const hours = [];
   const results = [];
   const rates = [];
-  const hourValue = 60;
+  let hourValue = 60;
   const uniqueDateList = [];
+  // get first hour the shift
+  let shiftLoopFirstHour = shiftServices.getShiftHour(shiftStart);
+  const theVeryFirstShiftHour = shiftServices.getShiftHour(shiftStart);
+  const theVeryLastShiftHour = shiftServices.getShiftHour(shiftEnd);
+  const shiftStartMinutes = shiftServices.getShiftMinutes(shiftStart);
+  const shiftEndMinutes = shiftServices.getShiftMinutes(shiftEnd);
+  const dayLastHour = 23;
+  let shiftLoopLastHour = 0;
 
   const paramDate = zonedTimeToUtc(reportDate, 'America/Mexico_City');
   const shiftStartDate = shiftServices.GetShiftStartAsDateTime(paramDate.toISOString(), shiftStart);
@@ -106,31 +118,37 @@ function joinValidationsAndProductionRate(validationResults, shiftStart, shiftEn
     // start and end shift is in the same day
     uniqueDateList.push(datefns.format(datefns.parseISO(shiftStartDate), 'yyyy-MM-dd'));
   }
-  // get first hour the shift
-  let theVeryfirstHour = shiftServices.getShiftHour(shiftStart);
-  const dayLastHour = 23;
-  let shiftLastHour = 0;
-
   // eslint-disable-next-line max-len
   // we need the last order to get the production rate in case some hours does not have production,
   // but however we need to put some production rate
   const lastOrder = validationResults[validationResults.length - 1];
+  const firstNotEmptyOrder = _.find(validationResults, (o) => o.validationResults > 0);
   for (let index = 0; index < uniqueDateList.length; index++) {
     const date = uniqueDateList[index];
     // the shift will start in current day and ends in the next one, that is why we iterate until 23 hour for the current date
     if (index === 0 && uniqueDateList.length > 1) {
-      shiftLastHour = dayLastHour;
+      shiftLoopLastHour = dayLastHour;
     } else if (index === 0 && uniqueDateList.length === 1) {
       // start and end shift is in the same day
-      shiftLastHour = theVeryfirstHour + totalShiftHours;
+      shiftLoopLastHour = shiftLoopFirstHour + totalShiftHours;
     } else if (index > 0 && uniqueDateList.length >= 1) {
       // iterate for reamining hours for next day shift
-      shiftLastHour = shiftServices.getShiftHour(shiftEnd);
+      shiftLoopLastHour = shiftServices.getShiftHour(shiftEnd);
       // restart the hour counter to start in 0 for the next day
-      theVeryfirstHour = 0;
+      shiftLoopFirstHour = 0;
     }
 
-    for (let hour = theVeryfirstHour; hour <= shiftLastHour; hour++) {
+    for (let hour = shiftLoopFirstHour; hour <= shiftLoopLastHour; hour++) {
+      // set hour value that will be used to do the calculations
+      // at the beginin or at the end of the shift the hour value could be a halft of an hour
+      if (hour === theVeryFirstShiftHour) {
+        hourValue = shiftStartMinutes;
+      } else if (hour === theVeryLastShiftHour) {
+        hourValue = shiftEndMinutes;
+      } else {
+        hourValue = 60;
+      }
+      // store the current hour to show in the chart
       hours.push(hour);
       // get the count for validation by hour and date
       const countByHour = validationResults.filter((result) => result.hour === hour && result.scanDate === date).length;
@@ -138,14 +156,32 @@ function joinValidationsAndProductionRate(validationResults, shiftStart, shiftEn
       const validationsPerHour = validationResults.filter((result) => result.hour === hour && result.scanDate === date);
       // if countByHour equal to 0 means in such hour there is any validation
       if (countByHour === 0) {
+        let rate = 0;
         // in this hour there is no material validations
         results.push(0);
         // keep the rate of the last order for this particual hour
-        if (!!lastOrder && Object.prototype.hasOwnProperty.call(lastOrder, 'ProductionRate')) rates.push(lastOrder.ProductionRate || 0);
-        else rates.push(0);
+        if (!!lastOrder && Object.prototype.hasOwnProperty.call(lastOrder, 'ProductionRate')) {
+          // if we are in the first hour of the shift we will use the next not empty order to get the rate
+          if (hour === theVeryFirstShiftHour) {
+            rate = Math.ceil((hourValue * firstNotEmptyOrder.ProductionRate) / 60);
+          } else {
+          // for the rest of the orders we will use the rate of the last order created
+            rate = Math.ceil((hourValue * lastOrder.ProductionRate) / 60);
+          }
+
+          rates.push(rate || 0);
+        } else rates.push(0);
       } else if (countByHour === 1) {
         // there is just one order in the shift use the same rate for all shift hours
-        rates.push(lastOrder.ProductionRate || 0);
+        let rate = 0;
+        // if we are in the first hour of the shift we will use the next not empty order to get the rate
+        if (hour === theVeryFirstShiftHour) {
+          rate = Math.ceil((hourValue * firstNotEmptyOrder.ProductionRate) / 60);
+        } else {
+          // for the rest of the orders we will use the rate of the last order created
+          rate = Math.ceil((hourValue * lastOrder.ProductionRate) / 60);
+        }
+        rates.push(rate || 0);
         results.push(validationsPerHour[0].validationResults);
       } else if (countByHour === 2) {
         // when we have just two different material in the same hour
@@ -194,8 +230,12 @@ function joinValidationsAndProductionRate(validationResults, shiftStart, shiftEn
           (parseInt(validationsPerHour[0].ProductionRate, 10) * maxUtcDateScanedMinutes) / hourValue
         );
           // rate for the last material, because the such hour just two orders were processed
-          // eslint-disable-next-line max-len
-        const lastRate = Math.ceil(((hourValue - minUtcDateScanedMinutes) * parseInt(validationsPerHour[validationsPerHour.length - 1].ProductionRate, 10)) / hourValue);
+        const lastRate = Math.ceil(
+          (
+            (hourValue - minUtcDateScanedMinutes)
+            * parseInt(validationsPerHour[validationsPerHour.length - 1].ProductionRate, 10)
+          ) / hourValue
+        );
         for (let iPerHour = 1; iPerHour < validationsPerHour.length - 1; iPerHour += 1) {
           maxUtcDateScaned = datefns.parseISO(validationsPerHour[iPerHour].maxDate);
           minUtcDateScaned = datefns.parseISO(validationsPerHour[iPerHour].minDate);
