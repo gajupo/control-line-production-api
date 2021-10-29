@@ -95,13 +95,13 @@ function getShiftHour(shiftStringTime) {
 function getShiftMinutes(shiftStringTime) {
   const re = /^([0-1]?\d|2[0-3])(?::([0-5]?\d))?(?::([0-5]?\d))?$/;
   const timeArray = shiftStringTime.toString().match(re);
-  let hour = 0;
+  let minutes = 0;
   if (timeArray) {
     const today = utcToZonedTime(new Date(), 'America/Mexico_City');
     const isoDate = `${datefns.formatISO(today, { representation: 'date' })} ${shiftStringTime}`;
-    hour = new Date(isoDate).getMinutes();
+    minutes = new Date(isoDate).getMinutes();
   }
-  return hour;
+  return minutes;
 }
 module.exports.getCurrentShift = getCurrentShift;
 module.exports.GetShiftEndAsDateTime = GetShiftEndAsDateTime;

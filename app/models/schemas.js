@@ -42,6 +42,16 @@ const ProductionLinesAndShiftsByCustomerSchema = Joi.array().items(Joi.object({
   ShiftStartedDateTime: Joi.date().required(),
   ShiftEndDateTime: Joi.date().required(),
 })).min(1);
+const ReportHourByHourSchema = Joi.object({
+  customerId: Joi.number().integer().positive().required(),
+  date: Joi.date().iso().required(),
+  productionLineId: Joi.number().integer().positive().required(),
+  // eslint-disable-next-line no-useless-escape
+  shiftEnd: Joi.string().regex(/^([0-1]?\d|2[0-3])(?::([0-5]?\d))?(?::([0-5]?\d))?$/),
+  // eslint-disable-next-line no-useless-escape
+  shiftStart: Joi.string().regex(/^([0-1]?\d|2[0-3])(?::([0-5]?\d))?(?::([0-5]?\d))?$/),
+  shiftId: Joi.number().integer().positive().required(),
+});
 function addMessageErrorIfNotValid(returned, error) {
   if (error) {
     const objReturned = returned;
@@ -49,7 +59,22 @@ function addMessageErrorIfNotValid(returned, error) {
     objReturned.errorList = error.details.map((e) => e.message);
   }
 }
-
+/**
+ ** Validates that the given body parameters are valid
+ ** customerId, productionLineId, shiftId is a number, integer and positive,
+ ** shiftEnd and shiftStart have valid time formar,
+ ** date is iso valid date time
+ * @param {*} bodyParams
+ */
+module.exports.validateHourByHourReportParams = (bodyParams) => {
+  const returned = {
+    isValid: true,
+    errorList: [],
+  };
+  const { error } = ReportHourByHourSchema.validate(bodyParams);
+  addMessageErrorIfNotValid(returned, error);
+  return returned;
+};
 /**
  * Validates that the given id is  a number, integer and positive.
  * Returns and object with the property isValid and a errorList array.
