@@ -1,10 +1,7 @@
 const _ = require('lodash');
 const datefns = require('date-fns');
-const { utcToZonedTime } = require('date-fns-tz/fp');
 const { Sequelize, Op, QueryTypes } = require('sequelize');
 const { zonedTimeToUtc } = require('date-fns-tz');
-const { isValid, getMinutes } = require('date-fns');
-const differenceInMinutes = require('date-fns/differenceInMinutes');
 const { sequelize, getDatePartConversion } = require('../helpers/sequelize');
 const models = require('../models');
 const shiftServices = require('./shift');
