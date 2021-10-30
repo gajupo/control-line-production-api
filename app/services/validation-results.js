@@ -309,10 +309,8 @@ function joinValidationsAndProductionRate(validationResults, shiftStart, shiftEn
         if (!!firstNotEmptyOrder && Object.prototype.hasOwnProperty.call(firstNotEmptyOrder, 'ProductionRate')) {
           // if we are in the first hour of the shift we will use the next not empty order to get the rate
           if (hour === theVeryFirstShiftHour) {
-            // rate = Math.ceil((hourValue * firstNotEmptyOrder.ProductionRate) / 60) * CountOperatingStations;
             rate = calculateRateSamePR(hourValue, firstNotEmptyOrder.ProductionRate, stationIdList.length);
           } else if (hour === theVeryLastShiftHour) {
-            // rate = Math.ceil((hourValue * lastNotEmptyOrder.ProductionRate) / 60) * CountOperatingStations;
             rate = calculateRateSamePR(hourValue, lastNotEmptyOrder.ProductionRate, stationIdList.length);
           } else {
             // for the rest of the orders we will use the rate of the last order created
@@ -322,10 +320,8 @@ function joinValidationsAndProductionRate(validationResults, shiftStart, shiftEn
               && result.scanDate === shiftDate
             );
             if (!_.isEmpty(validationsNextHour)) {
-              // rate = Math.ceil((hourValue * validationsNextHour[0].ProductionRate) / 60) * CountOperatingStations;
               rate = calculateRateSamePR(hourValue, validationsNextHour[0].ProductionRate, stationIdList.length);
             } else {
-              // rate = Math.ceil((hourValue * lastNotEmptyOrder.ProductionRate) / 60) * CountOperatingStations;
               rate = calculateRateSamePR(hourValue, lastNotEmptyOrder.ProductionRate, stationIdList.length);
             }
           }
@@ -333,130 +329,6 @@ function joinValidationsAndProductionRate(validationResults, shiftStart, shiftEn
           rates.push(rate);
         } else rates.push(0);
       }
-      //-
-      // if countByHour equal to 0 means in such hour there is not validations
-      /* if (countByHour === 0) {
-        let rate = 0;
-        // in this hour there is no material validations
-        results.push(0);
-        // keep the rate of the last order for this particual hour
-        if (!!lastNotEmptyOrder && Object.prototype.hasOwnProperty.call(lastNotEmptyOrder, 'ProductionRate')) {
-          // if we are in the first hour of the shift we will use the next not empty order to get the rate
-          if (hour === theVeryFirstShiftHour) {
-            rate = Math.ceil((hourValue * firstNotEmptyOrder.ProductionRate) / 60) * CountOperatingStations;
-          } else if (hour === theVeryLastShiftHour) {
-            rate = Math.ceil((hourValue * lastNotEmptyOrder.ProductionRate) / 60) * CountOperatingStations;
-          } else {
-            // for the rest of the orders we will use the rate of the last order created
-            // check if the next hour has production if it has we use that production rate
-            const validationsNextHour = validationResults.filter(
-              (result) => result.hour === (hour + 1)
-              && result.scanDate === date
-            );
-            if (!_.isEmpty(validationsNextHour)) {
-              rate = Math.ceil((hourValue * validationsNextHour[0].ProductionRate) / 60) * CountOperatingStations;
-            } else {
-              rate = Math.ceil((hourValue * lastNotEmptyOrder.ProductionRate) / 60) * CountOperatingStations;
-            }
-          }
-
-          rates.push(rate || 0);
-        } else rates.push(0);
-      } else if (countByHour === 1) {
-        // there is just one order in the shift use the same rate for all shift hours
-        const rate = Math.ceil(
-          (hourValue * parseInt(validationsPerHour[0].ProductionRate, 10)) / 60
-        ) * CountOperatingStations;
-        rates.push(rate || 0);
-        results.push(validationsPerHour[0].validationResults);
-      } else if (countByHour === 2) {
-        // when we have just two different material in the same hour
-        let minUtcDateScanedMinutes;
-        let maxUtcDateScanedMinutes = 0;
-        // get the min date of the first barcode scaned, this means it is the first time the order was used
-        const maxUtcDateScaned = datefns.parseISO(validationsPerHour[0].maxDate);
-        const minUtcDateScaned = datefns.parseISO(validationsPerHour[1].minDate);
-        if (isValid(minUtcDateScaned) && isValid(maxUtcDateScaned)) {
-          minUtcDateScanedMinutes = getMinutes(minUtcDateScaned);
-          maxUtcDateScanedMinutes = getMinutes(maxUtcDateScaned);
-        }
-        // rate for the first material
-        // eslint-disable-next-line max-len
-        const firstRate = Math.ceil((parseInt(validationsPerHour[0].ProductionRate, 10) * maxUtcDateScanedMinutes) / hourValue);
-        // rate for the last material, because the such hour just two orders were processed
-        // eslint-disable-next-line max-len
-        const lastRate = Math.floor(((hourValue - minUtcDateScanedMinutes) * parseInt(validationsPerHour[1].ProductionRate, 10)) / hourValue);
-        // calculate the total of validation resualts
-        // eslint-disable-next-line max-len
-        const totalOfValidations = parseInt(validationsPerHour[0].validationResults, 10) + parseInt(validationsPerHour[1].validationResults, 10);
-        results.push(totalOfValidations);
-        rates.push((firstRate + lastRate) * CountOperatingStations);
-      } else {
-        // when we have more that two different materials processed in the same hour
-        let minUtcDateScanedMinutes = 0;
-        let maxUtcDateScanedMinutes = 0;
-        let sumMiddleMaterialRates = 0;
-        let globalRate = 0;
-        let globalValidationResults = 0;
-        let sumMiddleValidationResults = 0;
-        // eslint-disable-next-line max-len
-        // get the min date of the first barcode scaned, this means it is the first time the order was used
-        let maxUtcDateScaned = datefns.parseISO(validationsPerHour[0].maxDate);
-        let minUtcDateScaned = datefns.parseISO(validationsPerHour[validationsPerHour.length - 1].minDate);
-        if (isValid(minUtcDateScaned) && isValid(maxUtcDateScaned)) {
-          minUtcDateScanedMinutes = getMinutes(minUtcDateScaned);
-          maxUtcDateScanedMinutes = getMinutes(maxUtcDateScaned);
-        }
-        logger.info(`Current Hour = ${hour}, current hour value = ${hourValue}`);
-        // rate for the first material
-        let firstRate = 0;
-        let lastRate = 0;
-        if (hour === theVeryFirstShiftHour) {
-          firstRate = Math.ceil(
-            ((parseInt(validationsPerHour[0].ProductionRate, 10) * hourValue) / 60)
-            * (maxUtcDateScanedMinutes / hourValue)
-          );
-        } else {
-          firstRate = Math.ceil(
-            parseInt(validationsPerHour[0].ProductionRate, 10)
-            * (maxUtcDateScanedMinutes / hourValue)
-          );
-        }
-        logger.info(`firstRate= ${firstRate}`);
-        // rate for the last material, because the such hour just two orders were processed
-        if (hour === theVeryLastShiftHour) {
-          lastRate = Math.ceil(
-            ((parseInt(validationsPerHour[validationsPerHour.length - 1].ProductionRate, 10) * hourValue) / 60)
-            * ((hourValue - minUtcDateScanedMinutes) / hourValue)
-          );
-        } else {
-          lastRate = Math.ceil(
-            parseInt(validationsPerHour[validationsPerHour.length - 1].ProductionRate, 10)
-            * ((hourValue - minUtcDateScanedMinutes) / hourValue)
-          );
-        }
-        logger.info(`lastRate= ${lastRate}`);
-        for (let iPerHour = 1; iPerHour < validationsPerHour.length - 1; iPerHour += 1) {
-          maxUtcDateScaned = datefns.parseISO(validationsPerHour[iPerHour].maxDate);
-          minUtcDateScaned = datefns.parseISO(validationsPerHour[iPerHour - 1].maxDate);
-          const difference = differenceInMinutes(maxUtcDateScaned, minUtcDateScaned, { roundingMethod: 'ceil' });
-          sumMiddleValidationResults += parseInt(validationsPerHour[iPerHour].validationResults, 10);
-          // if the same, it is the same material so it is the same production rate
-          sumMiddleMaterialRates += Math.floor(
-            (difference / hourValue)
-            * parseInt(validationsPerHour[iPerHour].ProductionRate, 10)
-          );
-        }
-        logger.info(`sumMiddleMaterialRates= ${sumMiddleMaterialRates}`);
-        // we have different material in the same hour we need to compute the rate based on all materials
-        globalRate = firstRate + sumMiddleMaterialRates + lastRate;
-        // sume the count of the first order + the count of midlle orders and plus the last order
-        globalValidationResults = parseInt(validationsPerHour[0].validationResults, 10)
-          + sumMiddleValidationResults
-          + parseInt(validationsPerHour[validationsPerHour.length - 1].validationResults, 10);
-        results.push(globalValidationResults);
-        rates.push(globalRate * CountOperatingStations);
-      } */
     }
   }
   // final object used in the report "hora por hora"
