@@ -1,4 +1,6 @@
 const _ = require('lodash');
+const datefns = require('date-fns');
+const { utcToZonedTime } = require('date-fns-tz');
 const { logError, logMessage, logger } = require('../helpers/logger');
 const services = require('../services');
 const libs = require('../helpers/lib');
@@ -55,23 +57,23 @@ async function getProductionLinesPerCustomerCurrentShift(req, res) {
     logger.debug('Production line by customer = %o', productionLines);
     if (libs.isArray(productionLines) && !!productionLines) {
       // eslint-disable-next-line no-restricted-syntax
-      for (const entry of productionLines) {
-        lineResultsPromises.push(services.ProductionLines.getLineStatsByLineIdAndShift(
-          entry,
-          customer.id
-        ));
+      for (const lineInfo of productionLines) {
+        lineResultsPromises.push(services.ValidationResults.getValidationResultsPerLine(lineInfo));
       }
       // await all calls
       lineResults = await Promise.all(lineResultsPromises);
       if (_.isEmpty(lineResults[0])) return res.json({});
       for (let index = 0; index < lineResults.length; index++) {
-        const orderList = lineResults[index];
+        const lineProduction = _.without(lineResults[index], 'lineInfo');
+        // eslint-disable-next-line prefer-destructuring
+        const lineInfo = lineResults[index].lineInfo;
         logger.debug('Orders by line =%o', lineResults);
         if (libs.isArray(lineResults[index]) && lineResults[index].length > 0) {
-          services.ProductionLines.formatProductionLineLiveStats(linesInformation, orderList.line, orderList);
+          // calculate rate and scanned materials by hour
+          linesInformation.push(services.ValidationResults.computeLineProductionLive(lineProduction, lineInfo));
         } else {
           logMessage('NO ROWS FOUND', 'The Production Line does not have scanned material in the current shift');
-          services.ProductionLines.transformProductionLineDefault(linesInformation, orderList.line);
+          linesInformation.push(services.ProductionLines.transformProductionLineDefault(lineInfo));
         }
       }
     }

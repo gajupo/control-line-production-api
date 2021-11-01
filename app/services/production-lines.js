@@ -277,24 +277,21 @@ function transformProductionLine(lines, line, lineInfoStats) {
  * @param lines Object to Store all lines of the customer
  * @param line The current line is being processed
  */
-function transformProductionLineDefault(lines, line) {
-  const validationResultCount = 0;
-  const goal = 0;
-  const active = true;
-  lines.push({
+function transformProductionLineDefault(line) {
+  return {
     id: line.ProductionLineId,
     lineName: line.LineName,
     // eslint-disable-next-line object-shorthand
-    active: active,
+    active: true,
     blocked: !!line.isBlocked,
     customerId: line.CustomerId,
     customerName: line.CustomerName,
     // eslint-disable-next-line object-shorthand
-    validationResultCount: validationResultCount,
+    validationResultCount: 0,
     // eslint-disable-next-line object-shorthand
-    goal: goal,
+    goal: 0,
     rate: 0,
-  });
+  };
 }
 function checkIfLineHasShifts(line) {
   if ('Shifts' in line) {
@@ -576,3 +573,4 @@ module.exports.getProductionLineById = getProductionLineById;
 module.exports.getProductionLineImpl = getProductionLineImpl;
 module.exports.getProductionLineByCustomerIdAndShift = getProductionLineByCustomerIdAndShift;
 module.exports.formatProductionLineLiveStats = formatProductionLineLiveStats;
+module.exports.getCurrentProductionByRate = getCurrentProductionByRate;
