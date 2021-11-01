@@ -1,3 +1,4 @@
+const fsp = require('fs').promises;
 const { logError } = require('../helpers/logger');
 const { Customer } = require('../models');
 const { internalServerError } = require('./core');
@@ -15,4 +16,9 @@ async function getCustomerList(res, next) {
   }
 }
 
+function getCustomerLogoAsBase64(customerId) {
+  return fsp.readFile(`app/assets/logos/customer-${customerId}.png`);
+}
+
 module.exports.getCustomerList = getCustomerList;
+module.exports.getCustomerLogoAsBase64 = getCustomerLogoAsBase64;
