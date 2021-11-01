@@ -73,9 +73,8 @@ async function getProductionLines(req, res) {
     if (!customer.isValid) {
       return badRequestError('Invalid parameter', res, customer.errorList);
     }
-    const today = utcToZonedTime(new Date(), 'America/Mexico_City');
     // eslint-disable-next-line max-len
-    const productionlines = await services.ProductionLines.getProductionLineByCustomerIdAndShift(customer.id, today);
+    const productionlines = await services.ProductionLines.getProductionLinesAndShiftsByCustomer(customer.id);
     return res.json(productionlines);
   } catch (error) {
     logError('Error in getProductionLines', error);
