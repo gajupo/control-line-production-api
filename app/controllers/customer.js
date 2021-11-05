@@ -17,7 +17,7 @@ async function getCustomerList(res, next) {
 }
 
 function getCustomerLogoAsBase64(customerId) {
-  return fsp.readFile(`app/assets/logos/customer-${customerId}.png`);
+  return fsp.readFile(`app/assets/logos/customer-${customerId}.png`, 'base64');
 }
 
 module.exports.getCustomerList = getCustomerList;
