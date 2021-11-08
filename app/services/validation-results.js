@@ -771,9 +771,7 @@ function computeLineDashboardProductionLive(validationResults, lineInfo) {
     .groupBy('stationIdentifier')
     .map(ValidationsByStation).value();
   const lineLiveProduction = computeLineProductionLive(validationResults, lineInfo);
-  lineLiveProduction.achievableGoal = _(validationResults)
-    .groupBy('stationIdentifier')
-    .map(calculateAchievableGoal).value();
+  lineLiveProduction.achievableGoal = 0;
   const lineLiveProgress = {
     lineLiveProduction: lineLiveProduction,
     stationsProduction: stationsProductionArray,
