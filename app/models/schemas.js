@@ -52,6 +52,17 @@ const ReportHourByHourSchema = Joi.object({
   shiftStart: Joi.string().regex(/^([0-1]?\d|2[0-3])(?::([0-5]?\d))?(?::([0-5]?\d))?$/),
   shiftId: Joi.number().integer().positive().required(),
 });
+const LineDashboardParamsSchema = Joi.object({
+  CustomerId: Joi.number().integer().positive().required(),
+  ProductionLineId: Joi.number().integer().positive().required(),
+  ShiftId: Joi.number().integer().positive().required(),
+  ShiftStartedDateTime: Joi.date().required(),
+  ShiftEndDateTime: Joi.date().required(),
+  // eslint-disable-next-line no-useless-escape
+  ShiftStartStr: Joi.string().regex(/^([0-1]?\d|2[0-3])(?::([0-5]?\d))?(?::([0-5]?\d))?$/),
+  // eslint-disable-next-line no-useless-escape
+  ShiftEndStr: Joi.string().regex(/^([0-1]?\d|2[0-3])(?::([0-5]?\d))?(?::([0-5]?\d))?$/),
+});
 function addMessageErrorIfNotValid(returned, error) {
   if (error) {
     const objReturned = returned;
@@ -166,6 +177,25 @@ module.exports.validateLinesAndShifts = function validateLinesAndShifts(queryRes
     errorList: [],
   };
   const { error } = ProductionLinesAndShiftsByCustomerSchema.validate(queryResult);
+  addMessageErrorIfNotValid(returned, error);
+  return returned;
+};
+/**
+ * Validates if the query string params passed to query the line dashboard data are valid
+ * @param {*} reqParams
+ * @returns Object
+ * @example
+ *{
+    isValid: true || false,
+    errorList: [],
+  };
+ */
+module.exports.validateLinesDashboradParams = function validateLinesDashboradParams(reqParams) {
+  const returned = {
+    isValid: true,
+    errorList: [],
+  };
+  const { error } = LineDashboardParamsSchema.validate(reqParams);
   addMessageErrorIfNotValid(returned, error);
   return returned;
 };

@@ -112,6 +112,7 @@ async function getValidationResultsPerLine(lineInfo) {
         ValidationResults.OrderIdentifier as [orderIdentifier],
         Materials.ProductionRate,
         ValidationResults.StationId as [stationId],
+        Orders.StationIdentifier as [stationIdentifier],
         Materials.ID as [materialId]
       FROM ValidationResults
         inner join Materials on Materials.ID = ValidationResults.MaterialId
@@ -126,7 +127,8 @@ async function getValidationResultsPerLine(lineInfo) {
         DATEPART(HOUR, ValidationResults.ScanDate),
         ValidationResults.OrderIdentifier,
         Materials.ProductionRate, ValidationResults.StationId,
-        Materials.ID, Orders.CreatedAt
+        Materials.ID, Orders.CreatedAt,
+        Orders.StationIdentifier
       ORDER BY min(ValidationResults.ScanDate), ValidationResults.StationId`,
       {
         bind: {
@@ -250,6 +252,18 @@ function getFirstStationsByHour(validationResults, hour) {
 }
 function lastNotEmptyOrderByHour(validationResults, hour) {
   return _.findLast(validationResults, (o) => o.validationResults > 0 && o.hour < hour);
+}
+function ValidationsByStation(items, stationIdentifier) {
+  return {
+    stationIdentifier: stationIdentifier,
+    countValidationResult: _.sumBy(items, 'validationResults'),
+  };
+}
+function calculateAchievableGoal(items, stationIdentifier) {
+  return {
+    stationIdentifier: stationIdentifier,
+    countValidationResult: _.sumBy(items, 'validationResults'),
+  };
 }
 // function joinValidationsAndProductionRate(validationResults, shiftStart, shiftEnd, reportDate) {
 //   const hours = [];
@@ -741,7 +755,7 @@ function computeLineProductionLive(validationResults, lineInfo) {
   const lineLiveProgress = {
     id: lineInfo.ProductionLineId,
     lineName: lineInfo.LineName,
-    active: lineInfo.Active,
+    active: true,
     blocked: !!lineInfo.isBlocked,
     customerId: lineInfo.CustomerId,
     customerName: lineInfo.CustomerName,
@@ -751,9 +765,25 @@ function computeLineProductionLive(validationResults, lineInfo) {
   };
   return lineLiveProgress;
 }
+function computeLineDashboardProductionLive(validationResults, lineInfo) {
+  // get stations and it validation count
+  const stationsProductionArray = _(validationResults)
+    .groupBy('stationIdentifier')
+    .map(ValidationsByStation).value();
+  const lineLiveProduction = computeLineProductionLive(validationResults, lineInfo);
+  lineLiveProduction.achievableGoal = _(validationResults)
+    .groupBy('stationIdentifier')
+    .map(calculateAchievableGoal).value();
+  const lineLiveProgress = {
+    lineLiveProduction: lineLiveProduction,
+    stationsProduction: stationsProductionArray,
+  };
+  return lineLiveProgress;
+}
 
 module.exports.getProductionComplianceImpl = getProductionComplianceImpl;
 module.exports.getValidationResultsPerHourImpl = getValidationResultsPerHourImpl;
 module.exports.joinValidationsAndProductionRate = joinValidationsAndProductionRate;
 module.exports.getValidationResultsPerLine = getValidationResultsPerLine;
 module.exports.computeLineProductionLive = computeLineProductionLive;
+module.exports.computeLineDashboardProductionLive = computeLineDashboardProductionLive;

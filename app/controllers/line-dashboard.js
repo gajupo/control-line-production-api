@@ -4,7 +4,7 @@ const {
   internalServerError, badRequestError, getHoursPerShift,
   getProductionGoal, getProductionRate,
 } = require('./core');
-const { validateModelId } = require('../models');
+const { validateModelId, validateLinesDashboradParams } = require('../models');
 const services = require('../services');
 
 function transformLine(productionLine) {
@@ -50,18 +50,27 @@ async function getProductionLineImpl(line) {
   const lineImpl = await services.ProductionLines.getProductionLineImpl(line, today);
   return transformLine(lineImpl);
 }
-async function getProductionLine(req, res) {
+async function getProductionLine(reqParams, res) {
   try {
-    const line = validateModelId(req.params.lineId);
-    if (!line.isValid) {
-      return badRequestError('Invalid parameter passed to getProductionLineImpl', res, line.errorList);
+    const parameters = validateLinesDashboradParams(reqParams);
+    if (!parameters.isValid) {
+      return badRequestError('Invalid parameters passed to getProductionLineImpl', res, parameters.errorList);
     }
-    const today = utcToZonedTime('2021-07-21 19:21:05.217', 'America/Mexico_City');
-    const productionLine = await getProductionLineImpl(line);
-    const compliance = await services.ValidationResults.getProductionComplianceImpl(line, today);
-    productionLine.compliance = compliance;
+    const validationsPerLine = await services.ValidationResults.getValidationResultsPerLine(reqParams);
+    const validationsTransformed = services
+      .ValidationResults
+      .computeLineDashboardProductionLive(validationsPerLine, reqParams);
+    const validationsPerHourTransformed = services
+      .ValidationResults
+      .joinValidationsAndProductionRate(
+        validationsPerLine,
+        reqParams.ShiftStartStr,
+        reqParams.ShiftEndStr,
+        reqParams.ShiftStartedDateTime
+      );
+    validationsTransformed.chartData = validationsPerHourTransformed;
 
-    return res.json(productionLine);
+    return res.json(validationsTransformed);
   } catch (error) {
     logError('Error in getProductionLine', error);
     return internalServerError('Internal server error', res);

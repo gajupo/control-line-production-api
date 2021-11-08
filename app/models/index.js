@@ -19,6 +19,7 @@ const {
   ReportParameterSchema, validateModelId, validateOrderParameters,
   validateLineParameters, validateLinePerCustomerParameters,
   validateReportParameters, validateLinesAndShifts, validateHourByHourReportParams,
+  validateLinesDashboradParams,
 } = require('./schemas');
 
 ProductionLine.hasMany(OperatingStation, {
@@ -222,3 +223,4 @@ module.exports.validateReportParameters = validateReportParameters;
 module.exports.validateLinesAndShifts = validateLinesAndShifts;
 module.exports.ProductionLineShiftHistory = ProductionLineShiftHistory;
 module.exports.validateHourByHourReportParams = validateHourByHourReportParams;
+module.exports.validateLinesDashboradParams = validateLinesDashboradParams;
