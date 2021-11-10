@@ -19,8 +19,9 @@ router.get('/getCustomerLogo/:customerId', async (req, res, next) => {
     // eslint-disable-next-line prefer-destructuring
     const customerId = req.params.customerId;
     const imageAsByteArray = await getCustomerLogoAsBase64(customerId);
-    res.writeHead(200, { 'Content-Type': 'image/png' });
-    res.end(imageAsByteArray, 'base64'); // Send the file data to the browser.
+    //res.writeHead(200, { 'Content-Type': 'image/png' });
+    //res.end(imageAsByteArray, 'base64'); // Send the file data to the browser.
+    res.end(imageAsByteArray);
   } catch (error) {
     res.status(404).json({ message: 'FILE NOT FOUND' });
   }

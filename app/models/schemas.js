@@ -29,6 +29,7 @@ const ReportParameterSchema = Joi.object({
   }),
 }).or('pasPN', 'scanDate');
 const ProductionLinesAndShiftsByCustomerSchema = Joi.array().items(Joi.object({
+  ShiftDescription: Joi.string().required(),
   ShiftStartStr: Joi.string().required(),
   ShiftEndStr: Joi.string().required(),
   ProductionLineId: Joi.number().integer().positive().required(),

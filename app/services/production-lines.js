@@ -124,7 +124,8 @@ async function getProductionLinesAndShiftsByCustomer(customerId) {
   try {
     const productionLinesCurrentShift = await sequelize.query(
       `SELECT
-            ProductionLineShifts.ShiftId, 
+            ProductionLineShifts.ShiftId,
+            Shifts.ShiftDescription,
             Shifts.ShiftStartStr, 
             Shifts.ShiftEndStr, 
             ProductionLineShifts.ProductionLineId,
@@ -176,7 +177,8 @@ async function getProductionLinesAndShiftsByCustomer(customerId) {
           Customers.CustomerName,
           ProductionLineShifts.ShiftId,
           plsHisotiries.ShiftStartDateTime,
-          plsHisotiries.ShiftEndDateTime`,
+          plsHisotiries.ShiftEndDateTime,
+          Shifts.ShiftDescription`,
       {
         // eslint-disable-next-line object-shorthand
         bind: { customerId: customerId },

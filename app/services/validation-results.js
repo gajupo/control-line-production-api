@@ -257,6 +257,7 @@ function ValidationsByStation(items, stationIdentifier) {
   return {
     stationIdentifier: stationIdentifier,
     countValidationResult: _.sumBy(items, 'validationResults'),
+    id: _.sumBy(items,'stationId'),
   };
 }
 function calculateAchievableGoal(items, stationIdentifier) {
