@@ -57,7 +57,7 @@ function logError(message, error, payload = undefined) {
   if (payload) {
     log.payload = payload;
   }
-  logger.error(log);
+  logger.error('%o', log);
 }
 
 function logMessage(message, payload = undefined) {
