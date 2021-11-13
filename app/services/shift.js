@@ -2,24 +2,30 @@ const _ = require('lodash');
 const { utcToZonedTime } = require('date-fns-tz');
 const datefns = require('date-fns');
 const { Sequelize, Op } = require('sequelize');
-const { ProductionLineShiftHistory } = require('../models');
+const { ProductionLineShiftHistory,Shift } = require('../models');
 
 async function getCurrentShift(productionLineId, customerId) {
   try {
     const shiftHistory = await ProductionLineShiftHistory.findAll({
       attributes: [
         'id', 'CustomerId', 'ProductionLineId', 'ShiftId',
-        [Sequelize.fn('convert', Sequelize.literal('varchar'), Sequelize.col('ShiftStartDateTime'), 20), 'shiftStartDateTime'],
-        [Sequelize.fn('convert', Sequelize.literal('varchar'), Sequelize.col('ShiftEndDateTime'), 20), 'shiftEndDateTime'],
+        [Sequelize.fn('convert', Sequelize.literal('varchar'), Sequelize.col('ShiftStartDateTime'), 20), 'ShiftStartedDateTime'],
+        [Sequelize.fn('convert', Sequelize.literal('varchar'), Sequelize.col('ShiftEndDateTime'), 20), 'ShiftEndedDateTime'],
       ],
       where: {
         [Op.and]: [
-          { productionLineId: productionLineId },
+          { ProductionLineId: productionLineId },
           { CustomerId: customerId },
           Sequelize.where(Sequelize.fn('GETDATE'), '>=', Sequelize.fn('convert', Sequelize.literal('datetime'), Sequelize.col('ShiftStartDateTime'))),
           Sequelize.where(Sequelize.fn('GETDATE'), '<=', Sequelize.fn('convert', Sequelize.literal('datetime'), Sequelize.col('ShiftEndDateTime'))),
         ],
       },
+      include: [{
+        model: Shift,
+        attributes: [
+          'ShiftDescription'
+        ]
+      }],
       mapToModel: true,
     });
     return _.first(shiftHistory);
