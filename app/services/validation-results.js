@@ -7,7 +7,6 @@ const models = require('../models');
 const shiftServices = require('./shift');
 const productionLinesServices = require('./production-lines');
 const { logger } = require('../helpers/logger');
-const validationResult = require('../models/validation-result');
 
 async function getProductionComplianceImpl(line, today) {
   try {
@@ -257,7 +256,7 @@ function ValidationsByStation(items, stationIdentifier) {
   return {
     stationIdentifier: stationIdentifier,
     countValidationResult: _.sumBy(items, 'validationResults'),
-    id: _.sumBy(items,'stationId'),
+    id: items[0].stationId,
   };
 }
 function calculateAchievableGoal(items, stationIdentifier) {
