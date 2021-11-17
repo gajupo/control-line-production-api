@@ -145,8 +145,6 @@ async function getValidationResultsPerLine(lineInfo) {
         type: QueryTypes.SELECT,
       }
     );
-    console.log("NodeJS message", lineInfo.ShiftStartedDateTime);
-    console.log("NodeJS message", lineInfo.ShiftEndDateTime);
     validations.lineInfo = lineInfo;
     return validations;
   } catch (error) {
