@@ -112,22 +112,26 @@ async function getValidationResultsPerLine(lineInfo) {
         Materials.ProductionRate,
         ValidationResults.StationId as [stationId],
         Orders.StationIdentifier as [stationIdentifier],
-        Materials.ID as [materialId]
+        Materials.ID as [materialId],
+        StopCauseLogs.status
       FROM ValidationResults
         inner join Materials on Materials.ID = ValidationResults.MaterialId
         inner join Orders on Orders.Id = ValidationResults.OrderId 
                              and Orders.ProductionLineId = $productionLineId 
                              and Orders.ShiftId = $shiftId
+        inner join StopCauseLogs on StopCauseLogs.StationId = ValidationResults.StationId
       WHERE 
         CONVERT(datetime, ValidationResults.ScanDate) >= CONVERT(datetime, $startDate) 
         and CONVERT(datetime, ValidationResults.ScanDate) <= CONVERT(datetime, $endDate) 
         and ValidationResults.CustomerId = $customerId
+        and StopCauseLogs.id = (select max(id) from StopCauseLogs where StopCauseLogs.StationId = ValidationResults.StationId group by StopCauseLogs.StationId)
       GROUP BY 
         DATEPART(HOUR, ValidationResults.ScanDate),
         ValidationResults.OrderIdentifier,
         Materials.ProductionRate, ValidationResults.StationId,
         Materials.ID, Orders.CreatedAt,
-        Orders.StationIdentifier
+        Orders.StationIdentifier,
+        StopCauseLogs.status
       ORDER BY min(ValidationResults.ScanDate), ValidationResults.StationId`,
       {
         bind: {
@@ -141,6 +145,8 @@ async function getValidationResultsPerLine(lineInfo) {
         type: QueryTypes.SELECT,
       }
     );
+    console.log("NodeJS message", lineInfo.ShiftStartedDateTime);
+    console.log("NodeJS message", lineInfo.ShiftEndDateTime);
     validations.lineInfo = lineInfo;
     return validations;
   } catch (error) {
@@ -257,6 +263,7 @@ function ValidationsByStation(items, stationIdentifier) {
     stationIdentifier: stationIdentifier,
     countValidationResult: _.sumBy(items, 'validationResults'),
     id: items[0].stationId,
+    blocked: items[0].status,
   };
 }
 function calculateAchievableGoal(items, stationIdentifier) {
