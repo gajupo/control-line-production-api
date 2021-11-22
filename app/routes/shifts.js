@@ -1,5 +1,5 @@
 const express = require('express');
-const { getShiftsPerProductionLine,getCurrentShiftProductionLine } = require('../controllers/shifts');
+const { getShiftsPerProductionLine,getCurrentShiftProductionLine,getChangeShiftInMinutes } = require('../controllers/shifts');
 
 const router = express.Router();
 
@@ -15,5 +15,12 @@ router.get('/productionline/:productionLineId', async (req, res) => {
  */
 router.get('/currentshift/:productionLineId/:customerId', async(req, res) =>{
   await getCurrentShiftProductionLine(req, res);
-})
+});
+
+/**
+ * GET /api/shifts/changeshift/shiftstartdatetime/shiftenddatetime
+ */
+router.get('/changeshift/:shiftstartdatetime/:shiftenddatetime', async(req, res) =>{
+  await getChangeShiftInMinutes(req, res);
+});
 module.exports = router;
