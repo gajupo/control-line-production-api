@@ -113,18 +113,18 @@ async function getValidationResultsPerLine(lineInfo) {
         ValidationResults.StationId as [stationId],
         Orders.StationIdentifier as [stationIdentifier],
         Materials.ID as [materialId],
-        StopCauseLogs.status
+        ISNULL(StopCauseLogs.status,0) as status
       FROM ValidationResults
         inner join Materials on Materials.ID = ValidationResults.MaterialId
         inner join Orders on Orders.Id = ValidationResults.OrderId 
                              and Orders.ProductionLineId = $productionLineId 
                              and Orders.ShiftId = $shiftId
-        inner join StopCauseLogs on StopCauseLogs.StationId = ValidationResults.StationId
+        LEFT OUTER JOIN StopCauseLogs on StopCauseLogs.StationId = ValidationResults.StationId
       WHERE 
         CONVERT(datetime, ValidationResults.ScanDate) >= CONVERT(datetime, $startDate) 
         and CONVERT(datetime, ValidationResults.ScanDate) <= CONVERT(datetime, $endDate) 
         and ValidationResults.CustomerId = $customerId
-        and StopCauseLogs.id = (select max(id) from StopCauseLogs where StopCauseLogs.StationId = ValidationResults.StationId group by StopCauseLogs.StationId)
+        and (StopCauseLogs.id IS NULL OR StopCauseLogs.id = (select max(id) from StopCauseLogs where StopCauseLogs.StationId = ValidationResults.StationId group by StopCauseLogs.StationId))
       GROUP BY 
         DATEPART(HOUR, ValidationResults.ScanDate),
         ValidationResults.OrderIdentifier,
@@ -148,6 +148,7 @@ async function getValidationResultsPerLine(lineInfo) {
     validations.lineInfo = lineInfo;
     return validations;
   } catch (error) {
+    console.log("ERROR API ", error);
     throw new Error(error);
   }
 }
