@@ -766,7 +766,7 @@ function computeLineProductionLive(validationResults, lineInfo) {
   return lineLiveProgress;
 }
 function computeLineDashboardProductionLive(validationResults, lineInfo) {
-  // get stations and it validation count
+  // get stations and its validation count
   const stationsProductionArray = _(validationResults)
     .groupBy('stationIdentifier')
     .map(ValidationsByStation).value();

@@ -35,19 +35,18 @@ async function getShiftsPerProductionLine(req, res) {
   }
 }
 
-async function getCurrentShiftProductionLine(req, res){
-  try{
+async function getCurrentShiftProductionLine(req, res) {
+  try {
     const line = validateModelId(req.params.productionLineId);
-    const customerId = validateModelId(req.params.customerId); 
-    if(!line.isValid){
+    const customerId = validateModelId(req.params.customerId);
+    if (!line.isValid) {
       return badRequestError(`The production line ID ${line.id} is not valid`, res, line.errorList);
     }
-    const shift = await serviceShift.getCurrentShift(line.id,customerId.id);
+    const shift = await serviceShift.getCurrentShift(line.id, customerId.id);
     return res.json(shift);
-  }catch(error){
-      logError('Error in getCurrentShift', error);
-      return internalServerError('Internal server error', res);
-    
+  } catch (error) {
+    logError('Error in getCurrentShift', error);
+    return internalServerError('Internal server error', res);
   }
 }
 

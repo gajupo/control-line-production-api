@@ -561,6 +561,33 @@ function formatProductionLineLiveStats(lines, currentLine, validationResults) {
     });
   }
 }
+async function getStationsStatusByLine(lineId) {
+  try {
+    const stationList = await models.OperatingStation.findOne({
+      attributes: [
+        'id', 'StationIdentifier',
+      ],
+      include: [{
+        model: models.ProductionLine,
+        attributes: [],
+      },
+      {
+        model: models.StopCauseLog,
+        attributes: ['status'],
+        where: { status: 1 },
+        required: false,
+      }],
+      where: {
+        [Op.and]: [
+          { LineId: lineId },
+        ],
+      },
+    });
+    return stationList;
+  } catch (error) {
+    throw new Error(error);
+  }
+}
 module.exports.getProductionLinesPerCustomer = getProductionLinesPerCustomer;
 module.exports.getLineStatsByLineIdAndShift = getLineStatsByLineIdAndShift;
 module.exports.getProductionLinesAndShiftsByCustomer = getProductionLinesAndShiftsByCustomer;
@@ -576,3 +603,4 @@ module.exports.getProductionLineImpl = getProductionLineImpl;
 module.exports.getProductionLineByCustomerIdAndShift = getProductionLineByCustomerIdAndShift;
 module.exports.formatProductionLineLiveStats = formatProductionLineLiveStats;
 module.exports.getCurrentProductionByRate = getCurrentProductionByRate;
+module.exports.getStationsStatusByLine = getStationsStatusByLine;

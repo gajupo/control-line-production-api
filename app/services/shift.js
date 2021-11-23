@@ -2,7 +2,7 @@ const _ = require('lodash');
 const { utcToZonedTime } = require('date-fns-tz');
 const datefns = require('date-fns');
 const { Sequelize, Op } = require('sequelize');
-const { ProductionLineShiftHistory,Shift } = require('../models');
+const { ProductionLineShiftHistory, Shift } = require('../models');
 
 async function getCurrentShift(productionLineId, customerId) {
   try {
@@ -23,8 +23,8 @@ async function getCurrentShift(productionLineId, customerId) {
       include: [{
         model: Shift,
         attributes: [
-          'ShiftDescription'
-        ]
+          'ShiftDescription',
+        ],
       }],
       mapToModel: true,
     });
