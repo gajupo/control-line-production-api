@@ -50,6 +50,18 @@ async function getCurrentShiftProductionLine(req, res) {
   }
 }
 
+async function getChangeShiftInMinutes(req, res) {
+  try {
+    const shiftstart = req.params.shiftstartdatetime;
+    const shiftend = req.params.shiftenddatetime;
+    const time = serviceShift.getShiftDifferenceInMinutes(shiftstart,shiftend);
+    return res.json(time);
+  } catch (error) {
+    logError('Error in getChangeShiftInMinutes', error);
+    return internalServerError('Internal server error', res);
+  }
+}
 module.exports.getShiftsPerProductionLine = getShiftsPerProductionLine;
 module.exports.getShiftsPerProductionLineImpl = getShiftsPerProductionLineImpl;
 module.exports.getCurrentShiftProductionLine = getCurrentShiftProductionLine;
+module.exports.getChangeShiftInMinutes = getChangeShiftInMinutes;
