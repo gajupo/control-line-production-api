@@ -1,7 +1,7 @@
 const _ = require('lodash');
 const datefns = require('date-fns');
 const { Sequelize, Op, QueryTypes } = require('sequelize');
-const { zonedTimeToUtc } = require('date-fns-tz');
+const { zonedTimeToUtc, utcToZonedTime } = require('date-fns-tz');
 const { sequelize, getDatePartConversion } = require('../helpers/sequelize');
 const models = require('../models');
 const shiftServices = require('./shift');
@@ -265,11 +265,31 @@ function ValidationsByStation(items, stationIdentifier) {
     blocked: items[0].status,
   };
 }
-function calculateAchievableGoal(items, stationIdentifier) {
+function getLastOrderAndItsPR(items, stationIdentifier) {
   return {
-    stationIdentifier: stationIdentifier,
-    countValidationResult: _.sumBy(items, 'validationResults'),
+    lastOrder: _.last(items),
   };
+}
+function calculateAchievableGoal(validationResults, lineInfo) {
+  const today = utcToZonedTime(new Date(), 'America/Mexico_City');
+  const shiftEndDate = lineInfo.ShiftEndDateTime;
+  const achievableGoals = [];
+  // remaining time to the end of the shoft
+  const totalShiftMinutes = shiftServices.getShiftDifferenceInMinutes(shiftEndDate, datefns.format(today, 'yyyy-MM-dd HH:mm:ss'));
+  // validation result sum
+  const currentValidationResults = _.sumBy(validationResults, (o) => o.validationResults);
+  // last order by station and its production rate
+  const lastOrderPerStation = _(validationResults)
+    .groupBy('stationIdentifier')
+    .map((items) => _.last(items)).value();
+  // calculate achievable goal per station
+  for (let iOrderStation = 0; iOrderStation < lastOrderPerStation.length; iOrderStation++) {
+    const lastOrder = lastOrderPerStation[iOrderStation];
+    achievableGoals.push((lastOrder.ProductionRate * totalShiftMinutes) / 60);
+  }
+  // sume achievable goal + sum of validation results
+  // return achievable goal
+  return Math.floor(_.sum(achievableGoals) + currentValidationResults);
 }
 // function joinValidationsAndProductionRate(validationResults, shiftStart, shiftEnd, reportDate) {
 //   const hours = [];
@@ -777,7 +797,7 @@ function computeLineDashboardProductionLive(validationResults, lineInfo) {
     .groupBy('stationIdentifier')
     .map(ValidationsByStation).value();
   const lineLiveProduction = computeLineProductionLive(validationResults, lineInfo);
-  lineLiveProduction.achievableGoal = 0;
+  lineLiveProduction.achievableGoal = calculateAchievableGoal(validationResults, lineInfo);
   const lineLiveProgress = {
     lineLiveProduction: lineLiveProduction,
     stationsProduction: stationsProductionArray,
