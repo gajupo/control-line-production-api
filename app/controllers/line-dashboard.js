@@ -1,55 +1,10 @@
+const _ = require('lodash');
 const { utcToZonedTime } = require('date-fns-tz');
 const { logError } = require('../helpers/logger');
-const {
-  internalServerError, badRequestError, getHoursPerShift,
-  getProductionGoal, getProductionRate,
-} = require('./core');
+const { internalServerError, badRequestError } = require('./core');
 const { validateModelId, validateLinesDashboradParams } = require('../models');
 const services = require('../services');
 
-function transformLine(productionLine) {
-  const line = {
-    id: productionLine.id,
-    lineName: productionLine.lineName,
-    stations: [],
-    validationResultCount: 0,
-    goal: 0,
-    rate: 0,
-  };
-  if (Object.prototype.hasOwnProperty.call(productionLine, 'Shifts') && productionLine.Shifts.length > 0) {
-    const shift = productionLine.Shifts[0];
-    line.shiftId = shift.id;
-    line.shiftDescription = shift.shiftDescription;
-  }
-  if (Object.prototype.hasOwnProperty.call(productionLine, 'OperatingStations') && productionLine.OperatingStations.length > 0) {
-    const stations = [];
-    let totalValidationResultCount = 0;
-
-    productionLine.OperatingStations.forEach((e) => {
-      const station = e.dataValues;
-      totalValidationResultCount += station.validationResultCount;
-
-      stations.push({
-        id: station.id,
-        identifier: station.stationIdentifier,
-        validationResultCount: station.validationResultCount,
-        blocked: station.StopCauseLogs.length > 0,
-      });
-    });
-    line.stations = stations;
-    line.validationResultCount = totalValidationResultCount;
-  }
-  const shiftHours = getHoursPerShift(productionLine);
-  line.goal = getProductionGoal(productionLine, shiftHours);
-  line.rate = getProductionRate(line.validationResultCount, line.goal);
-
-  return line;
-}
-async function getProductionLineImpl(line) {
-  const today = utcToZonedTime('2021-07-21 19:21:05.217', 'America/Mexico_City');
-  const lineImpl = await services.ProductionLines.getProductionLineImpl(line, today);
-  return transformLine(lineImpl);
-}
 async function getProductionLine(reqParams, res) {
   try {
     const parameters = validateLinesDashboradParams(reqParams);
@@ -57,6 +12,10 @@ async function getProductionLine(reqParams, res) {
       return badRequestError('Invalid parameters passed to getProductionLineImpl', res, parameters.errorList);
     }
     const validationsPerLine = await services.ValidationResults.getValidationResultsPerLine(reqParams);
+    // check if we have production
+    if (_.isEmpty(validationsPerLine)) {
+      return res.json([]);
+    }
     const validationsTransformed = services
       .ValidationResults
       .computeLineDashboardProductionLive(validationsPerLine, reqParams);
