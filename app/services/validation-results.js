@@ -449,6 +449,14 @@ function calculateAchievableGoal(validationResults, lineInfo) {
 //   };
 //   return joined;
 // }
+/**
+ * Returs information for hour by hour report for a given customer, line and shift
+ * @param {*} validationResults
+ * @param {*} shiftStart
+ * @param {*} shiftEnd
+ * @param {*} reportDate
+ * @returns An object with hourly reporting information
+ */
 function joinValidationsAndProductionRate(validationResults, shiftStart, shiftEnd, reportDate) {
   const hours = [];
   const results = [];
@@ -614,6 +622,12 @@ function joinValidationsAndProductionRate(validationResults, shiftStart, shiftEn
   };
   return joined;
 }
+/**
+ * This function returns information about line status and production that is shown in the general dashboard
+ * @param {*} validationResults
+ * @param {*} lineInfo
+ * @returns An object with all information about the line and its production in real tiem
+ */
 function computeLineProductionLive(validationResults, lineInfo) {
   const hours = [];
   const results = [];
@@ -791,6 +805,12 @@ function computeLineProductionLive(validationResults, lineInfo) {
   };
   return lineLiveProgress;
 }
+/**
+ * Returns all needed information used in the line dashboard for a given production line
+ * @param {*} validationResults
+ * @param {*} lineInfo
+ * @returns An object with all information to be shown in the line dashboard
+ */
 function computeLineDashboardProductionLive(validationResults, lineInfo) {
   // get stations and its validation count
   const stationsProductionArray = _(validationResults)

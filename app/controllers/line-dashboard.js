@@ -4,7 +4,12 @@ const { logError } = require('../helpers/logger');
 const { internalServerError, badRequestError } = require('./core');
 const { validateModelId, validateLinesDashboradParams } = require('../models');
 const services = require('../services');
-
+/**
+ * Performs all queries and calcultation used for line panel dashboard for a give line
+ * @param {*} reqParams
+ * @param {*} res
+ * @returns An object with line information, goals, rates and total of validations
+ */
 async function getProductionLine(reqParams, res) {
   try {
     const parameters = validateLinesDashboradParams(reqParams);
@@ -35,6 +40,12 @@ async function getProductionLine(reqParams, res) {
     return internalServerError('Internal server error', res);
   }
 }
+/**
+ * Returns a list of lines and its current shift for a given customer
+ * @param {*} req
+ * @param {*} res
+ * @returns An array of objects
+ */
 async function getProductionLines(req, res) {
   try {
     const customer = validateModelId(req.params.customerId);

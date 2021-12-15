@@ -40,7 +40,12 @@ async function getProductionLinesPerCustomer(req, res) {
     return internalServerError('Internal server error', res);
   }
 }
-
+/**
+ * Controlls and returns all information for general dashboards
+ * @param {*} req
+ * @param {*} res
+ * @returns An array of objects, every object is a production line with its goal, rate and validations
+ */
 async function getProductionLinesPerCustomerCurrentShift(req, res) {
   try {
     const customer = models.validateModelId(req.params.customerId);
