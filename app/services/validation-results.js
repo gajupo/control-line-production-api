@@ -291,164 +291,6 @@ function calculateAchievableGoal(validationResults, lineInfo) {
   // return achievable goal
   return Math.floor(_.sum(achievableGoals) + currentValidationResults);
 }
-// function joinValidationsAndProductionRate(validationResults, shiftStart, shiftEnd, reportDate) {
-//   const hours = [];
-//   const results = [];
-//   const rates = [];
-//   let hourValue = 60;
-//   const shiftDates = [];
-//   // get first hour the shift
-//   let shiftLoopFirstHour = shiftServices.getShiftHour(shiftStart);
-//   const theVeryFirstShiftHour = shiftServices.getShiftHour(shiftStart);
-//   const theVeryLastShiftHour = shiftServices.getShiftHour(shiftEnd);
-//   const shiftStartMinutes = shiftServices.getShiftMinutes(shiftStart);
-//   const shiftEndMinutes = shiftServices.getShiftMinutes(shiftEnd);
-//   const dayLastHour = 23;
-//   let shiftLoopLastHour = 0;
-
-//   const paramDate = zonedTimeToUtc(reportDate, 'America/Mexico_City');
-//   const shiftStartDate = shiftServices.GetShiftStartAsDateTime(paramDate.toISOString(), shiftStart);
-//   const shiftEndDate = shiftServices.GetShiftEndAsDateTime(paramDate.toISOString(), shiftStart, shiftEnd);
-//   const totalShiftHours = shiftServices.getShiftDifferenceInHours(shiftEndDate, shiftStartDate);
-//   // get the unique station id list in validationsResults
-//   const stationIdList = _.uniqBy(validationResults, 'stationId').map((item) => item.stationId);
-//   // if start and end date is not the same day, we will look for hours in the next day starting by 0 = 12 AM
-//   if (!datefns.isSameDay(datefns.parseISO(shiftEndDate), datefns.parseISO(shiftStartDate))) {
-//     // current day - 2021-10-27 15:30:00
-//     shiftDates.push(datefns.format(datefns.parseISO(shiftStartDate), 'yyyy-MM-dd'));
-//     // next day - 2021-10-28 00:30:00
-//     shiftDates.push(datefns.format(datefns.parseISO(shiftEndDate), 'yyyy-MM-dd'));
-//   } else {
-//     // start and end shift is the same day, 2021-10-27 06:00:00 - 2021-10-27 15:29:59
-//     // in the next loop we will filter just by one date
-//     shiftDates.push(datefns.format(datefns.parseISO(shiftStartDate), 'yyyy-MM-dd'));
-//   }
-//   // we need the last order to get the production rate in case some hours does not have production,
-//   const lastNotEmptyOrder = _.findLast(validationResults, (o) => o.validationResults > 0);
-//   // get first order not empty
-//   const firstNotEmptyOrder = _.find(validationResults, (o) => o.validationResults > 0);
-//   // loop shift dates to filter scanned materials
-//   for (let index = 0; index < shiftDates.length; index++) {
-//     //-
-//     const shiftDate = shiftDates[index];
-//     // the shift will start in current day and ends in the next one, that is why we iterate until 23 hour for the current date
-//     if (index === 0 && shiftDates.length > 1) {
-//       shiftLoopLastHour = dayLastHour;
-//     } else if (index === 0 && shiftDates.length === 1) {
-//       // start and end shift is in the same day
-//       // shiftLoopLastHour must be equal to the end of the shift
-//       shiftLoopLastHour = shiftLoopFirstHour + totalShiftHours;
-//     } else if (index > 0 && shiftDates.length >= 1) {
-//       // iterate for reamining hours for next day shift
-//       shiftLoopLastHour = shiftServices.getShiftHour(shiftEnd);
-//       // restart the hour counter to start in 0 for the next day
-//       shiftLoopFirstHour = 0;
-//     }
-
-//     for (let hour = shiftLoopFirstHour; hour <= shiftLoopLastHour; hour++) {
-//       // set hour value that will be used to do the calculations
-//       // at the beginin or at the end of the shift the hour value could be a halft of an hour
-//       if (hour === theVeryFirstShiftHour) {
-//         hourValue = (shiftStartMinutes === 0) ? 60 : shiftStartMinutes;
-//       } else if (hour === theVeryLastShiftHour) {
-//         hourValue = (shiftEndMinutes === 0) ? 60 : shiftEndMinutes;
-//       } else {
-//         // for the middle hours in the shift
-//         hourValue = 60;
-//       }
-//       // store the current hour to show in the chart
-//       hours.push(hour);
-//       // get the count for validation by hour and date
-//       const countByHour = validationResults.filter(
-//         (result) => result.hour === hour && result.scanDate === shiftDate
-//       ).length;
-//       if (countByHour > 0) {
-//         // get all materials processed by the current hour and date
-//         const validationsPerHour = validationResults.filter(
-//           (result) => result.hour === hour && result.scanDate === shiftDate
-//         );
-//         // all orders has the same production rate
-//         const samePR = hasSameMaterial(validationsPerHour);
-//         if (samePR) {
-//           // all orders in the hour have the same material so then same PR
-//           const rateByHour = calculateRateSamePR(hourValue, validationsPerHour[0].ProductionRate, stationIdList.length);
-//           rates.push(rateByHour);
-//         } else {
-//         // TODO: get unique stations again in this hour, because it could some stations that do not have validations
-//           const ratesByStation = [];
-//           let firsShiftProccesed = false;
-//           let firstOrderUsed;
-//           let lastOrderUsed;
-//           for (let iStation = 0; iStation < stationIdList.length; iStation++) {
-//             const stationId = stationIdList[iStation];
-//             let stationOrders = filterOrdersByStation(stationId, validationsPerHour);
-//             if (hasSameMaterial(stationOrders)) {
-//               if (hour === theVeryFirstShiftHour) firsShiftProccesed = true;
-//               const rate = calculateRateSamePR(hourValue, stationOrders[0].ProductionRate, 1);
-//               ratesByStation.push(rate);
-//             } else {
-//               //------------------------------------------------------------------------------------------------------------
-//               // check if we are processing the first hour of the shift, we will use the first minute of the shift start time
-//               if (hour === theVeryFirstShiftHour && !firsShiftProccesed) {
-//                 const first = _.first(stationOrders);
-//                 ratesByStation.push(calculateRateForFirstShiftOrder(first, shiftStartDate));
-//                 stationOrders = _.remove(stationOrders, (o) => o === first);
-//                 firstOrderUsed = first;
-//               }
-//               if (hour === theVeryLastShiftHour) {
-//                 const last = _.last(stationOrders);
-//                 ratesByStation.push(calculateRateForLastShiftOrder(last, shiftEndDate));
-//                 stationOrders = _.remove(stationOrders, (o) => o === last);
-//                 lastOrderUsed = last;
-//               }
-//               // the orders of the station in this hour do not have the same material
-//               const ordersRates = getRateForMiddleOrders(stationOrders, hour, shiftDate, firstOrderUsed, lastOrderUsed);
-//               const rate = calculateRateDifferentPR(ordersRates, hourValue);
-//               ratesByStation.push(rate);
-//             }
-//           }
-//           rates.push(_.sum(ratesByStation));
-//         }
-//         // count validation result by hour
-//         results.push(_.sumBy(validationsPerHour, (o) => o.validationResults));
-//       } else {
-//         let rate = 0;
-//         // TODO: CHECK LAST AND FIRST VALID ORDER
-//         // in this hour there is no material validations
-//         results.push(0);
-//         // keep the rate of the last order for this particual hour
-//         if (!!firstNotEmptyOrder && Object.prototype.hasOwnProperty.call(firstNotEmptyOrder, 'ProductionRate')) {
-//           // if we are in the first hour of the shift we will use the next not empty order to get the rate
-//           if (hour === theVeryFirstShiftHour) {
-//             rate = calculateRateSamePR(hourValue, firstNotEmptyOrder.ProductionRate, stationIdList.length);
-//           } else if (hour === theVeryLastShiftHour) {
-//             rate = calculateRateSamePR(hourValue, lastNotEmptyOrder.ProductionRate, stationIdList.length);
-//           } else {
-//             // for the rest of the orders we will use the rate of the last order created
-//             // check if the next hour has production if it has we use that production rate
-//             const validationsNextHour = validationResults.filter(
-//               (result) => result.hour > hour && result.validationResults > 0
-//             );
-//             if (!_.isEmpty(validationsNextHour)) {
-//               rate = calculateRateSamePR(hourValue, validationsNextHour[0].ProductionRate, stationIdList.length);
-//             } else {
-//               rate = calculateRateSamePR(hourValue, lastNotEmptyOrder.ProductionRate, stationIdList.length);
-//             }
-//           }
-
-//           rates.push(rate);
-//         } else rates.push(0);
-//       }
-//     }
-//   }
-//   // final object used in the report "hora por hora"
-//   const joined = {
-//     hours: hours,
-//     validationResults: results,
-//     productionRates: rates,
-//   };
-//   return joined;
-// }
 /**
  * Returs information for hour by hour report for a given customer, line and shift
  * @param {*} validationResults
@@ -491,6 +333,8 @@ function joinValidationsAndProductionRate(validationResults, shiftStart, shiftEn
   const lastNotEmptyOrder = _.findLast(validationResults, (o) => o.validationResults > 0);
   // get first order not empty
   const firstNotEmptyOrder = _.find(validationResults, (o) => o.validationResults > 0);
+  // get the unique station id list in validationsResults
+  const stationIdList = _.uniqBy(validationResults, 'stationId').map((item) => item.stationId);
   // loop shift dates to filter scanned materials
   for (let index = 0; index < shiftDates.length; index++) {
     //-
@@ -532,7 +376,7 @@ function joinValidationsAndProductionRate(validationResults, shiftStart, shiftEn
           (result) => result.hour === hour && result.scanDate === shiftDate
         );
         // get the unique station id list in validationsResults
-        const stationIdList = _.uniqBy(validationsPerHour, 'stationId').map((item) => item.stationId);
+        // const stationIdList = _.uniqBy(validationsPerHour, 'stationId').map((item) => item.stationId);
         // all orders has the same production rate
         const samePR = hasSameMaterial(validationsPerHour);
         if (samePR) {
@@ -586,26 +430,22 @@ function joinValidationsAndProductionRate(validationResults, shiftStart, shiftEn
         if (!!firstNotEmptyOrder && Object.prototype.hasOwnProperty.call(firstNotEmptyOrder, 'ProductionRate')) {
           // if we are in the first hour of the shift we will use the next not empty order to get the rate
           if (hour === theVeryFirstShiftHour) {
-            const stations = getFirstStationsByHour(validationResults, firstNotEmptyOrder.hour);
-            rate = calculateRateSamePR(hourValue, firstNotEmptyOrder.ProductionRate, stations.length);
+            // const stations = getFirstStationsByHour(validationResults, firstNotEmptyOrder.hour);
+            rate = calculateRateSamePR(hourValue, firstNotEmptyOrder.ProductionRate, stationIdList.length);
           } else if (hour === theVeryLastShiftHour) {
-            const stations = getLastStationsByHour(validationResults, lastNotEmptyOrder.hour);
-            rate = calculateRateSamePR(hourValue, lastNotEmptyOrder.ProductionRate, stations.length);
+            // const stations = getLastStationsByHour(validationResults, lastNotEmptyOrder.hour);
+            rate = calculateRateSamePR(hourValue, lastNotEmptyOrder.ProductionRate, stationIdList.length);
           } else {
             // for the rest of the orders we will use the rate of the last order created
             // check if the next hour has production if it has we use that production rate
             const validationsNextHour = validationResults.filter(
               (result) => result.hour > hour && result.validationResults > 0
             );
-            // if (!_.isEmpty(validationsNextHour)) {
-            //   const stations = getFirstStationsByHour(validationResults, hour);
-            //   rate = calculateRateSamePR(hourValue, validationsNextHour[0].ProductionRate, stations.length);
-            // } else {
-            let stations = getLastStationsByHour(validationResults, hour);
-            if (stations.length === 0) {
-              stations = getFirstStationsByHour(validationResults, hour);
-            }
-            rate = calculateRateSamePR(hourValue, lastNotEmptyOrder.ProductionRate, stations.length);
+            // let stations = getLastStationsByHour(validationResults, hour);
+            // if (stations.length === 0) {
+            //   stations = getFirstStationsByHour(validationResults, hour);
+            // }
+            rate = calculateRateSamePR(hourValue, lastNotEmptyOrder.ProductionRate, stationIdList.length);
             // }
           }
 
@@ -629,169 +469,64 @@ function joinValidationsAndProductionRate(validationResults, shiftStart, shiftEn
  * @returns An object with all information about the line and its production in real tiem
  */
 function computeLineProductionLive(validationResults, lineInfo) {
-  const hours = [];
-  const results = [];
-  const rates = [];
-  let hourValue = 60;
-  const shiftDates = [];
-  // get first hour the shift
-  let shiftLoopFirstHour = shiftServices.getShiftHour(lineInfo.ShiftStartStr);
-  const theVeryFirstShiftHour = shiftServices.getShiftHour(lineInfo.ShiftStartStr);
-  const theVeryLastShiftHour = shiftServices.getShiftHour(lineInfo.ShiftEndStr);
-  const shiftStartMinutes = shiftServices.getShiftMinutes(lineInfo.ShiftStartStr);
-  const shiftEndMinutes = shiftServices.getShiftMinutes(lineInfo.ShiftEndStr);
-  const dayLastHour = 23;
-  let shiftLoopLastHour = 0;
-
-  const shiftStartDate = lineInfo.ShiftStartedDateTime;
+  const stationGoals = [];
+  const hourValue = 60;
+  // shift end as date time
   const shiftEndDate = lineInfo.ShiftEndDateTime;
-  const totalShiftHours = shiftServices.getShiftDifferenceInHours(shiftEndDate, shiftStartDate);
-  // if start and end date is not the same day, we will look for hours in the next day starting by 0 = 12 AM
-  if (!datefns.isSameDay(datefns.parseISO(shiftEndDate), datefns.parseISO(shiftStartDate))) {
-    // current day - 2021-10-27 15:30:00
-    shiftDates.push(datefns.format(datefns.parseISO(shiftStartDate), 'yyyy-MM-dd'));
-    // next day - 2021-10-28 00:30:00
-    shiftDates.push(datefns.format(datefns.parseISO(shiftEndDate), 'yyyy-MM-dd'));
-  } else {
-    // start and end shift is the same day, 2021-10-27 06:00:00 - 2021-10-27 15:29:59
-    // in the next loop we will filter just by one date
-    shiftDates.push(datefns.format(datefns.parseISO(shiftStartDate), 'yyyy-MM-dd'));
-  }
-  // we need the last order to get the production rate in case some hours does not have production,
-  const lastNotEmptyOrder = _.findLast(validationResults, (o) => o.validationResults > 0);
-  // get first order not empty
-  const firstNotEmptyOrder = _.find(validationResults, (o) => o.validationResults > 0);
-  // get first order not empty
-  const firstHourEmptyOrder = _.find(validationResults, (o) => o.validationResults > 0).hour;
-  // loop shift dates to filter scanned materials
-  for (let index = 0; index < shiftDates.length; index++) {
-    //-
-    const shiftDate = shiftDates[index];
-    // the shift will start in current day and ends in the next one, that is why we iterate until 23 hour for the current date
-    if (index === 0 && shiftDates.length > 1) {
-      shiftLoopLastHour = dayLastHour;
-      if (shiftLoopFirstHour !== firstHourEmptyOrder) {
-        shiftLoopFirstHour = firstHourEmptyOrder;
-      }
-    } else if (index === 0 && shiftDates.length === 1) {
-      // start and end shift is in the same day
-      // shiftLoopLastHour must be equal to the end of the shift
-      shiftLoopLastHour = shiftLoopFirstHour + totalShiftHours;
-      if (shiftLoopFirstHour !== firstHourEmptyOrder) {
-        shiftLoopFirstHour = firstHourEmptyOrder;
-      }
-    } else if (index > 0 && shiftDates.length >= 1) {
-      // iterate for reamining hours for next day shift
-      shiftLoopLastHour = shiftServices.getShiftHour(lineInfo.ShiftEndStr);
-      // restart the hour counter to start in 0 for the next day
-      shiftLoopFirstHour = 0;
-    }
-
-    for (let hour = shiftLoopFirstHour; hour <= shiftLoopLastHour; hour++) {
-      // set hour value that will be used to do the calculations
-      // at the beginin or at the end of the shift the hour value could be a halft of an hour
-      if (hour === theVeryFirstShiftHour) {
-        hourValue = (shiftStartMinutes === 0) ? 60 : shiftStartMinutes;
-      } else if (hour === theVeryLastShiftHour) {
-        hourValue = (shiftEndMinutes === 0) ? 60 : shiftEndMinutes;
-      } else {
-        // for the middle hours in the shift
-        hourValue = 60;
-      }
-      // store the current hour to show in the chart
-      hours.push(hour);
-      // get the count for validation by hour and date
-      const countByHour = validationResults.filter(
-        (result) => result.hour === hour && result.scanDate === shiftDate
-      ).length;
-      if (countByHour > 0) {
-        // get all materials processed by the current hour and date
-        const validationsPerHour = validationResults.filter(
-          (result) => result.hour === hour && result.scanDate === shiftDate
-        );
-        // get the unique station id list in validationsResults
-        const stationIdList = _.uniqBy(validationsPerHour, 'stationId').map((item) => item.stationId);
-        // all orders has the same production rate
-        const samePR = hasSameMaterial(validationsPerHour);
-        if (samePR) {
-          // all orders in the hour have the same material so then same PR
-          const rateByHour = calculateRateSamePR(hourValue, validationsPerHour[0].ProductionRate, stationIdList.length);
-          rates.push(rateByHour);
+  // sum of total of validation for all stations
+  const currentValidationResults = _.sumBy(validationResults, (o) => o.validationResults);
+  // group by station
+  const stationsProductionArray = _(validationResults)
+    .groupBy('stationIdentifier')
+    .map((items) => items).value();
+  // loop stations
+  for (let iStation = 0; iStation < stationsProductionArray.length; iStation++) {
+    const stationOrders = stationsProductionArray[iStation];
+    let prevMaterial = 0;
+    let splitedOrders = [];
+    // loop orders and check if material changes
+    for (let iOrder = 0; iOrder < stationOrders.length; iOrder++) {
+      const order = stationOrders[iOrder];
+      if (prevMaterial !== order.materialId && prevMaterial !== 0) {
+        // calculate goal for every material and time used in minutes from the first order to the last one
+        const startDateTime = _.first(splitedOrders).minDate;
+        const endDateTime = _.last(splitedOrders).maxDate;
+        const diffInMinutes = shiftServices.getShiftDifferenceInMinutes(endDateTime, startDateTime);
+        //  store goal of the station
+        const materialStationGoal = Math.floor((stationOrders[0].ProductionRate * diffInMinutes) / hourValue);
+        stationGoals.push(materialStationGoal);
+        // clean stored orders on every material change
+        splitedOrders = [];
+        // if the next order will be the last one we store it to made the propper calculations
+        if (iOrder === stationOrders.length - 1) {
+          splitedOrders.push(stationOrders[stationOrders.length - 1]);
         } else {
-        // TODO: get unique stations again in this hour, because it could some stations that do not have validations
-          const ratesByStation = [];
-          let firsShiftProccesed = false;
-          let firstOrderUsed;
-          let lastOrderUsed;
-          for (let iStation = 0; iStation < stationIdList.length; iStation++) {
-            const stationId = stationIdList[iStation];
-            let stationOrders = filterOrdersByStation(stationId, validationsPerHour);
-            if (hasSameMaterial(stationOrders)) {
-              if (hour === theVeryFirstShiftHour) firsShiftProccesed = true;
-              const rate = calculateRateSamePR(hourValue, stationOrders[0].ProductionRate, 1);
-              ratesByStation.push(rate);
-            } else {
-              //------------------------------------------------------------------------------------------------------------
-              // check if we are processing the first hour of the shift, we will use the first minute of the shift start time
-              if (hour === theVeryFirstShiftHour && !firsShiftProccesed) {
-                const first = _.first(stationOrders);
-                ratesByStation.push(calculateRateForFirstShiftOrder(first, shiftStartDate));
-                stationOrders = _.remove(stationOrders, (o) => o === first);
-                firstOrderUsed = first;
-              }
-              if (hour === theVeryLastShiftHour) {
-                const last = _.last(stationOrders);
-                ratesByStation.push(calculateRateForLastShiftOrder(last, shiftEndDate));
-                stationOrders = _.remove(stationOrders, (o) => o === last);
-                lastOrderUsed = last;
-              }
-              // the orders of the station in this hour do not have the same material
-              const ordersRates = getRateForMiddleOrders(stationOrders, hour, shiftDate, firstOrderUsed, lastOrderUsed);
-              const rate = calculateRateDifferentPR(ordersRates, hourValue);
-              ratesByStation.push(rate);
-            }
-          }
-          rates.push(_.sum(ratesByStation));
+          splitedOrders.push(order);
         }
-        // count validation result by hour
-        results.push(_.sumBy(validationsPerHour, (o) => o.validationResults));
+        // store the prev material used
+        prevMaterial = order.materialId;
       } else {
-        let rate = 0;
-        // TODO: CHECK LAST AND FIRST VALID ORDER
-        // in this hour there is no material validations
-        results.push(0);
-        // keep the rate of the last order for this particual hour
-        if (!!firstNotEmptyOrder && Object.prototype.hasOwnProperty.call(firstNotEmptyOrder, 'ProductionRate')) {
-          // if we are in the first hour of the shift we will use the next not empty order to get the rate
-          if (hour === theVeryFirstShiftHour) {
-            const stations = getFirstStationsByHour(validationResults, firstNotEmptyOrder.hour);
-            rate = calculateRateSamePR(hourValue, firstNotEmptyOrder.ProductionRate, stations.length);
-          } else if (hour === theVeryLastShiftHour) {
-            const stations = getLastStationsByHour(validationResults, lastNotEmptyOrder.hour);
-            rate = calculateRateSamePR(hourValue, lastNotEmptyOrder.ProductionRate, stations.length);
-          } else {
-            // for the rest of the orders we will use the rate of the last order created
-            // check if the next hour has production if it has we use that production rate
-            const validationsNextHour = validationResults.filter(
-              (result) => result.hour > hour && result.validationResults > 0
-            );
-            // if (!_.isEmpty(validationsNextHour)) {
-            //   const stations = getFirstStationsByHour(validationResults, hour);
-            //   rate = calculateRateSamePR(hourValue, validationsNextHour[0].ProductionRate, stations.length);
-            // } else {
-            const stations = getLastStationsByHour(validationResults, hour);
-            rate = calculateRateSamePR(hourValue, lastNotEmptyOrder.ProductionRate, stations.length);
-            // }
-          }
-
-          rates.push(rate);
-        } else rates.push(0);
+        splitedOrders.push(order);
+        prevMaterial = order.materialId;
+      }
+      // check if we are at the end of the loop
+      if (iOrder === stationOrders.length - 1) {
+        // calculate goal for every material and time used in minutes from the first order to the last one
+        const startDateTime = _.first(splitedOrders).minDate;
+        const endDateTime = _.last(splitedOrders).maxDate;
+        const diffInMinutes = shiftServices.getShiftDifferenceInMinutes(endDateTime, startDateTime);
+        //  store goal of the station
+        const splitedOrdersGoal = Math.floor((stationOrders[0].ProductionRate * diffInMinutes) / hourValue);
+        // get ramaining time till the end of the shift because we are in the last order proccesed by the station
+        const diffTimeTillEndShift = shiftServices.getShiftDifferenceInMinutes(shiftEndDate, endDateTime);
+        const remainingGoal = Math.floor((_.last(splitedOrders).ProductionRate * diffTimeTillEndShift) / hourValue);
+        stationGoals.push(splitedOrdersGoal);
+        stationGoals.push(remainingGoal);
       }
     }
   }
-  // final object used to show production line live progress
-  const validationResultCount = _.sum(results);
-  const goal = _.sum(rates);
+  // sum all goal of all stations
+  const goal = _.sum(stationGoals);
   const lineLiveProgress = {
     id: lineInfo.ProductionLineId,
     lineName: lineInfo.LineName,
@@ -799,9 +534,9 @@ function computeLineProductionLive(validationResults, lineInfo) {
     blocked: !!lineInfo.isBlocked,
     customerId: lineInfo.CustomerId,
     customerName: lineInfo.CustomerName,
-    validationResultCount: validationResultCount, // sum fo all stations scanned materials
+    validationResultCount: currentValidationResults, // sum fo all stations scanned materials
     goal: goal, // sum of goals for all stations
-    rate: productionLinesServices.getCurrentProductionByRate(validationResultCount, goal), // sum of all percentages completition vs goal
+    rate: productionLinesServices.getCurrentProductionByRate(currentValidationResults, goal), // sum of all percentages completition vs goal
   };
   return lineLiveProgress;
 }
@@ -812,12 +547,40 @@ function computeLineProductionLive(validationResults, lineInfo) {
  * @returns An object with all information to be shown in the line dashboard
  */
 function computeLineDashboardProductionLive(validationResults, lineInfo) {
-  // get stations and its validation count
+  // gets stations and its validation count
+  /**
+   * Example of list of stations and its production count
+    {
+      stationIdentifier: STATION1,
+      countValidationResult: 100,
+      id: 1,
+      blocked: false,
+    }
+   */
   const stationsProductionArray = _(validationResults)
     .groupBy('stationIdentifier')
     .map(ValidationsByStation).value();
+
+  // returns the bellow object with all information about line and its production
   const lineLiveProduction = computeLineProductionLive(validationResults, lineInfo);
+  // calculates de the achievableGoal for the given line based on its current production
+  // we set the value for achievableGoal on the object lineLiveProduction
   lineLiveProduction.achievableGoal = calculateAchievableGoal(validationResults, lineInfo);
+  /**
+   * Object for lineLiveProduction that is returned latter
+   {
+      achievableGoal:1988
+      active:true
+      blocked:false
+      customerId:'1'
+      customerName:undefined
+      goal:2535
+      id:'1'
+      lineName:undefined
+      rate:7
+      validationResultCount:168
+   }
+   */
   const lineLiveProgress = {
     lineLiveProduction: lineLiveProduction,
     stationsProduction: stationsProductionArray,

@@ -16,22 +16,24 @@ async function getProductionLine(reqParams, res) {
     if (!parameters.isValid) {
       return badRequestError('Invalid parameters passed to getProductionLineImpl', res, parameters.errorList);
     }
+    // get all production information for the given line, it performs a sql query
     const validationsPerLine = await services.ValidationResults.getValidationResultsPerLine(reqParams);
     // check if we have production
     if (_.isEmpty(validationsPerLine)) {
       return res.json([]);
     }
-    const validationsTransformed = services
-      .ValidationResults
+    // returns all data for the goal, achievable goal, current production, production by station
+    const validationsTransformed = services.ValidationResults
       .computeLineDashboardProductionLive(validationsPerLine, reqParams);
-    const validationsPerHourTransformed = services
-      .ValidationResults
+    // gets rates, goals and hours to be shown in the bar chart
+    const validationsPerHourTransformed = services.ValidationResults
       .joinValidationsAndProductionRate(
         validationsPerLine,
         reqParams.ShiftStartStr,
         reqParams.ShiftEndStr,
         reqParams.ShiftStartedDateTime
       );
+    // set the data for the bar chart on line dashboard
     validationsTransformed.chartData = validationsPerHourTransformed;
 
     return res.json(validationsTransformed);
