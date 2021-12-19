@@ -36,7 +36,7 @@ async function getCurrentShift(productionLineId, customerId) {
 function getShiftDifferenceInMinutes(shiftStrStartTime, shiftStrEndTime) {
   let minutes = 0;
   if (shiftStrStartTime && shiftStrEndTime) {
-    minutes = datefns.differenceInMinutes(datefns.parseISO(shiftStrStartTime), datefns.parseISO(shiftStrEndTime), { roundingMethod: 'ceil' });
+    minutes = datefns.differenceInMinutes(datefns.parseISO(shiftStrStartTime), datefns.parseISO(shiftStrEndTime), { roundingMethod: 'floor' });
   }
   return minutes;
 }

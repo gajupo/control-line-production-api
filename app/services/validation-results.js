@@ -1,3 +1,4 @@
+/* eslint-disable no-param-reassign */
 const _ = require('lodash');
 const datefns = require('date-fns');
 const { Sequelize, Op, QueryTypes } = require('sequelize');
@@ -190,6 +191,8 @@ function getRateForMiddleOrders(ordersByStation, hour, currentDate, parentFirstO
   let orderListAux = [];
   let firstTime = true;
   let lastOrderUsed = {};
+  // add 0 as prefix if the hour is less than 10
+  if (hour < 10) hour = `0${hour}`;
   for (let iFirstMaterial = 0; iFirstMaterial < ordersByStation.length; iFirstMaterial++) {
     const order = ordersByStation[iFirstMaterial];
     if (order.materialId === curretMaterialId) {
@@ -217,19 +220,24 @@ function getRateForMiddleOrders(ordersByStation, hour, currentDate, parentFirstO
     }
   }
   const currentEndDate = (parentLastOrderUsed) ? parentLastOrderUsed.minDate : `${currentDate} ${hour}:59:59`;
-  const first = _.first(orderListAux);
-  let timeUsed = shiftServices.getShiftDifferenceInMinutes(currentEndDate, first.minDate);
+  let currentStartDate = '';
+  if (ordersByStation.length === 1) {
+    currentStartDate = `${currentDate} ${hour}:00:00`;
+  } else {
+    currentStartDate = _.first(orderListAux).minDate;
+  }
+  let timeUsed = shiftServices.getShiftDifferenceInMinutes(currentEndDate, currentStartDate);
   // if the time used is equal to 0 at least we will use 1 minute
   timeUsed = (timeUsed === 0) ? 1 : timeUsed;
   usedTimeAndRates.push({ timeUsed: timeUsed, ProductionRate: orderListAux[0].ProductionRate });
   return usedTimeAndRates;
 }
-function calculateRateForFirstShiftOrder(order, shiftStartDate) {
-  const timeUsed = shiftServices.differenceInMinutes(order.maxDate, shiftStartDate);
+function getRatesForFirstShiftOrder(order, shiftStartDate) {
+  const timeUsed = shiftServices.getShiftDifferenceInMinutes(order.maxDate, shiftStartDate);
   return { timeUsed: timeUsed, ProductionRate: order.ProductionRate };
 }
-function calculateRateForLastShiftOrder(order, shiftEndDate) {
-  const timeUsed = shiftServices.differenceInMinutes(shiftEndDate, order.minDate);
+function getRateForLastShiftOrder(order, shiftEndDate) {
+  const timeUsed = shiftServices.getShiftDifferenceInMinutes(shiftEndDate, order.minDate);
   return { timeUsed: timeUsed, ProductionRate: order.ProductionRate };
 }
 function getLastStationsByHour(validationResults, hour) {
@@ -269,6 +277,70 @@ function getLastOrderAndItsPR(items, stationIdentifier) {
   return {
     lastOrder: _.last(items),
   };
+}
+function calculateStationsRate(hourValue, stationIdList, validationResults) {
+  const stationGoals = [];
+  for (let iStation = 0; iStation < stationIdList.length; iStation++) {
+    const stationId = stationIdList[iStation];
+    // get all validation by station to calculate its rate individualy
+    const firstNotEmptyOrder = _.find(validationResults, (o) => o.validationResults > 0 && o.stationId === stationId);
+    if (_.isEmpty(firstNotEmptyOrder)) {
+      stationGoals.push(0);
+    } else {
+      stationGoals.push((hourValue * firstNotEmptyOrder.ProductionRate) / 60);
+    }
+  }
+  return _.sum(stationGoals);
+}
+function calculateStationsRateLastHour(hourValue, stationIdList, validationResults) {
+  const stationGoals = [];
+  for (let iStation = 0; iStation < stationIdList.length; iStation++) {
+    const stationId = stationIdList[iStation];
+    const lastNotEmptyOrder = _.findLast(
+      validationResults,
+      (o) => o.validationResults > 0 && o.stationId === stationId
+    );
+    if (_.isEmpty(lastNotEmptyOrder)) {
+      stationGoals.push(0);
+    } else {
+      stationGoals.push((hourValue * lastNotEmptyOrder.ProductionRate) / 60);
+    }
+  }
+  return _.sum(stationGoals);
+}
+function calculateStationsRateMiddleHours(hourValue, stationIdList, validationResults, hour) {
+  const stationGoals = [];
+  let order = {};
+  for (let iStation = 0; iStation < stationIdList.length; iStation++) {
+    const stationId = stationIdList[iStation];
+    const firstNotEmptyOrder = _.find(validationResults, (o) => o.validationResults > 0 && o.stationId === stationId);
+    const lastNotEmptyOrder = _.findLast(
+      validationResults,
+      (o) => o.validationResults > 0 && o.stationId === stationId
+    );
+    // there is any validation in the next hours
+    if (_.isEmpty(firstNotEmptyOrder) && _.isEmpty(lastNotEmptyOrder)) {
+      stationGoals.push(0);
+    } else if (_.eq(firstNotEmptyOrder, lastNotEmptyOrder)) {
+      stationGoals.push((hourValue * firstNotEmptyOrder.ProductionRate) / 60);
+    } else {
+      let firstHourFound = 0;
+      let lastHourFound = 0;
+      if (!_.isEmpty(firstNotEmptyOrder)) {
+        firstHourFound = shiftServices.getShiftHour(firstNotEmptyOrder.minDate.split(' ')[1]);
+      }
+      if (!_.isEmpty(lastNotEmptyOrder)) {
+        lastHourFound = shiftServices.getShiftHour(lastNotEmptyOrder.minDate.split(' ')[1]);
+      }
+      if (hour < firstHourFound) {
+        order = firstNotEmptyOrder;
+      } else if (hour >= lastHourFound) {
+        order = lastNotEmptyOrder;
+      }
+      stationGoals.push((hourValue * order.ProductionRate) / 60);
+    }
+  }
+  return _.sum(stationGoals);
 }
 function calculateAchievableGoal(validationResults, lineInfo) {
   const today = utcToZonedTime(new Date(), 'America/Mexico_City');
@@ -352,7 +424,7 @@ function joinValidationsAndProductionRate(validationResults, shiftStart, shiftEn
       // restart the hour counter to start in 0 for the next day
       shiftLoopFirstHour = 0;
     }
-
+    // loop shift hours
     for (let hour = shiftLoopFirstHour; hour <= shiftLoopLastHour; hour++) {
       // set hour value that will be used to do the calculations
       // at the beginin or at the end of the shift the hour value could be a halft of an hour
@@ -366,7 +438,7 @@ function joinValidationsAndProductionRate(validationResults, shiftStart, shiftEn
       }
       // store the current hour to show in the chart
       hours.push(hour);
-      // get the count for validation by hour and date
+      // get validations count by hour and date
       const countByHour = validationResults.filter(
         (result) => result.hour === hour && result.scanDate === shiftDate
       ).length;
@@ -386,71 +458,64 @@ function joinValidationsAndProductionRate(validationResults, shiftStart, shiftEn
         } else {
         // TODO: get unique stations again in this hour, because it could some stations that do not have validations
           const ratesByStation = [];
+          const ratesAndTimesByStation = [];
           let firsShiftProccesed = false;
           let firstOrderUsed;
           let lastOrderUsed;
           for (let iStation = 0; iStation < stationIdList.length; iStation++) {
             const stationId = stationIdList[iStation];
-            let stationOrders = filterOrdersByStation(stationId, validationsPerHour);
+            const stationOrders = filterOrdersByStation(stationId, validationsPerHour);
             if (hasSameMaterial(stationOrders)) {
-              if (hour === theVeryFirstShiftHour) firsShiftProccesed = true;
               const rate = calculateRateSamePR(hourValue, stationOrders[0].ProductionRate, 1);
               ratesByStation.push(rate);
             } else {
+              const first = _.first(stationOrders);
+              const last = _.last(stationOrders);
               //------------------------------------------------------------------------------------------------------------
               // check if we are processing the first hour of the shift, we will use the first minute of the shift start time
-              if (hour === theVeryFirstShiftHour && !firsShiftProccesed) {
-                const first = _.first(stationOrders);
-                ratesByStation.push(calculateRateForFirstShiftOrder(first, shiftStartDate));
-                stationOrders = _.remove(stationOrders, (o) => o === first);
+              if (hour === theVeryFirstShiftHour) {
+                ratesAndTimesByStation.push(getRatesForFirstShiftOrder(first, shiftStartDate));
+                _.remove(stationOrders, (o) => o.orderIdentifier === first.orderIdentifier);
                 firstOrderUsed = first;
               }
               if (hour === theVeryLastShiftHour) {
-                const last = _.last(stationOrders);
-                ratesByStation.push(calculateRateForLastShiftOrder(last, shiftEndDate));
-                stationOrders = _.remove(stationOrders, (o) => o === last);
+                ratesAndTimesByStation.push(getRateForLastShiftOrder(last, shiftEndDate));
+                _.remove(stationOrders, (o) => o.orderIdentifier === last.orderIdentifier);
                 lastOrderUsed = last;
               }
               // the orders of the station in this hour do not have the same material
-              const ordersRates = getRateForMiddleOrders(stationOrders, hour, shiftDate, firstOrderUsed, lastOrderUsed);
-              const rate = calculateRateDifferentPR(ordersRates, hourValue);
+              ratesAndTimesByStation.push(
+                getRateForMiddleOrders(stationOrders, hour, shiftDate, firstOrderUsed, lastOrderUsed)
+              );
+              logger.info('%o', _.flatten(ratesAndTimesByStation));
+              const rate = calculateRateDifferentPR(_.flatten(ratesAndTimesByStation), hourValue);
               ratesByStation.push(rate);
             }
           }
+          // sum stations rates
           rates.push(_.sum(ratesByStation));
         }
         // count validation result by hour
         results.push(_.sumBy(validationsPerHour, (o) => o.validationResults));
       } else {
         let rate = 0;
-        // TODO: CHECK LAST AND FIRST VALID ORDER
         // in this hour there is no material validations
         results.push(0);
-        // keep the rate of the last order for this particual hour
-        if (!!firstNotEmptyOrder && Object.prototype.hasOwnProperty.call(firstNotEmptyOrder, 'ProductionRate')) {
-          // if we are in the first hour of the shift we will use the next not empty order to get the rate
-          if (hour === theVeryFirstShiftHour) {
-            // const stations = getFirstStationsByHour(validationResults, firstNotEmptyOrder.hour);
-            rate = calculateRateSamePR(hourValue, firstNotEmptyOrder.ProductionRate, stationIdList.length);
-          } else if (hour === theVeryLastShiftHour) {
-            // const stations = getLastStationsByHour(validationResults, lastNotEmptyOrder.hour);
-            rate = calculateRateSamePR(hourValue, lastNotEmptyOrder.ProductionRate, stationIdList.length);
-          } else {
-            // for the rest of the orders we will use the rate of the last order created
-            // check if the next hour has production if it has we use that production rate
-            const validationsNextHour = validationResults.filter(
-              (result) => result.hour > hour && result.validationResults > 0
-            );
-            // let stations = getLastStationsByHour(validationResults, hour);
-            // if (stations.length === 0) {
-            //   stations = getFirstStationsByHour(validationResults, hour);
-            // }
-            rate = calculateRateSamePR(hourValue, lastNotEmptyOrder.ProductionRate, stationIdList.length);
-            // }
-          }
-
-          rates.push(rate);
-        } else rates.push(0);
+        // if we are in the first hour of the shift we will use the next not empty order to get the rate
+        if (hour === theVeryFirstShiftHour) {
+          // const stations = getFirstStationsByHour(validationResults, firstNotEmptyOrder.hour);
+          // rate = calculateRateSamePR(hourValue, firstNotEmptyOrder.ProductionRate, stationIdList.length);
+          rate = calculateStationsRate(hourValue, stationIdList, validationResults);
+        } else if (hour === theVeryLastShiftHour) {
+          // const stations = getLastStationsByHour(validationResults, lastNotEmptyOrder.hour);
+          // rate = calculateRateSamePR(hourValue, lastNotEmptyOrder.ProductionRate, stationIdList.length);
+          rate = calculateStationsRateLastHour(hourValue, stationIdList, validationResults);
+        } else {
+          // for the rest of the hours if we dont have validation keep the last rate calculated
+          // rate = calculateRateSamePR(hourValue, lastNotEmptyOrder.ProductionRate, stationIdList.length);
+          rate = calculateStationsRateMiddleHours(hourValue, stationIdList, validationResults, hour);
+        }
+        rates.push(rate);
       }
     }
   }
