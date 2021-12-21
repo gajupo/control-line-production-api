@@ -584,16 +584,19 @@ function computeLineProductionLive(validationResults, lineInfo) {
     const stationOrders = stationsProductionArray[iStation];
     let prevMaterial = 0;
     let splitedOrders = [];
+    let lastOrderUsed = {};
     // loop orders and check if material changes
     for (let iOrder = 0; iOrder < stationOrders.length; iOrder++) {
       const order = stationOrders[iOrder];
       if (prevMaterial !== order.materialId && prevMaterial !== 0) {
+        // last order of the current material, this order will be used when me perfor the calculation for the last order of the station
+        lastOrderUsed = _.last(splitedOrders);
         // calculate goal for every material and time used in minutes from the first order to the last one
         const startDateTime = _.first(splitedOrders).minDate;
         const endDateTime = _.last(splitedOrders).maxDate;
         const diffInMinutes = shiftServices.getShiftDifferenceInMinutes(endDateTime, startDateTime);
         //  store goal of the station
-        const materialStationGoal = Math.floor((stationOrders[0].ProductionRate * diffInMinutes) / hourValue);
+        const materialStationGoal = Math.floor((splitedOrders[0].ProductionRate * diffInMinutes) / hourValue);
         stationGoals.push(materialStationGoal);
         // clean stored orders on every material change
         splitedOrders = [];
@@ -611,12 +614,17 @@ function computeLineProductionLive(validationResults, lineInfo) {
       }
       // check if we are at the end of the loop
       if (iOrder === stationOrders.length - 1) {
+        let startDateTime = '';
         // calculate goal for every material and time used in minutes from the first order to the last one
-        const startDateTime = _.first(splitedOrders).minDate;
+        if (_.isEmpty(lastOrderUsed)) {
+          startDateTime = _.first(splitedOrders).minDate;
+        } else {
+          startDateTime = lastOrderUsed.maxDate;
+        }
         const endDateTime = _.last(splitedOrders).maxDate;
         const diffInMinutes = shiftServices.getShiftDifferenceInMinutes(endDateTime, startDateTime);
         //  store goal of the station
-        const splitedOrdersGoal = Math.floor((stationOrders[0].ProductionRate * diffInMinutes) / hourValue);
+        const splitedOrdersGoal = Math.floor((splitedOrders[0].ProductionRate * diffInMinutes) / hourValue);
         // get ramaining time till the end of the shift because we are in the last order proccesed by the station
         const diffTimeTillEndShift = shiftServices.getShiftDifferenceInMinutes(shiftEndDate, endDateTime);
         const remainingGoal = Math.floor((_.last(splitedOrders).ProductionRate * diffTimeTillEndShift) / hourValue);
