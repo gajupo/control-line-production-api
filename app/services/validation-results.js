@@ -212,7 +212,7 @@ function getRateForMiddleOrders(
         let timeUsed = shiftServices.getShiftDifferenceInMinutes(last.maxDate, currentStartDate);
         timeUsed = (timeUsed === 0) ? 1 : timeUsed;
         usedTimeAndRates.push({ timeUsed: timeUsed, ProductionRate: orderListAux[0].ProductionRate });
-        firstTime = true;
+        firstTime = false;
         lastOrderUsed = last;
       } else {
         const last = _.last(orderListAux);
@@ -231,8 +231,11 @@ function getRateForMiddleOrders(
   if (firstTime && _.isEmpty(lastOrderUsed)) {
     currentStartDate = (parentFirstOrderUsed) ? parentFirstOrderUsed.maxDate : `${currentDate} ${hour}:00:00`;
   } else {
-    currentStartDate = _.last(orderListAux).minDate;
+    currentStartDate = lastOrderUsed.maxDate;
   }
+  // else {
+  //   currentStartDate = _.last(orderListAux).minDate;
+  // }
   let timeUsed = shiftServices.getShiftDifferenceInMinutes(currentEndDate, currentStartDate);
   // if the time used is equal to 0 at least we will use 1 minute
   timeUsed = (timeUsed === 0) ? 1 : timeUsed;
