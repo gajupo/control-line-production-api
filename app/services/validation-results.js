@@ -229,7 +229,7 @@ function getRateForMiddleOrders(
   }
   const currentEndDate = (parentLastOrderUsed) ? parentLastOrderUsed.minDate : `${currentDate} ${hour}:59:59`;
   if (firstTime && _.isEmpty(lastOrderUsed)) {
-    currentStartDate = `${currentDate} ${hour}:00:00`;
+    currentStartDate = (parentFirstOrderUsed) ? parentFirstOrderUsed.maxDate : `${currentDate} ${hour}:00:00`;
   } else {
     currentStartDate = _.last(orderListAux).minDate;
   }
@@ -469,19 +469,24 @@ function joinValidationsAndProductionRate(validationResults, shiftStart, shiftEn
         // TODO: get unique stations again in this hour, because it could some stations that do not have validations
         const ratesByStation = [];
         let ratesAndTimesByStation = [];
-        let firsShiftProccesed = false;
         let firstOrderUsed;
         let lastOrderUsed;
         for (let iStation = 0; iStation < stationIdList.length; iStation++) {
           const stationId = stationIdList[iStation];
+          // get next valid order with production
           const stationOrders = filterOrdersByStation(stationId, validationsPerHour);
           if (_.isEmpty(stationOrders)) {
-            stationOrders.push(
-              _.findLast(
-                validationResults,
-                (o) => o.validationResults > 0 && o.stationId === stationId && o.hour < hour
-              )
+            // we did no find orders going forward, then look for in previous hours
+            const lastOrderIfExist = _.findLast(
+              validationResults,
+              (o) => o.validationResults > 0 && o.stationId === stationId && o.hour < hour
             );
+            // if even in previous hour we do no have a valid orde regardig the hour, we use the first one order no matters the material
+            if (lastOrderIfExist === undefined) {
+              stationOrders.push(validationsPerHour[0]);
+            } else {
+              stationOrders.push(lastOrderIfExist);
+            }
           }
           if (hasSameMaterial(stationOrders)) {
             const rate = calculateRateSamePR(hourValue, stationOrders[0].ProductionRate, 1);
