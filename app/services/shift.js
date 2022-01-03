@@ -28,7 +28,8 @@ async function getCurrentShift(productionLineId, customerId) {
       }],
       mapToModel: true,
     });
-    return _.first(shiftHistory);
+    // if there is no current shift returns an empty object not undefined
+    return (_.isEmpty(shiftHistory)) ? {} : _.first(shiftHistory);
   } catch (error) {
     throw new Error(error);
   }
