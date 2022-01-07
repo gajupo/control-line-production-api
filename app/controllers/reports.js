@@ -57,6 +57,9 @@ function getScannedReportImpl(report) {
       }],
     }],
     where: dateWhere,
+    order: [
+      ['id', 'DESC']
+    ],
   };
   return query;
 }
