@@ -160,7 +160,7 @@ async function getStopCauseLogsRecordByCustomer(req, res) {
   try {
     const recordCauseLog = await StopCauseLog.findAll({
       where: { status: false },
-      limit: 10,
+      limit: 5,
       attributes: ['id', 'createdDate', 'Barcode'],
       include: [{
         model: StopCause,
