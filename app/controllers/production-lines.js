@@ -41,7 +41,7 @@ async function getProductionLinesPerCustomer(req, res) {
   }
 }
 /**
- * Controlls and returns all information for general dashboards
+ * Controlls and returns all production information shown in dashboard by client for the given customer
  * @param {*} req
  * @param {*} res
  * @returns An array of objects, every object is a production line with its goal, rate and validations
@@ -55,6 +55,7 @@ async function getProductionLinesPerCustomerCurrentShift(req, res) {
     const linesInformation = [];
     const lineResultsPromises = [];
     let lineResults = [];
+    // execute sql query to the db
     const productionLines = await services.ProductionLines.getProductionLinesAndShiftsByCustomer(customer.id);
     if (_.isEmpty(productionLines)) {
       return res.json(linesInformation);

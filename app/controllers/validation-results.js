@@ -1,9 +1,11 @@
 const _ = require('lodash');
 const { utcToZonedTime } = require('date-fns-tz');
 const { Sequelize, Op } = require('sequelize');
-const { logError } = require('../helpers/logger');
+const { logError, logger, logMessage } = require('../helpers/logger');
 const { internalServerError } = require('./core');
 const services = require('../services');
+const models = require('../models');
+const libs = require('../helpers/lib');
 const { getDatePartConversion } = require('../helpers/sequelize');
 const {
   Order, Material, validateHourByHourReportParams, badRequestError,
@@ -85,5 +87,55 @@ async function getProductionRatePerHourImpl(params) {
   });
   return productionRates;
 }
-
+/**
+ * @description
+ * * gets from the db all customers and its productions lines for the current shift detected.
+ * * It will also calculate goal, rates, scanned materials for every customer and its production lines.
+ * * The returned array will be used on generic dashboard intended to show all running line in one place
+ * @param {*} req
+ * @param {*} res
+ * @returns object array
+ * @example
+ */
+async function getAllCustomersProductionLinesCurrentShift(req, res) {
+  try {
+    const linesInformation = [];
+    const lineResultsPromises = [];
+    let lineResults = [];
+    // execute sql query to the db
+    const productionLines = await services.ProductionLines.getAllCustomersProductionLines();
+    if (_.isEmpty(productionLines)) {
+      return res.json(linesInformation);
+    }
+    logger.debug('Production line by customer = %o', productionLines);
+    if (libs.isArray(productionLines) && !!productionLines) {
+      // eslint-disable-next-line no-restricted-syntax
+      for (const lineInfo of productionLines) {
+        lineResultsPromises.push(services.ValidationResults.getValidationResultsPerLine(lineInfo));
+      }
+      // await all calls
+      lineResults = await Promise.all(lineResultsPromises);
+      if (_.isEmpty(lineResults[0])) return res.json({});
+      for (let index = 0; index < lineResults.length; index++) {
+        const lineProduction = _.without(lineResults[index], 'lineInfo');
+        // eslint-disable-next-line prefer-destructuring
+        const lineInfo = lineResults[index].lineInfo;
+        logger.debug('Orders by line =%o', lineResults);
+        if (libs.isArray(lineResults[index]) && lineResults[index].length > 0) {
+          // calculate rate and scanned materials by hour
+          linesInformation.push(services.ValidationResults.computeLineProductionLive(lineProduction, lineInfo));
+        } else {
+          logMessage('NO ROWS FOUND', 'The Production Line does not have scanned material in the current shift');
+          linesInformation.push(services.ProductionLines.transformProductionLineDefault(lineInfo));
+        }
+      }
+    }
+    logger.debug('Lines live stats=%o', linesInformation);
+    return res.json(linesInformation);
+  } catch (error) {
+    logError('Error in getProductionLinesPerCustomerCurrentShift', error.stack);
+    return internalServerError('Internal server error', res);
+  }
+}
 module.exports.getValidationResultsPerHour = getValidationResultsPerHour;
+module.exports.getAllCustomersProductionLinesCurrentShift = getAllCustomersProductionLinesCurrentShift;

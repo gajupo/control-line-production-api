@@ -13,6 +13,8 @@ router.get('/', async (req, res) => {
   await getProductionLines(res);
 });
 /**
+ * Returns information like goal, scanned meterials for the given customer
+ * Returns an array of line with its related information about production
  * GET /api/productionlines/shift/customer/15
  */
 router.get('/shift/customer/:customerId', async (req, res) => {

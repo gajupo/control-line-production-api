@@ -588,6 +588,88 @@ async function getStationsStatusByLine(lineId) {
     throw new Error(error);
   }
 }
+/**
+ *  @description
+ *  Get all production lines, its current shift start and end value, no customer filtering
+ *  @returns an array of objects
+ *  @example
+ */
+async function getAllCustomersProductionLines() {
+  try {
+    const productionLinesCurrentShift = await sequelize.query(
+      `SELECT
+            ProductionLineShifts.ShiftId,
+            Shifts.ShiftDescription,
+            Shifts.ShiftStartStr, 
+            Shifts.ShiftEndStr, 
+            ProductionLineShifts.ProductionLineId,
+            ProductionLines.Status as Active,
+            ProductionLines.LineName,
+            Customers.Id as CustomerId,
+            Customers.CustomerName, 
+            count(OperatingStations.Id) as [NumberOfStations],
+            (case when (count(OperatingStations.id) = count(stopEvents.StationId) and count(OperatingStations.id) > 0) then 1 else 0 end) as isBlocked,
+            convert(varchar , plsHisotiries.ShiftStartDateTime, 20) as ShiftStartedDateTime,
+            convert(varchar , plsHisotiries.ShiftEndDateTime, 20) as ShiftEndDateTime
+      FROM ProductionLines
+        inner join Customers on ProductionLines.CustomerId = Customers.Id
+        inner join ProductionLineShifts on ProductionLines.Id = ProductionLineShifts.ProductionLineId
+        inner join Shifts on Shifts.Id = ProductionLineShifts.ShiftId and Shifts.Active = 1 
+        inner join OperatingStations on OperatingStations.LineId = ProductionLines.Id and OperatingStations.Status = 1
+        inner join (
+            select 
+            ProductionLineShiftHistories.ProductionLineId, 
+            ProductionLineShiftHistories.ShiftId, 
+            convert(varchar ,max(ProductionLineShiftHistories.ShiftStartDateTime), 20) as [ShiftStartDateTime],
+            convert(varchar ,max(ProductionLineShiftHistories.ShiftEndDateTime), 20) as ShiftEndDateTime
+            from ProductionLineShiftHistories 
+            where 
+            CONVERT(datetime, getdate()) >= CONVERT(datetime, ProductionLineShiftHistories.ShiftStartDateTime)
+            and CONVERT(datetime, getdate()) <= CONVERT(datetime, ProductionLineShiftHistories.ShiftEndDateTime)
+            group by 
+            ProductionLineShiftHistories.ProductionLineId,
+            ProductionLineShiftHistories.ShiftId
+        ) as plsHisotiries on plsHisotiries.ProductionLineId = ProductionLines.Id and plsHisotiries.ShiftId = Shifts.id
+        left join (
+            select 
+              StopCauseLogs.StationId
+            from StopCauseLogs 
+            inner join OperatingStations  on 
+              StopCauseLogs.StationId = OperatingStations.Id 
+              and StopCauseLogs.status = 1
+            group by StopCauseLogs.StationId
+      ) as stopEvents on stopEvents.StationId = OperatingStations.Id
+      WHERE 
+            ProductionLines.Status = 1
+      GROUP BY 
+          Shifts.ShiftStartStr, 
+          Shifts.ShiftEndStr, 
+          ProductionLineShifts.ProductionLineId,
+          ProductionLines.Status,
+          ProductionLines.LineName,
+          Customers.Id,
+          Customers.CustomerName,
+          ProductionLineShifts.ShiftId,
+          plsHisotiries.ShiftStartDateTime,
+          plsHisotiries.ShiftEndDateTime,
+          Shifts.ShiftDescription`,
+      {
+        bind: {},
+        raw: true,
+        type: QueryTypes.SELECT,
+      }
+    );
+    const valResult = models.validateLinesAndShifts(productionLinesCurrentShift);
+    if (valResult.isValid) {
+      logger.debug('all customers and its production line information= %o', productionLinesCurrentShift);
+      return productionLinesCurrentShift;
+    }
+    logger.error('getAllCustomersProductionLines - %o', valResult.errorList);
+    return {};
+  } catch (error) {
+    throw new Error(error);
+  }
+}
 module.exports.getProductionLinesPerCustomer = getProductionLinesPerCustomer;
 module.exports.getLineStatsByLineIdAndShift = getLineStatsByLineIdAndShift;
 module.exports.getProductionLinesAndShiftsByCustomer = getProductionLinesAndShiftsByCustomer;
@@ -604,3 +686,4 @@ module.exports.getProductionLineByCustomerIdAndShift = getProductionLineByCustom
 module.exports.formatProductionLineLiveStats = formatProductionLineLiveStats;
 module.exports.getCurrentProductionByRate = getCurrentProductionByRate;
 module.exports.getStationsStatusByLine = getStationsStatusByLine;
+module.exports.getAllCustomersProductionLines = getAllCustomersProductionLines;

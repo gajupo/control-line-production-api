@@ -1,5 +1,8 @@
 const express = require('express');
-const { getValidationResultsPerHour } = require('../controllers/validation-results');
+const {
+  getValidationResultsPerHour,
+  getAllCustomersProductionLinesCurrentShift,
+} = require('../controllers/validation-results');
 
 const router = express.Router();
 
@@ -15,5 +18,13 @@ const router = express.Router();
  */
 router.post('/perhour', async (req, res) => {
   await getValidationResultsPerHour(req, res);
+});
+/**
+ * Returns information like goal, scanned meterials for all customers
+ * Returns an array of line with its related information about production
+ * GET /api/productionlines/shift/customer/15
+ */
+router.get('/allcustomerslines', async (req, res) => {
+  await getAllCustomersProductionLinesCurrentShift(req, res);
 });
 module.exports = router;
