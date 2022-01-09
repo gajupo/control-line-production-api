@@ -115,13 +115,12 @@ async function getAllCustomersProductionLinesCurrentShift(req, res) {
       }
       // await all calls
       lineResults = await Promise.all(lineResultsPromises);
-      if (_.isEmpty(lineResults[0])) return res.json({});
       for (let index = 0; index < lineResults.length; index++) {
         const lineProduction = _.without(lineResults[index], 'lineInfo');
         // eslint-disable-next-line prefer-destructuring
         const lineInfo = lineResults[index].lineInfo;
         logger.debug('Orders by line =%o', lineResults);
-        if (libs.isArray(lineResults[index]) && lineResults[index].length > 0) {
+        if (!_.isEmpty(lineResults[index])) {
           // calculate rate and scanned materials by hour
           linesInformation.push(services.ValidationResults.computeLineProductionLive(lineProduction, lineInfo));
         } else {
