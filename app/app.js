@@ -1,3 +1,4 @@
+const compression = require('compression');
 const express = require('express');
 const cors = require('cors');
 const config = require('config');
@@ -9,7 +10,8 @@ const { logger } = require('./helpers/logger');
 
 app.use(express.json());
 app.use(cors());
-
+// compress all response
+app.use(compression());
 // allow update log at runtime
 app.get('/updateloglevel/:transportname/:newlevel', (req, res) => {
   try {
