@@ -7,6 +7,7 @@ const { sequelize, getDatePartConversion } = require('../helpers/sequelize');
 const models = require('../models');
 const shiftServices = require('./shift');
 const productionLinesServices = require('./production-lines');
+const { getStopStationStatuses } = require('./operating-stations');
 const { logger } = require('../helpers/logger');
 
 async function getProductionComplianceImpl(line, today) {
@@ -114,25 +115,22 @@ async function getValidationResultsPerLine(lineInfo) {
         ValidationResults.StationId as [stationId],
         Orders.StationIdentifier as [stationIdentifier],
         Materials.ID as [materialId],
-        ISNULL(StopCauseLogs.status,0) as status
+        0 as status
       FROM ValidationResults
         inner join Materials on Materials.ID = ValidationResults.MaterialId
         inner join Orders on Orders.Id = ValidationResults.OrderId 
                              and Orders.ProductionLineId = $productionLineId 
                              and Orders.ShiftId = $shiftId
-        LEFT OUTER JOIN StopCauseLogs on StopCauseLogs.StationId = ValidationResults.StationId
       WHERE 
         CONVERT(datetime, ValidationResults.ScanDate) >= CONVERT(datetime, $startDate) 
         and CONVERT(datetime, ValidationResults.ScanDate) <= CONVERT(datetime, $endDate) 
         and ValidationResults.CustomerId = $customerId
-        and (StopCauseLogs.id IS NULL OR StopCauseLogs.id = (select max(id) from StopCauseLogs where StopCauseLogs.StationId = ValidationResults.StationId group by StopCauseLogs.StationId))
       GROUP BY 
         DATEPART(HOUR, ValidationResults.ScanDate),
         ValidationResults.OrderIdentifier,
         Materials.ProductionRate, ValidationResults.StationId,
         Materials.ID, Orders.CreatedAt,
-        Orders.StationIdentifier,
-        StopCauseLogs.status
+        Orders.StationIdentifier
       ORDER BY min(ValidationResults.ScanDate), ValidationResults.StationId`,
       {
         bind: {
@@ -280,7 +278,7 @@ function ValidationsByStation(items, stationIdentifier) {
     stationIdentifier: stationIdentifier,
     countValidationResult: _.sumBy(items, 'validationResults'),
     id: items[0].stationId,
-    blocked: items[0].status,
+    blocked: 0,
   };
 }
 function getLastOrderAndItsPR(items, stationIdentifier) {
@@ -654,37 +652,48 @@ function computeLineProductionLive(validationResults, lineInfo) {
  * @param {*} lineInfo
  * @returns An object with all information to be shown in the line dashboard
  */
-function computeLineDashboardProductionLive(validationResults, lineInfo) {
+async function computeLineDashboardProductionLive(validationResults, lineInfo) {
   // gets stations and its validation count
   /**
    * Example of list of stations and its production count
     {
-      stationIdentifier: STATION1,
+      stationIdentifier: 'STATION1',
       countValidationResult: 100,
       id: 1,
-      blocked: false,
     }
    */
   const stationsProductionArray = _(validationResults)
     .groupBy('stationIdentifier')
     .map(ValidationsByStation).value();
-
+    // get stations id as object {id:1, id:3}
+  const stationIdsAsObject = stationsProductionArray.map((item) => item.id);
+  // get station status from db, the parameter sent is the array of station ids [1,3]
+  const stationStatuses = await getStopStationStatuses(Object.values(stationIdsAsObject));
+  // if at least one station is blocked
+  if (!_.isEmpty(stationStatuses)) {
+    // add blocked prop to stationsProductionArray, it represents the station status
+    for (let index = 0; index < stationsProductionArray.length; index++) {
+      const station = stationsProductionArray[index];
+      const newStatus = _.find(stationStatuses, (s) => s.StationId === station.id);
+      station.blocked = newStatus.blocked;
+    }
+  }
   // returns the bellow object with all information about line and its production
   const lineLiveProduction = computeLineProductionLive(validationResults, lineInfo);
   // calculates de the achievableGoal for the given line based on its current production
   // we set the value for achievableGoal on the object lineLiveProduction
   lineLiveProduction.achievableGoal = calculateAchievableGoal(validationResults, lineInfo);
   /**
-   * Object for lineLiveProduction that is returned latter
+   * Object for lineLiveProduction that is returned
    {
       achievableGoal:1988
       active:true
       blocked:false
       customerId:'1'
-      customerName:undefined
+      customerName:'BSH'
       goal:2535
       id:'1'
-      lineName:undefined
+      lineName:'BSH'
       rate:7
       validationResultCount:168
    }
