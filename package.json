@@ -1,13 +1,13 @@
 {
   "name": "simpl-dashboard-api",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "REST api to display production information in a dashboard panel",
   "main": "www.js",
   "scripts": {
     "test": "test",
     "start": "node www.js",
     "dev": "nodemon --inspect=0.0.0.0:9229 www.js",
-    "prod": "node www.js",
+    "prod": "pm2-runtime www.js",
     "build": "webpack --mode production",
     "builddev": "webpack --mode development"
   },
@@ -28,6 +28,7 @@
   "dependencies": {
     "@hapi/hoek": "^9.2.0",
     "body-parser": "^1.19.0",
+    "compression": "^1.7.4",
     "config": "^3.3.6",
     "cors": "^2.8.5",
     "date-fns": "^2.24.0",

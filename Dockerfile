@@ -2,6 +2,8 @@
 FROM node:14-slim
 #install curl for dev tasks
 RUN apt-get update && apt-get install -y curl && apt install -y telnet
+# pm2 module to spawn multiple node process
+RUN npm install pm2 -g
 # Create our containers WORKDIR and "node_modules" directory.
 # Give the user:group "node" ownership of all files/directories in our containers WORKDIR
 RUN mkdir -p /home/node/app/node_modules && chown -R node:node /home/node/app
@@ -19,4 +21,4 @@ COPY --chown=node:node . .
 # Port for production environments
 EXPOSE 8080
 # An array of commands our container needs to run when we start it
-CMD [ "npm", "run", "prod" ]
+CMD [ "pm2-runtime", "start", "pm2.json" ]

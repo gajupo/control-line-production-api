@@ -1,0 +1,5 @@
+{
+    "name": "simpl-dashboard-api",
+    "script": "www.js",
+    "instances": "2"
+}
