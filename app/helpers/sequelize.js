@@ -14,12 +14,18 @@ const sequelize = new Sequelize(
   config.get('database.password'), {
     dialect: 'mssql',
     dialectModule: mssql,
+    logging: loggers.debug,
     host: config.get('database.host'),
     port: config.get('database.port'),
     dialectOptions: {
       options: {
         validateBulkLoadParameters: true,
       },
+    },
+    pool: {
+      max: 10,
+      idle: 30000,
+      acquire: 60000,
     },
   }
 );
