@@ -1,6 +1,7 @@
 const config = require('config');
 const winston = require('winston');
 const DailyRotateFile = require('winston-daily-rotate-file');
+const morgan = require('morgan');
 
 // filter function,
 // that will allow logging only the specified log level
@@ -95,6 +96,29 @@ const logger = winston.createLogger({
   // specify the logging targets
   transports: transports,
 });
+// Logger to mongo example
+// app.use(
+//   morgan(
+//     {
+//       dbName: 'simpl_logs',
+//       collection: 'simpl_api',
+//       connectionString: 'mongodb://mongo:27017/',
+//       user: 'root',
+//       pass: 'simpl2022',
+//     },
+//     {}, 'combined'
+//   )
+// );
+// create a Morgan middleware instance
+// store 500 errors on a file
+const morganMiddleware = morgan('combined', {
+  // specify a function for skipping requests without errors
+  skip: (req, res) => res.statusCode < 400,
+  // specify a stream for requests logging
+  stream: {
+    write: (msg) => logger.http(msg),
+  },
+});
 function logError(message, error, payload = undefined) {
   const log = { message: message, error: error };
   if (payload) {
@@ -115,3 +139,4 @@ module.exports.logger = logger;
 module.exports.logError = logError;
 module.exports.logMessage = logMessage;
 module.exports.unHandledExceptionsTransport = unHandledExceptionsTransport;
+module.exports.morganMiddleware = morganMiddleware;

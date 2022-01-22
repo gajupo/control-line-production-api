@@ -12,6 +12,7 @@ const services = require('../services');
  */
 async function getProductionLine(reqParams, res) {
   try {
+    logger.debug('params sent on getProductionLine', reqParams);
     const parameters = validateLinesDashboradParams(reqParams);
     if (!parameters.isValid) {
       return badRequestError('Invalid parameters passed to getProductionLine', res, parameters.errorList);
