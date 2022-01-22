@@ -80,16 +80,19 @@ const transports = [
     ),
   }),
 ];
-const unHandledExceptionsTransport = new DailyRotateFile({
-  filename: config.get('logger.errorFile'),
-  datePattern: 'YYYY-MM-DD',
-  maxSize: '20m',
-  maxFiles: '7d',
-  prepend: true,
-  level: 'error',
-  name: 'dailyerror',
-  format: logFormat,
-});
+const unHandledExceptionsTransport = [
+  new DailyRotateFile({
+    filename: config.get('logger.errorFile'),
+    datePattern: 'YYYY-MM-DD',
+    maxSize: '20m',
+    maxFiles: '7d',
+    prepend: true,
+    level: 'error',
+    name: 'dailyerror',
+    format: logFormat,
+  }),
+  new winston.transports.Console({ colorize: true, prettyPrint: true }),
+];
 const logger = winston.createLogger({
   // specify the own log levels system
   levels: levels,
