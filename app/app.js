@@ -1,13 +1,45 @@
 const compression = require('compression');
+const winston = require('winston');
 const express = require('express');
 const cors = require('cors');
 const config = require('config');
-const errorHandler = require('./middleware/error-handler');
+// mongoose-morgan
+const morgan = require('morgan');
+const { errorHandler } = require('./middleware/error-handler');
 
 const app = express();
-// eslint-disable-next-line no-unused-vars
-const { logger } = require('./helpers/logger');
-
+const { logger, unHandledExceptionsTransport } = require('./helpers/logger');
+// catch uncaught exceptions and unhandledRejection
+winston.exceptions.handle(unHandledExceptionsTransport);
+// will re-throw to winston unhandled promise rejections
+process.on('unhandledRejection', (ex) => {
+  throw ex;
+});
+// Logger to mongo example
+// app.use(
+//   morgan(
+//     {
+//       dbName: 'simpl_logs',
+//       collection: 'simpl_api',
+//       connectionString: 'mongodb://mongo:27017/',
+//       user: 'root',
+//       pass: 'simpl2022',
+//     },
+//     {}, 'combined'
+//   )
+// );
+// create a Morgan middleware instance
+// store 500 errors on a file
+const morganMiddleware = morgan('combined', {
+  // specify a function for skipping requests without errors
+  skip: (req, res) => res.statusCode < 400,
+  // specify a stream for requests logging
+  stream: {
+    write: (msg) => logger.http(msg),
+  },
+});
+// apply the middleware
+app.use(morganMiddleware);
 app.use(express.json());
 app.use(cors());
 // compress all response
@@ -41,7 +73,6 @@ app.use('/api/validationresults', require('./routes/validation-results'));
 app.use('/api/unblock', require('./routes/operating-stations'));
 
 app.use(errorHandler);
-
 logger.info(`host= ${config.get('database.host')}, port= ${config.get('database.port')}, database = ${config.get('database.name')}
 , username =${config.get('database.user')}`);
 

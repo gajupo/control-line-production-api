@@ -17,4 +17,14 @@ function errorHandler(err, req, res, next) {
       return res.status(500).json({ message: err.message });
   }
 }
-module.exports = errorHandler;
+function asyncMiddleware(handler) {
+  return async (req, res, next) => {
+    try {
+      await handler(req, res);
+    } catch (ex) {
+      next(ex);
+    }
+  };
+}
+module.exports.errorHandler = errorHandler;
+module.exports.asyncMiddleware = asyncMiddleware;

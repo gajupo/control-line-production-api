@@ -1,6 +1,6 @@
 const _ = require('lodash');
 const { utcToZonedTime } = require('date-fns-tz');
-const { logError } = require('../helpers/logger');
+const { logError, logger } = require('../helpers/logger');
 const { internalServerError, badRequestError } = require('./core');
 const { validateModelId, validateLinesDashboradParams } = require('../models');
 const services = require('../services');
@@ -35,7 +35,7 @@ async function getProductionLine(reqParams, res) {
       );
     // set the data for the bar chart on line dashboard
     validationsTransformed.chartData = validationsPerHourTransformed;
-
+    logger.debug('line panel production line', validationsTransformed);
     return res.json(validationsTransformed);
   } catch (error) {
     logError('Error in getProductionLine', error);
@@ -56,6 +56,7 @@ async function getProductionLines(req, res) {
     }
     // eslint-disable-next-line max-len
     const productionlines = await services.ProductionLines.getProductionLinesAndShiftsByCustomer(customer.id);
+    logger.debug('production liens and its shift', productionlines);
     return res.json(productionlines);
   } catch (error) {
     logError('Error in getProductionLines', error);
