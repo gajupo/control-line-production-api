@@ -586,6 +586,7 @@ function computeLineProductionLive(validationResults, lineInfo) {
     // loop orders and check if material changes
     for (let iOrder = 0; iOrder < stationOrders.length; iOrder++) {
       const order = stationOrders[iOrder];
+      // group order by material
       if (prevMaterial !== order.materialId && prevMaterial !== 0) {
         // last order of the current material, this order will be used when me perfor the calculation for the last order of the station
         lastOrderUsed = _.last(splitedOrders);
@@ -607,6 +608,7 @@ function computeLineProductionLive(validationResults, lineInfo) {
         // store the prev material used
         prevMaterial = order.materialId;
       } else {
+        // store all orders for the same material
         splitedOrders.push(order);
         prevMaterial = order.materialId;
       }
@@ -614,6 +616,7 @@ function computeLineProductionLive(validationResults, lineInfo) {
       if (iOrder === stationOrders.length - 1) {
         let startDateTime = '';
         // calculate goal for every material and time used in minutes from the first order to the last one
+        // if it is empty it means the station only has one order
         if (_.isEmpty(lastOrderUsed)) {
           startDateTime = _.first(splitedOrders).minDate;
         } else {
