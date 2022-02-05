@@ -34,6 +34,20 @@ async function getCurrentShift(productionLineId, customerId) {
     throw new Error(error);
   }
 }
+function getShiftDifferenceInMiliSeconds(shiftStrStartTime, shiftStrEndTime){
+  let miliseconds = 0;
+  if(shiftStrStartTime && shiftStrEndTime){
+    miliseconds = datefns.differenceInMilliseconds(datefns.parseISO(shiftStrStartTime), datefns.parseISO(shiftStrEndTime), { roundingMethod: 'floor'});
+  }
+  return miliseconds;
+}
+function getShiftDifferenceInSeconds(shiftStrStartTime, shiftStrEndTime){
+  let seconds = 0;
+  if(shiftStrStartTime && shiftStrEndTime){
+    seconds = datefns.differenceInSeconds(datefns.parseISO(shiftStrStartTime), datefns.parseISO(shiftStrEndTime), { roundingMethod: 'floor' });
+  }
+  return seconds;
+}
 function getShiftDifferenceInMinutes(shiftStrStartTime, shiftStrEndTime) {
   let minutes = 0;
   if (shiftStrStartTime && shiftStrEndTime) {
@@ -112,6 +126,8 @@ function getShiftMinutes(shiftStringTime) {
 }
 module.exports.getCurrentShift = getCurrentShift;
 module.exports.GetShiftEndAsDateTime = GetShiftEndAsDateTime;
+module.exports.getShiftDifferenceInMiliSeconds = getShiftDifferenceInMiliSeconds;
+module.exports.getShiftDifferenceInSeconds = getShiftDifferenceInSeconds;
 module.exports.getShiftDifferenceInMinutes = getShiftDifferenceInMinutes;
 module.exports.getShifTimeTotaltSeconds = getShifTimeTotaltSeconds;
 module.exports.getShiftHour = getShiftHour;
