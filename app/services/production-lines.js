@@ -664,8 +664,8 @@ async function getAllCustomersProductionLines() {
       logger.debug('all customers and its production line information= %o', productionLinesCurrentShift);
       return productionLinesCurrentShift;
     }
-    logger.error('getAllCustomersProductionLines - %o', valResult.errorList);
-    return {};
+    logger.error('getAllCustomersProductionLines - %o', valResult);
+    throw new Error('Unable to find a valid shift for the registered lines');
   } catch (error) {
     throw new Error(error);
   }

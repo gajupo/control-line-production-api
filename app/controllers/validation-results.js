@@ -4,7 +4,6 @@ const { Sequelize, Op } = require('sequelize');
 const { logError, logger, logMessage } = require('../helpers/logger');
 const { internalServerError } = require('./core');
 const services = require('../services');
-const models = require('../models');
 const libs = require('../helpers/lib');
 const { getDatePartConversion } = require('../helpers/sequelize');
 const {
@@ -104,9 +103,6 @@ async function getAllCustomersProductionLinesCurrentShift(req, res) {
     let lineResults = [];
     // execute sql query to the db
     const productionLines = await services.ProductionLines.getAllCustomersProductionLines();
-    if (_.isEmpty(productionLines)) {
-      return res.json(linesInformation);
-    }
     logger.debug('Production line by customer = %o', productionLines);
     if (libs.isArray(productionLines) && !!productionLines) {
       // eslint-disable-next-line no-restricted-syntax
@@ -132,8 +128,11 @@ async function getAllCustomersProductionLinesCurrentShift(req, res) {
     logger.debug('Lines live stats=%o', linesInformation);
     return res.json(linesInformation);
   } catch (error) {
-    logError('Error in getProductionLinesPerCustomerCurrentShift', error.stack);
-    return internalServerError('Internal server error', res);
+    logError('Error in getProductionLinesPerCustomerCurrentShift', error);
+    return internalServerError(
+      Object.prototype.hasOwnProperty.call(error, 'message') ? error.message : error,
+      res
+    );
   }
 }
 module.exports.getValidationResultsPerHour = getValidationResultsPerHour;
