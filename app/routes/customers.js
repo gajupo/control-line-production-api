@@ -1,12 +1,15 @@
 const express = require('express');
 const { getCustomerList, getCustomerLogoAsBase64 } = require('../controllers/customer');
+const {auth} = require('../middleware/auth');
+const authorize = require('../middleware/authorize');
+const {Role} = require('./../helpers/role');
 
 const router = express.Router();
 
 /**
  * GET /api/customers
  */
-router.get('/', async (req, res, next) => {
+router.get('/',[auth, authorize([Role.Administrador])], async (req, res, next) => {
   await getCustomerList(res, next);
 });
 /**
