@@ -8,21 +8,19 @@ function authorize(roles = []) {
         roles = [roles];
     }
 
-        // authorize based on user role
-      return (req, res, next) => {
-            if (!containsAny(roles, req.user.rolId)) {
-                // user's role is not authorized
-                return res.status(403).send('Access Denied');
-            }
-
-            // authentication and authorization successful
-            next();
+    // authorize based on user role
+    return (req, res, next) => {
+        if (!containsAny(roles, req.user.rolId)) {
+            // user's role is not authorized
+            return res.status(403).send('Access Denied');
         }
+        // authentication and authorization successful
+        next();
+    }
 }
 
-function containsAny(source,target)
-{
-    var result = source.find( rol => rol === target );
+function containsAny(source, target) {
+    const result = source.find(rol => rol === target);
     //var result = source.filter(function(item){ return target.indexOf(item) > -1});   
-    return result ? true : false;  
+    return result ? true : false;
 } 
