@@ -14,6 +14,7 @@ const Supplier = require('./supplier');
 const Material = require('./material');
 const ValidationResult = require('./validation-result');
 const ProductionLineShiftHistory = require('./production-line-shift-history');
+const UserCustomer = require('./user-customer');
 
 const {
   ReportParameterSchema, validateModelId, validateOrderParameters,
@@ -36,7 +37,8 @@ Order.belongsTo(ProductionLine, {
   foreignKey: 'ProductionLineId',
 });
 
-Customer.hasOne(ProductionLine, {
+Customer.hasMany(ProductionLine, {
+  as: 'lineas',
   foreignKey: 'CustomerId',
 });
 ProductionLine.belongsTo(Customer, {
@@ -201,6 +203,20 @@ Material.belongsTo(Customer, {
   foreignKey: 'CustomerId',
 });
 
+Customer.hasMany(UserCustomer, {
+  foreignKey: 'CustomerId',
+});
+ProductionLine.hasMany(UserCustomer, {
+  foreignKey: 'ProductionLineId',
+});
+User.hasMany(UserCustomer, {
+  foreignKey: 'UserId',
+});
+
+UserCustomer.belongsTo(Customer, {foreignKey: 'CustomerId'}); // Adds fk_CustomerId to UserCustomer
+UserCustomer.belongsTo(ProductionLine, {as: 'lineas',foreignKey: 'ProductionLineId'}); // Adds fk_ProductionLineId to UserCustomer
+UserCustomer.belongsTo(User, {foreignKey: 'UserId'}); // Adds fk_UserId to UserCustomer
+
 module.exports.Order = Order;
 module.exports.ProductionLine = ProductionLine;
 module.exports.OperatingStation = OperatingStation;
@@ -213,6 +229,7 @@ module.exports.StopCause = StopCause;
 module.exports.Supplier = Supplier;
 module.exports.Material = Material;
 module.exports.ValidationResult = ValidationResult;
+module.exports.UserCustomer = UserCustomer;
 module.exports.ReportParameterSchema = ReportParameterSchema;
 module.exports.validateModelId = validateModelId;
 module.exports.validatePaginationPage = validateModelId;
