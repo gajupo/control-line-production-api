@@ -9,8 +9,8 @@ const router = express.Router();
 /**
  * GET /api/customers
  */
-router.get('/',[auth, authorize([Role.Administrador])], async (req, res, next) => {
-  await getCustomerList(res, next);
+router.get('/',[auth, authorize([Role.Administrador,Role.Supervisor])], async (req, res, next) => {
+  await getCustomerList(req, res, next);
 });
 /**
  * @description
