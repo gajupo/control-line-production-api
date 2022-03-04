@@ -41,6 +41,7 @@ app.use('/api/shifts', require('./routes/shifts'));
 app.use('/api/stopcauselogs', require('./routes/stop-cause-log'));
 app.use('/api/validationresults', require('./routes/validation-results'));
 app.use('/api/unblock', require('./routes/operating-stations'));
+app.use('/api/user', require('./routes/user'));
 
 app.use(errorHandler);
 

@@ -15,6 +15,9 @@ const Material = require('./material');
 const ValidationResult = require('./validation-result');
 const ProductionLineShiftHistory = require('./production-line-shift-history');
 const UserCustomer = require('./user-customer');
+const UserSectionPermissions = require('./user-section-permissions');
+const ApplicationSections = require('./application-sections');
+const SectionTypes = require('./section-types');
 
 const {
   ReportParameterSchema, validateModelId, validateOrderParameters,
@@ -217,6 +220,22 @@ UserCustomer.belongsTo(Customer, {foreignKey: 'CustomerId'}); // Adds fk_Custome
 UserCustomer.belongsTo(ProductionLine, {as: 'lineas',foreignKey: 'ProductionLineId'}); // Adds fk_ProductionLineId to UserCustomer
 UserCustomer.belongsTo(User, {foreignKey: 'UserId'}); // Adds fk_UserId to UserCustomer
 
+SectionTypes.hasMany(ApplicationSections, {
+  foreignKey: 'SectionTypeId',
+});
+
+ApplicationSections.hasMany(UserSectionPermissions,{
+  foreignKey: 'ApplicationSectionId',
+});
+
+UserType.hasMany(UserSectionPermissions,{
+  foreignKey: 'UserTypeId',
+});
+
+ApplicationSections.belongsTo(SectionTypes, {foreignKey: 'SectionTypeId'}); // Adds fk_CustomerId to UserCustomer
+UserSectionPermissions.belongsTo(ApplicationSections, {foreignKey: 'ApplicationSectionId'}); // Adds fk_ProductionLineId to UserCustomer
+UserSectionPermissions.belongsTo(UserType, {foreignKey: 'UserTypeId'}); // Adds fk_UserId to UserCustomer
+
 module.exports.Order = Order;
 module.exports.ProductionLine = ProductionLine;
 module.exports.OperatingStation = OperatingStation;
@@ -230,6 +249,9 @@ module.exports.Supplier = Supplier;
 module.exports.Material = Material;
 module.exports.ValidationResult = ValidationResult;
 module.exports.UserCustomer = UserCustomer;
+module.exports.UserSectionPermissions = UserSectionPermissions;
+module.exports.ApplicationSections = ApplicationSections;
+module.exports.SectionTypes = SectionTypes;
 module.exports.ReportParameterSchema = ReportParameterSchema;
 module.exports.validateModelId = validateModelId;
 module.exports.validatePaginationPage = validateModelId;
