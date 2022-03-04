@@ -6,21 +6,35 @@ const { internalServerError } = require('./core');
 // eslint-disable-next-line no-unused-vars
 async function getCustomerList(req, res, next) {
   try {
-    const customers = await Customer.findAll({
-      attributes: [['Id','id'],['CustomerName', 'customerName']],
-      include:[{
-        model: UserCustomer,
-        attributes:[],
-        where: { userId: req.user.userId },
-      },{
-        as: 'lineas',
-        model: ProductionLine,
-        attributes: ['id', ['lineName', 'LineName']],
-      }]
-    });
-    /*const customers = await Customer.findAll({
-      attributes: ['id', 'customerNumber', 'customerName'],
-    });*/
+    let customers;
+    //If rol it's administrator return all customers and lines
+    if (req.user.rolId == 1) {
+       customers = await Customer.findAll({
+        attributes: [['Id', 'id'], ['CustomerName', 'customerName']],
+        include: [{
+          as: 'lineas',
+          model: ProductionLine,
+          attributes: ['id', ['lineName', 'LineName']],
+        }]
+      });
+    //if rol it's supervisor return only customers and lines, associates in UserCustomers  
+    }else if(req.user.rolId == 2){
+      customers = await Customer.findAll({
+        attributes: [['Id', 'id'], ['CustomerName', 'customerName']],
+        include: [{
+          model: UserCustomer,
+          attributes: [],
+          where: { userId: req.user.userId },
+        }, {
+          as: 'lineas',
+          model: ProductionLine,
+          attributes: ['id', ['lineName', 'LineName']],
+        }]
+      });
+    }else{
+      logger.debug('Rol id not valid for resquested this end point');
+      throw new Error("Rol id not valid for resquested this end point");
+    }
     logger.debug('Customer found ', customers);
     return res.json(customers);
   } catch (error) {
