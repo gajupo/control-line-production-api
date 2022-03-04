@@ -1,4 +1,7 @@
 const express = require('express');
+const {auth} = require('../middleware/auth');
+const authorize = require('../middleware/authorize');
+const {Role} = require('./../helpers/role');
 const {
   getValidationResultsPerHour,
   getAllCustomersProductionLinesCurrentShift,
@@ -24,7 +27,7 @@ router.post('/perhour', async (req, res) => {
  * Returns an array of line with its related information about production
  * GET /api/productionlines/shift/customer/15
  */
-router.get('/allcustomerslines', async (req, res) => {
+router.get('/allcustomerslines',[auth, authorize([Role.Administrador,Role.Supervisor])], async (req, res) => {
   await getAllCustomersProductionLinesCurrentShift(req, res);
 });
 module.exports = router;

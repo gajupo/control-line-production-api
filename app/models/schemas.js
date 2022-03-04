@@ -1,5 +1,12 @@
 const Joi = require('joi');
 
+const UserParameterSchema = Joi.object({
+  userId: Joi.number().positive().required(),
+  userName: Joi.string().required(),
+  name: Joi.string().required(),
+  rolId: Joi.number().positive().required(),
+})
+
 const PageParameterSchema = Joi.object({
   page: Joi.number().integer().positive().required(),
 });
