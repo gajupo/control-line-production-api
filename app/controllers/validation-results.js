@@ -102,7 +102,7 @@ async function getAllCustomersProductionLinesCurrentShift(req, res) {
     const lineResultsPromises = [];
     let lineResults = [];
     // execute sql query to the db
-    const productionLines = await services.ProductionLines.getAllCustomersProductionLines();
+    const productionLines = await services.ProductionLines.getAllCustomersProductionLines(req);
     logger.debug('Production line by customer = %o', productionLines);
     if (libs.isArray(productionLines) && !!productionLines) {
       // eslint-disable-next-line no-restricted-syntax
