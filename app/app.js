@@ -2,6 +2,7 @@ const compression = require('compression');
 const express = require('express');
 const cors = require('cors');
 const { errorHandler } = require('./middleware/error-handler');
+const { logger } = require('./helpers/logger');
 
 const app = express();
 // catch all unhandled errors

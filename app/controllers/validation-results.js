@@ -120,7 +120,7 @@ async function getAllCustomersProductionLinesCurrentShift(req, res) {
           // calculate rate and scanned materials by hour
           linesInformation.push(services.ValidationResults.computeLineProductionLive(lineProduction, lineInfo));
         } else {
-          logMessage('NO ROWS FOUND', 'The Production Line does not have scanned material in the current shift');
+          logger.debug(`NO ROWS FOUND, The Production Line ${lineInfo.LineName} does not have scanned material in the current shift`);
           linesInformation.push(services.ProductionLines.transformProductionLineDefault(lineInfo));
         }
       }
