@@ -594,12 +594,10 @@ async function getStationsStatusByLine(lineId) {
  *  @returns an array of objects
  *  @example
  */
-async function getAllCustomersProductionLines(req) {
+async function getAllCustomersProductionLines() {
   try {
-    let productionLinesCurrentShift;
-    if (req.user.rolId == 1) {
-      productionLinesCurrentShift = await sequelize.query(
-        `SELECT
+    const productionLinesCurrentShift = await sequelize.query(
+      `SELECT
             ProductionLineShifts.ShiftId,
             Shifts.ShiftDescription,
             Shifts.ShiftStartStr, 
@@ -655,86 +653,97 @@ async function getAllCustomersProductionLines(req) {
           plsHisotiries.ShiftStartDateTime,
           plsHisotiries.ShiftEndDateTime,
           Shifts.ShiftDescription`,
-        {
-          bind: {},
-          raw: true,
-          type: QueryTypes.SELECT,
-        }
-      );
-    }else if(req.user.rolId == 2){
-      productionLinesCurrentShift = await sequelize.query(
-        `SELECT
-            ProductionLineShifts.ShiftId,
-            Shifts.ShiftDescription,
-            Shifts.ShiftStartStr, 
-            Shifts.ShiftEndStr, 
-            ProductionLineShifts.ProductionLineId,
-            ProductionLines.Status as Active,
-            ProductionLines.LineName,
-            Customers.Id as CustomerId,
-            Customers.CustomerName, 
-            count(OperatingStations.Id) as [NumberOfStations],
-            (case when (count(OperatingStations.id) = count(stopEvents.StationId) and count(OperatingStations.id) > 0) then 1 else 0 end) as isBlocked,
-            convert(varchar , plsHisotiries.ShiftStartDateTime, 20) as ShiftStartedDateTime,
-            convert(varchar , plsHisotiries.ShiftEndDateTime, 20) as ShiftEndDateTime
-      FROM UserCustomers
-        inner join ProductionLines on UserCustomers.ProductionLineId = ProductionLines.Id
-        inner join Customers on ProductionLines.CustomerId = Customers.Id
-        inner join ProductionLineShifts on ProductionLines.Id = ProductionLineShifts.ProductionLineId
-        inner join Shifts on Shifts.Id = ProductionLineShifts.ShiftId and Shifts.Active = 1 
-        inner join OperatingStations on OperatingStations.LineId = ProductionLines.Id and OperatingStations.Status = 1
-        inner join (
-            select 
-            ProductionLineShiftHistories.ProductionLineId, 
-            ProductionLineShiftHistories.ShiftId, 
-            convert(varchar ,max(ProductionLineShiftHistories.ShiftStartDateTime), 20) as [ShiftStartDateTime],
-            convert(varchar ,max(ProductionLineShiftHistories.ShiftEndDateTime), 20) as ShiftEndDateTime
-            from ProductionLineShiftHistories 
-            where 
-            CONVERT(datetime, getdate()) >= CONVERT(datetime, ProductionLineShiftHistories.ShiftStartDateTime)
-            and CONVERT(datetime, getdate()) <= CONVERT(datetime, ProductionLineShiftHistories.ShiftEndDateTime)
-            group by 
-            ProductionLineShiftHistories.ProductionLineId,
-            ProductionLineShiftHistories.ShiftId
-        ) as plsHisotiries on plsHisotiries.ProductionLineId = ProductionLines.Id and plsHisotiries.ShiftId = Shifts.id
-        left join (
-            select 
-              StopCauseLogs.StationId
-            from StopCauseLogs 
-            inner join OperatingStations  on 
-              StopCauseLogs.StationId = OperatingStations.Id 
-              and StopCauseLogs.status = 1
-            group by StopCauseLogs.StationId
-      ) as stopEvents on stopEvents.StationId = OperatingStations.Id
-      WHERE 
-            UserCustomers.UserId = $userId and
-            ProductionLines.Status = 1
-      GROUP BY 
-          Shifts.ShiftStartStr, 
-          Shifts.ShiftEndStr, 
-          ProductionLineShifts.ProductionLineId,
-          ProductionLines.Status,
-          ProductionLines.LineName,
-          Customers.Id,
-          Customers.CustomerName,
-          ProductionLineShifts.ShiftId,
-          plsHisotiries.ShiftStartDateTime,
-          plsHisotiries.ShiftEndDateTime,
-          Shifts.ShiftDescription`,
-        {
-          // eslint-disable-next-line object-shorthand
-          bind: { userId: req.user.userId },
-          raw: true,
-          type: QueryTypes.SELECT,
-        }
-      );
-    }
+      {
+        bind: {},
+        raw: true,
+        type: QueryTypes.SELECT,
+      }
+    );
     const valResult = models.validateLinesAndShifts(productionLinesCurrentShift);
     if (valResult.isValid) {
       logger.debug('all customers and its production line information= %o', productionLinesCurrentShift);
       return productionLinesCurrentShift;
     }
     logger.error('getAllCustomersProductionLines - %o', valResult);
+    throw new Error('Unable to find a valid shift for the registered lines');
+  } catch (error) {
+    throw new Error(error);
+  }
+}
+async function getAllCustomersProductionLinesByUserId(parameters) {
+  try {
+    const productionLinesCurrentShift = await sequelize.query(
+      `SELECT
+        ProductionLineShifts.ShiftId,
+        Shifts.ShiftDescription,
+        Shifts.ShiftStartStr, 
+        Shifts.ShiftEndStr, 
+        ProductionLineShifts.ProductionLineId,
+        ProductionLines.Status as Active,
+        ProductionLines.LineName,
+        Customers.Id as CustomerId,
+        Customers.CustomerName, 
+        count(OperatingStations.Id) as [NumberOfStations],
+        (case when (count(OperatingStations.id) = count(stopEvents.StationId) and count(OperatingStations.id) > 0) then 1 else 0 end) as isBlocked,
+        convert(varchar , plsHisotiries.ShiftStartDateTime, 20) as ShiftStartedDateTime,
+        convert(varchar , plsHisotiries.ShiftEndDateTime, 20) as ShiftEndDateTime
+  FROM UserCustomers
+    inner join ProductionLines on UserCustomers.ProductionLineId = ProductionLines.Id
+    inner join Customers on ProductionLines.CustomerId = Customers.Id
+    inner join ProductionLineShifts on ProductionLines.Id = ProductionLineShifts.ProductionLineId
+    inner join Shifts on Shifts.Id = ProductionLineShifts.ShiftId and Shifts.Active = 1 
+    inner join OperatingStations on OperatingStations.LineId = ProductionLines.Id and OperatingStations.Status = 1
+    inner join (
+        select 
+        ProductionLineShiftHistories.ProductionLineId, 
+        ProductionLineShiftHistories.ShiftId, 
+        convert(varchar ,max(ProductionLineShiftHistories.ShiftStartDateTime), 20) as [ShiftStartDateTime],
+        convert(varchar ,max(ProductionLineShiftHistories.ShiftEndDateTime), 20) as ShiftEndDateTime
+        from ProductionLineShiftHistories 
+        where 
+        CONVERT(datetime, getdate()) >= CONVERT(datetime, ProductionLineShiftHistories.ShiftStartDateTime)
+        and CONVERT(datetime, getdate()) <= CONVERT(datetime, ProductionLineShiftHistories.ShiftEndDateTime)
+        group by 
+        ProductionLineShiftHistories.ProductionLineId,
+        ProductionLineShiftHistories.ShiftId
+    ) as plsHisotiries on plsHisotiries.ProductionLineId = ProductionLines.Id and plsHisotiries.ShiftId = Shifts.id
+    left join (
+        select 
+          StopCauseLogs.StationId
+        from StopCauseLogs 
+        inner join OperatingStations  on 
+          StopCauseLogs.StationId = OperatingStations.Id 
+          and StopCauseLogs.status = 1
+        group by StopCauseLogs.StationId
+  ) as stopEvents on stopEvents.StationId = OperatingStations.Id
+  WHERE 
+        UserCustomers.UserId = $userId and
+        ProductionLines.Status = 1
+  GROUP BY 
+      Shifts.ShiftStartStr, 
+      Shifts.ShiftEndStr, 
+      ProductionLineShifts.ProductionLineId,
+      ProductionLines.Status,
+      ProductionLines.LineName,
+      Customers.Id,
+      Customers.CustomerName,
+      ProductionLineShifts.ShiftId,
+      plsHisotiries.ShiftStartDateTime,
+      plsHisotiries.ShiftEndDateTime,
+      Shifts.ShiftDescription`,
+      {
+      // eslint-disable-next-line object-shorthand
+        bind: { userId: parameters.UserId },
+        raw: true,
+        type: QueryTypes.SELECT,
+      }
+    );
+    const valResult = models.validateLinesAndShifts(productionLinesCurrentShift);
+    if (valResult.isValid) {
+      logger.debug('all customers and its production line information= %o', productionLinesCurrentShift);
+      return productionLinesCurrentShift;
+    }
+    logger.error('getAllCustomersProductionLinesByUserId - %o', valResult);
     throw new Error('Unable to find a valid shift for the registered lines');
   } catch (error) {
     throw new Error(error);
@@ -757,3 +766,4 @@ module.exports.formatProductionLineLiveStats = formatProductionLineLiveStats;
 module.exports.getCurrentProductionByRate = getCurrentProductionByRate;
 module.exports.getStationsStatusByLine = getStationsStatusByLine;
 module.exports.getAllCustomersProductionLines = getAllCustomersProductionLines;
+module.exports.getAllCustomersProductionLinesByUserId = getAllCustomersProductionLinesByUserId;

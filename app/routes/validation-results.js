@@ -1,10 +1,11 @@
 const express = require('express');
-const {auth} = require('../middleware/auth');
+const { auth } = require('../middleware/auth');
 const authorize = require('../middleware/authorize');
-const {Role} = require('./../helpers/role');
+const { Role } = require('../helpers/role');
 const {
   getValidationResultsPerHour,
   getAllCustomersProductionLinesCurrentShift,
+  getAllCustomersProductionLinesCurrentShiftByUserId,
 } = require('../controllers/validation-results');
 
 const router = express.Router();
@@ -27,7 +28,17 @@ router.post('/perhour', async (req, res) => {
  * Returns an array of line with its related information about production
  * GET /api/productionlines/shift/customer/15
  */
-router.get('/allcustomerslines',[auth, authorize([Role.Administrador,Role.Supervisor])], async (req, res) => {
-  await getAllCustomersProductionLinesCurrentShift(req, res);
+router.get('/allcustomerslines', [auth, authorize([Role.Administrador, Role.Supervisor])], async (req, res) => {
+  const parameters = {
+    UserId: req.user.userId,
+    RolId: req.user.rolId,
+    UserName: req.user.userName,
+    Name: req.user.name,
+  };
+  if (parameters.RolId === Role.Administrador) {
+    await getAllCustomersProductionLinesCurrentShift(res);
+  } else {
+    await getAllCustomersProductionLinesCurrentShiftByUserId(parameters, res);
+  }
 });
 module.exports = router;

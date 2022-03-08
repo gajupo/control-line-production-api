@@ -7,7 +7,7 @@ const services = require('../services');
 const libs = require('../helpers/lib');
 const { getDatePartConversion } = require('../helpers/sequelize');
 const {
-  Order, Material, validateHourByHourReportParams, badRequestError,
+  Order, Material, validateHourByHourReportParams, badRequestError, validateCustomerListParams,
 } = require('../models');
 /**
  * @description
@@ -96,13 +96,13 @@ async function getProductionRatePerHourImpl(params) {
  * @returns object array
  * @example
  */
-async function getAllCustomersProductionLinesCurrentShift(req, res) {
+async function getAllCustomersProductionLinesCurrentShift(res) {
   try {
     const linesInformation = [];
     const lineResultsPromises = [];
     let lineResults = [];
     // execute sql query to the db
-    const productionLines = await services.ProductionLines.getAllCustomersProductionLines(req);
+    const productionLines = await services.ProductionLines.getAllCustomersProductionLines();
     logger.debug('Production line by customer = %o', productionLines);
     if (libs.isArray(productionLines) && !!productionLines) {
       // eslint-disable-next-line no-restricted-syntax
@@ -135,5 +135,50 @@ async function getAllCustomersProductionLinesCurrentShift(req, res) {
     );
   }
 }
+async function getAllCustomersProductionLinesCurrentShiftByUserId(parameters, res) {
+  try {
+    logger.debug('params sent on getAllCustomersProductionLinesCurrentShiftByUserId', parameters);
+    const parametersValidated = validateCustomerListParams(parameters);
+    if (!parametersValidated.isValid) {
+      return badRequestError('Invalid parameters passed to getCustomerListByUserId', res, parametersValidated.errorList);
+    }
+    const linesInformation = [];
+    const lineResultsPromises = [];
+    let lineResults = [];
+    // execute sql query to the db
+    const productionLines = await services.ProductionLines.getAllCustomersProductionLinesByUserId(parameters);
+    logger.debug('Production line by customer = %o', productionLines);
+    if (libs.isArray(productionLines) && !!productionLines) {
+      // eslint-disable-next-line no-restricted-syntax
+      for (const lineInfo of productionLines) {
+        lineResultsPromises.push(services.ValidationResults.getValidationResultsPerLine(lineInfo));
+      }
+      // await all calls
+      lineResults = await Promise.all(lineResultsPromises);
+      for (let index = 0; index < lineResults.length; index++) {
+        const lineProduction = _.without(lineResults[index], 'lineInfo');
+        // eslint-disable-next-line prefer-destructuring
+        const lineInfo = lineResults[index].lineInfo;
+        logger.debug('Orders by line =%o', lineResults);
+        if (!_.isEmpty(lineResults[index])) {
+          // calculate rate and scanned materials by hour
+          linesInformation.push(services.ValidationResults.computeLineProductionLive(lineProduction, lineInfo));
+        } else {
+          logMessage('NO ROWS FOUND', 'The Production Line does not have scanned material in the current shift');
+          linesInformation.push(services.ProductionLines.transformProductionLineDefault(lineInfo));
+        }
+      }
+    }
+    logger.debug('Lines live stats=%o', linesInformation);
+    return res.json(linesInformation);
+  } catch (error) {
+    logError('Error in getAllCustomersProductionLinesCurrentShiftByUserId', error);
+    return internalServerError(
+      Object.prototype.hasOwnProperty.call(error, 'message') ? error.message : error,
+      res
+    );
+  }
+}
 module.exports.getValidationResultsPerHour = getValidationResultsPerHour;
 module.exports.getAllCustomersProductionLinesCurrentShift = getAllCustomersProductionLinesCurrentShift;
+module.exports.getAllCustomersProductionLinesCurrentShiftByUserId = getAllCustomersProductionLinesCurrentShiftByUserId;
