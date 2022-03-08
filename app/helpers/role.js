@@ -1,5 +1,5 @@
 module.exports.Role = {
-    Administrador: 1,
-    Supervisor: 2,
-    Operador: 3
-}
+  Administrador: 1,
+  Supervisor: 2,
+  Operador: 3,
+};
