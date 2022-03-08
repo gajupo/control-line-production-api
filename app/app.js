@@ -6,7 +6,7 @@ const { errorHandler } = require('./middleware/error-handler');
 const app = express();
 // catch all unhandled errors
 require('./helpers/unhandledErrors');
-const { morganMiddleware } = require('./helpers/logger');
+const { morganMiddleware, logger } = require('./helpers/logger');
 
 // apply the middleware
 app.use(morganMiddleware);
