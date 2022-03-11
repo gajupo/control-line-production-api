@@ -14,12 +14,16 @@ const Supplier = require('./supplier');
 const Material = require('./material');
 const ValidationResult = require('./validation-result');
 const ProductionLineShiftHistory = require('./production-line-shift-history');
+const UserCustomer = require('./user-customer');
+const UserSectionPermissions = require('./user-section-permissions');
+const ApplicationSections = require('./application-sections');
+const SectionTypes = require('./section-types');
 
 const {
   ReportParameterSchema, validateModelId, validateOrderParameters,
   validateLineParameters, validateLinePerCustomerParameters,
   validateReportParameters, validateLinesAndShifts, validateHourByHourReportParams,
-  validateLinesDashboradParams,
+  validateLinesDashboradParams, validateCustomerListParams,
 } = require('./schemas');
 
 ProductionLine.hasMany(OperatingStation, {
@@ -36,7 +40,8 @@ Order.belongsTo(ProductionLine, {
   foreignKey: 'ProductionLineId',
 });
 
-Customer.hasOne(ProductionLine, {
+Customer.hasMany(ProductionLine, {
+  as: 'lineas',
   foreignKey: 'CustomerId',
 });
 ProductionLine.belongsTo(Customer, {
@@ -201,6 +206,36 @@ Material.belongsTo(Customer, {
   foreignKey: 'CustomerId',
 });
 
+Customer.hasMany(UserCustomer, {
+  foreignKey: 'CustomerId',
+});
+ProductionLine.hasMany(UserCustomer, {
+  foreignKey: 'ProductionLineId',
+});
+User.hasMany(UserCustomer, {
+  foreignKey: 'UserId',
+});
+
+UserCustomer.belongsTo(Customer, { foreignKey: 'CustomerId' }); // Adds fk_CustomerId to UserCustomer
+UserCustomer.belongsTo(ProductionLine, { as: 'lineas', foreignKey: 'ProductionLineId' }); // Adds fk_ProductionLineId to UserCustomer
+UserCustomer.belongsTo(User, { foreignKey: 'UserId' }); // Adds fk_UserId to UserCustomer
+
+SectionTypes.hasMany(ApplicationSections, {
+  foreignKey: 'SectionTypeId',
+});
+
+ApplicationSections.hasMany(UserSectionPermissions, {
+  foreignKey: 'ApplicationSectionId',
+});
+
+UserType.hasMany(UserSectionPermissions, {
+  foreignKey: 'UserTypeId',
+});
+
+ApplicationSections.belongsTo(SectionTypes, { foreignKey: 'SectionTypeId' }); // Adds fk_CustomerId to UserCustomer
+UserSectionPermissions.belongsTo(ApplicationSections, { foreignKey: 'ApplicationSectionId' }); // Adds fk_ProductionLineId to UserCustomer
+UserSectionPermissions.belongsTo(UserType, { foreignKey: 'UserTypeId' }); // Adds fk_UserId to UserCustomer
+
 module.exports.Order = Order;
 module.exports.ProductionLine = ProductionLine;
 module.exports.OperatingStation = OperatingStation;
@@ -213,6 +248,10 @@ module.exports.StopCause = StopCause;
 module.exports.Supplier = Supplier;
 module.exports.Material = Material;
 module.exports.ValidationResult = ValidationResult;
+module.exports.UserCustomer = UserCustomer;
+module.exports.UserSectionPermissions = UserSectionPermissions;
+module.exports.ApplicationSections = ApplicationSections;
+module.exports.SectionTypes = SectionTypes;
 module.exports.ReportParameterSchema = ReportParameterSchema;
 module.exports.validateModelId = validateModelId;
 module.exports.validatePaginationPage = validateModelId;
@@ -224,3 +263,4 @@ module.exports.validateLinesAndShifts = validateLinesAndShifts;
 module.exports.ProductionLineShiftHistory = ProductionLineShiftHistory;
 module.exports.validateHourByHourReportParams = validateHourByHourReportParams;
 module.exports.validateLinesDashboradParams = validateLinesDashboradParams;
+module.exports.validateCustomerListParams = validateCustomerListParams;

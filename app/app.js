@@ -7,7 +7,7 @@ const { logger } = require('./helpers/logger');
 const app = express();
 // catch all unhandled errors
 require('./helpers/unhandledErrors');
-const { morganMiddleware } = require('./helpers/logger');
+const { morganMiddleware, logger } = require('./helpers/logger');
 
 // apply the middleware
 app.use(morganMiddleware);
@@ -42,6 +42,7 @@ app.use('/api/shifts', require('./routes/shifts'));
 app.use('/api/stopcauselogs', require('./routes/stop-cause-log'));
 app.use('/api/validationresults', require('./routes/validation-results'));
 app.use('/api/unblock', require('./routes/operating-stations'));
+app.use('/api/user', require('./routes/user'));
 
 app.use(errorHandler);
 

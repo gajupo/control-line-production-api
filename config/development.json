@@ -6,6 +6,7 @@
         "name": "SimplProd",
         "user": "sa",
         "password":"sysadmin1"
-    }
+    },
+    "idp": "simpl-identity-provider:3010"
 }
  
