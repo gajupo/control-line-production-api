@@ -1,6 +1,6 @@
 {
     "name": "simpl-dashboard-api",
     "script": "www.js",
-    "instances": "2",
+    "instances": "3",
     "node_args": "--max_old_space_size=1024"
 }
