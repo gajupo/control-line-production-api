@@ -67,6 +67,7 @@ const transports = [
   // create a logging target for debug logs
   new winston.transports.Console({
     level: 'debug',
+    name: 'consoleinfo',
     // specify format for the target
     format: winston.format.combine(
       // process only debug logs
