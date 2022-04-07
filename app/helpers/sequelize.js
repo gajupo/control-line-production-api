@@ -23,7 +23,7 @@ const sequelize = new Sequelize(
       },
     },
     pool: {
-      max: 10,
+      max: 30,
       idle: 30000,
       acquire: 60000,
     },
