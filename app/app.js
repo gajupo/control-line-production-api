@@ -2,7 +2,6 @@ const compression = require('compression');
 const express = require('express');
 const cors = require('cors');
 const { errorHandler } = require('./middleware/error-handler');
-const { logger } = require('./helpers/logger');
 
 const app = express();
 // catch all unhandled errors
@@ -43,6 +42,7 @@ app.use('/api/stopcauselogs', require('./routes/stop-cause-log'));
 app.use('/api/validationresults', require('./routes/validation-results'));
 app.use('/api/unblock', require('./routes/operating-stations'));
 app.use('/api/user', require('./routes/user'));
+app.use('/api/usertype', require('./routes/user-types'));
 
 app.use(errorHandler);
 
