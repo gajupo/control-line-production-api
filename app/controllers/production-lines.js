@@ -1,7 +1,5 @@
 const _ = require('lodash');
-const datefns = require('date-fns');
-const { utcToZonedTime } = require('date-fns-tz');
-const { logError, logMessage, logger } = require('../helpers/logger');
+const { logError, logger } = require('../helpers/logger');
 const services = require('../services');
 const libs = require('../helpers/lib');
 const { internalServerError, badRequestError } = require('./core');
