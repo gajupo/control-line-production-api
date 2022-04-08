@@ -1,5 +1,7 @@
 # Tell Docker to use the "node" Docker Image at version "lts-slim"
 FROM node:14.19.1-slim
+# pm2 module to spawn multiple node process
+RUN npm install pm2 -g
 #install curl for dev tasks
 RUN apt-get update && apt-get install -y curl && apt install -y telnet
 # Create our containers WORKDIR and "node_modules" directory.
@@ -13,8 +15,6 @@ COPY package*.json ./
 USER node
 # Installs our NPM packages from the "package.json" file we moved from local in to our container
 RUN npm install
-# pm2 module to spawn multiple node process
-RUN npm install pm2 -g
 # Tells our container who owns the copied content
 COPY --chown=node:node . .
 # Port for production environments
