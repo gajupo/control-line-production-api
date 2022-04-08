@@ -2,8 +2,9 @@
 const config = require('config');
 const axios =require('axios');
 
+const hostIdp = config.get('idp');
 const httpClient = axios.create({
-    baseURL: config.get('idp'),
+    baseURL: hostIdp,
     headers: {
         'Content-Type': 'application/json',
         
@@ -11,7 +12,6 @@ const httpClient = axios.create({
     },
     //timeout: 15000
 });
-
 // interceptor to catch errors
 const errorInterceptor = error => {
     console.log('error on interceptor', error);
