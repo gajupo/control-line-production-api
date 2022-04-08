@@ -1,12 +1,12 @@
 {
     "name": "simpl dashboard api - development",
     "database": {
-        "host": "192.168.0.102",
+        "host": "192.168.0.196",
         "port": "1433",
         "name": "SimplProd",
         "user": "sa",
         "password":"sysadmin1"
     },
-    "idp": "simpl-identity-provider:3010"
+    "idp": "http://simpl-identity-provider:3000"
 }
  
