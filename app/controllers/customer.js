@@ -69,7 +69,7 @@ async function getCustomerListByUserId(parameters, res) {
         }, []);
         return customersFormatt;
       }
-      throw new Error('Error in get section permissions for the user.');
+      throw new Error('Error in getCustomerListByUserId for the user.');
     });
     logger.debug('CustomerList found ', customersList);
     return res.json(customersList);
