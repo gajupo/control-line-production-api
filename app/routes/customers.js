@@ -29,6 +29,21 @@ router.get('/', [auth, authorize([Role.Administrador, Role.Supervisor])], async 
 });
 /**
  * @description
+ * param {body} userprofile
+ * return the customers by user id from edit profile user
+ * GET /api/customers/getCustomers/
+ */
+router.post('/getCustomers/', [auth, authorize([Role.Administrador])], async (req, res) => {
+  const parameters = {
+    UserId: req.body.profile.id,
+    RolId: req.body.profile.usertype,
+    UserName: req.body.profile.username,
+    Name: req.body.profile.name,
+  };
+  await ldGetCustomerListByUserId(parameters, res);
+});
+/**
+ * @description
  * return the customer logo image as base64 string
  * GET /api/getCustomerLogo/:customerId
  */
