@@ -4,6 +4,9 @@ const {
   getProductionLine: ldGetProductionLine,
   getProductionCompliance: ldGetProductionCompliance,
 } = require('../controllers/line-dashboard');
+const {
+  getCustomerList: ldGetCustomerList,
+} = require('../controllers/customer');
 
 const router = express.Router();
 
@@ -41,5 +44,14 @@ router.get('/productionline/:customerId/:productionLineId/:shiftId/:shiftStarted
    */
 router.get('/productioncompliance/:lineId', async (req, res) => {
   await ldGetProductionCompliance(req, res);
+});
+/**
+ * @description
+ * returns all customers no auth required, used only by line dashboard
+ * GET /api/line-dashboard/customers
+ */
+// eslint-disable-next-line no-unused-vars
+router.get('/customers', async (req, res) => {
+  await ldGetCustomerList(res);
 });
 module.exports = router;
