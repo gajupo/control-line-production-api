@@ -6,6 +6,7 @@ const {
   setBulkUpdate,
   setProfileUpdateStatus,
   setProfileUpdateGeneral,
+  setCustomersLinesbyUser,
 } = require('../controllers/user');
 const { auth } = require('../middleware/auth');
 const authorize = require('../middleware/authorize');
@@ -79,5 +80,17 @@ router.post('/profileupdate', [auth, authorize([Role.Administrador])], async (re
   if (req.body.type === 2) {
     await setProfileUpdateGeneral(parameters, res);
   }
+});
+router.post('/customerslinesupdate', [auth, authorize([Role.Administrador])], async (req, res) => {
+  const parameters = {
+    UserId: req.user.userId,
+    RolId: req.user.rolId,
+    UserName: req.user.userName,
+    Name: req.user.name,
+    user: req.body.user,
+    customersDelete: req.body.customersDelete,
+    customersAdd: req.body.customersAdd,
+  };
+  await setCustomersLinesbyUser(parameters, res);
 });
 module.exports = router;
