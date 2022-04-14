@@ -12,7 +12,7 @@ const router = express.Router();
 /**
  * GET /api/usertype/usertypes
  */
-router.get('/usertypes', [auth, authorize([Role.Administrador])], async (req, res) => {
+router.get('/usertypes', [auth], async (req, res) => {
   const parameters = {
     UserId: req.user.userId,
     RolId: req.user.rolId,
