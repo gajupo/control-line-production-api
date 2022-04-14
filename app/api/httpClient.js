@@ -1,5 +1,6 @@
 const config = require('config');
 const axios = require('axios');
+const { logError } = require('../controllers/core');
 
 const hostIdp = config.get('idp');
 const httpClient = axios.create({
@@ -13,26 +14,25 @@ const httpClient = axios.create({
 });
 // interceptor to catch errors
 const errorInterceptor = (error) => {
-  console.log('error on interceptor', error);
   // check if it's a server error
   if (!error.response) {
-    console.error('Error when requesting the server');
+    logError('Error when requesting the server');
     return Promise.reject(error);
   }
 
   // all the other error responses
   switch (error.response.status) {
     case 400:
-      console.error(error.response.status, error.message);
+      logError(error.response.status, error.message);
       // notify.warn('Nothing to display','Data Not Found');
       break;
 
     case 401: // authentication error, logout the user
-      console.log('Please login again');
+      logError('Please login again');
       // router.push('/auth');
       break;
     case 404:
-      console.log('Data not found error 404 ', error.message);
+      logError('Data not found error 404 ', error.message);
       break;
     default:
         // internal server error = 500
