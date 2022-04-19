@@ -55,10 +55,10 @@ Order.belongsTo(Shift, {
   foreignKey: 'ShiftId',
 });
 
-User.hasMany(UserType, {
+User.belongsTo(UserType, {
   foreignKey: 'UserTypeId',
 });
-UserType.belongsTo(User, {
+UserType.hasMany(User, {
   foreignKey: 'UserTypeId',
 });
 
