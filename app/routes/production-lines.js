@@ -1,8 +1,10 @@
 const express = require('express');
 const {
   getProductionLines, getProductionLinesPerCustomerCurrentShift,
-  getProductionLinesPerCustomer,
+  getProductionLinesPerCustomer, getProductionLinesPerCustomerCurrentShiftByUser,
 } = require('../controllers/production-lines');
+const { auth } = require('../middleware/auth');
+const { Role } = require('../helpers/role');
 
 const router = express.Router();
 
@@ -17,8 +19,19 @@ router.get('/', async (req, res) => {
  * Returns an array of line with its related information about production
  * GET /api/productionlines/shift/customer/15
  */
-router.get('/shift/customer/:customerId', async (req, res) => {
-  await getProductionLinesPerCustomerCurrentShift(req, res);
+router.get('/shift/customer/:customerId', [auth], async (req, res) => {
+  const parameters = {
+    UserId: req.user.userId,
+    RolId: req.user.rolId,
+    UserName: req.user.userName,
+    Name: req.user.name,
+    CustomerId: req.params.customerId,
+  };
+  if (parameters.RolId === Role.Administrador) {
+    await getProductionLinesPerCustomerCurrentShift(parameters, res);
+  } else {
+    await getProductionLinesPerCustomerCurrentShiftByUser(parameters, res);
+  }
 });
 /**
    * GET /api/productionlines/customer/15

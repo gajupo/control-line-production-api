@@ -43,6 +43,7 @@ app.use('/api/validationresults', require('./routes/validation-results'));
 app.use('/api/unblock', require('./routes/operating-stations'));
 app.use('/api/user', require('./routes/user'));
 app.use('/api/usertype', require('./routes/user-types'));
+app.use('/api/applicationsection', require('./routes/application-sections'));
 
 app.use(errorHandler);
 

@@ -1,9 +1,10 @@
 const { Op } = require('sequelize');
-const { logError, logger } = require('../helpers/logger');
-const { UserSectionPermissions, ApplicationSections, User } = require('../models');
-const { internalServerError } = require('./core');
-// const { Role } = require('../helpers/role');
-// const { getKeyByValue, getStringByStatus } = require('../helpers/lib');
+const { sequelize } = require('../helpers/sequelize');
+const { logError, logMessage } = require('../helpers/logger');
+const {
+  UserSectionPermissions, ApplicationSections, User, UserCustomer,
+} = require('../models');
+const { returnError, notFoundError } = require('./core');
 
 async function getSectionPermissionsList(parameters, res) {
   try {
@@ -23,13 +24,14 @@ async function getSectionPermissionsList(parameters, res) {
       if (sections) {
         return sections.map((section) => section.sectionName);
       }
-      throw new Error('Error in get section permissions for the user.');
+      return notFoundError('Error al obtener permisos de sección para la usuario.', res);
     });
-    logger.debug('User sectionpermissions found ', sectionpermissions);
+    logMessage('User Controller sectionpermissions consumed by ', parameters);
     return res.json(sectionpermissions);
   } catch (error) {
-    logError('Error in getSectionPermissionsList', error);
-    return internalServerError('Internal server error', res);
+    logError('Error in Controller User getSectionPermissionsList details ', error, parameters);
+    logError('Error in Controller User getSectionPermissionsList compressed', error.response ? error.response.data : error.message, parameters);
+    return returnError(error, res);
   }
 }
 async function getUsersList(parameters, res) {
@@ -38,20 +40,14 @@ async function getUsersList(parameters, res) {
       raw: true,
       nest: true,
       attributes: ['id', ['userName', 'username'], 'name', ['firstName', 'firstname'], ['emailAddress', 'email'], 'status', ['userTypeId', 'usertype'], 'lockcode'],
-      where: { id: { [Op.ne]: parameters.UserId } },
-    });/* .then((usersList) => {
-      usersList.map((user) => {
-        // eslint-disable-next-line no-param-reassign
-        user.usertype = getKeyByValue(Role, user.usertype);
-        return user;
-      });
-      return usersList;
-    }); */
-    logger.debug('getUsersList consumed by ', parameters);
+      // where: { id: { [Op.ne]: parameters.UserId } },
+    });
+    logMessage('User Controller getUsersList consumed by ', parameters);
     return res.json(users);
   } catch (error) {
-    logError('Error in getUsersList', error);
-    return internalServerError('Internal server error', res);
+    logError('Error in Controller User getUsersList details ', error, parameters);
+    logError('Error in Controller User getUsersList compressed', error.response ? error.response.data : error.message, parameters);
+    return returnError(error, res);
   }
 }
 async function getUser(parameters, res) {
@@ -62,12 +58,12 @@ async function getUser(parameters, res) {
       attributes: ['id', ['userName', 'username'], 'name', ['firstName', 'firstname'], ['emailAddress', 'email'], 'status', ['userTypeId', 'usertype'], 'lockcode'],
       where: { id: { [Op.eq]: parameters.UserId } },
     });
-    logger.debug('getUser consumed by ', parameters);
+    logMessage('User Controller getUser consumed by ', parameters);
     return res.json(userData);
   } catch (error) {
-    logger.debug('Error in getUser ', error);
-    logError('Error in getUser', error);
-    return internalServerError('Internal server error', res);
+    logError('Error in Controller User getUser details ', error, parameters);
+    logError('Error in Controller User getUser compressed', error.response ? error.response.data : error.message, parameters);
+    return returnError(error, res);
   }
 }
 
@@ -82,12 +78,12 @@ async function setBulkUpdate(parameters, res) {
         },
       },
     });
-    logger.debug('setBulkUpdate consumed by ', parameters);
+    logMessage('User Controller setBulkUpdate consumed by ', parameters);
     return res.json(result);
   } catch (error) {
-    logger.debug('Error in setBulkUpdate ', error);
-    logError('Error in setBulkUpdate', error);
-    return internalServerError('Internal server error', res);
+    logError('Error in Controller User setBulkUpdate details ', error, parameters);
+    logError('Error in Controller User setBulkUpdate compressed', error.response ? error.response.data : error.message, parameters);
+    return returnError(error, res);
   }
 }
 
@@ -100,12 +96,12 @@ async function setProfileUpdateStatus(parameters, res) {
       returning: true,
       plain: true,
     });
-    logger.debug('setProfileUpdateStatus consumed by ', parameters);
+    logMessage('User Controller setProfileUpdateStatus consumed by ', parameters);
     return res.json(user);
   } catch (error) {
-    logger.debug('Error in setProfileUpdateStatus ', error);
-    logError('Error in setProfileUpdateStatus', error);
-    return internalServerError('Internal server error', res);
+    logError('Error in Controller User setProfileUpdateStatus details ', error, parameters);
+    logError('Error in Controller User setProfileUpdateStatus compressed', error.response ? error.response.data : error.message, parameters);
+    return returnError(error, res);
   }
 }
 async function setProfileUpdateGeneral(parameters, res) {
@@ -119,12 +115,60 @@ async function setProfileUpdateGeneral(parameters, res) {
       returning: true,
       plain: true,
     });
-    logger.debug('setProfileUpdateStatus consumed by ', parameters);
+    logMessage('User Controller setProfileUpdateGeneral consumed by ', parameters);
     return res.json(user);
   } catch (error) {
-    logger.debug('Error in setProfileUpdateStatus ', error);
-    logError('Error in setProfileUpdateStatus', error);
-    return internalServerError('Internal server error', res);
+    logError('Error in Controller User setProfileUpdateGeneral details ', error, parameters);
+    logError('Error in Controller User setProfileUpdateGeneral compressed', error.response ? error.response.data : error.message, parameters);
+    return returnError(error, res);
+  }
+}
+async function setCustomersLinesbyUser(parameters, res) {
+  const t = await sequelize.transaction();
+  try {
+    const Promises = [];
+    if (parameters.customersDelete.length > 0) {
+      for (let i = 0; i < parameters.customersDelete.length; i++) {
+        const promiseDelete = UserCustomer.destroy({
+          where: {
+            [Op.and]: [
+              { productionLineId: parameters.customersDelete[i] },
+              { userId: parameters.user.id },
+            ],
+          },
+          transaction: t,
+        });
+        Promises.push(promiseDelete);
+      }
+    }
+    if (parameters.customersAdd.length > 0) {
+      for (let i = 0; i < parameters.customersAdd.length; i++) {
+        const promiseAdd = UserCustomer.findOrCreate({
+          where: {
+            productionLineId: parameters.customersAdd[i].id,
+            userId: parameters.user.id,
+          },
+          defaults: {
+            customerId: parameters.customersAdd[i].parent,
+            productionLineId: parameters.customersAdd[i].id,
+            userId: parameters.user.id,
+          },
+          transaction: t,
+        });
+        Promises.push(promiseAdd);
+      }
+    }
+    Promise.all(Promises).then(async (result) => {
+      await t.commit();
+      logMessage('setCustomersLinesbyUser ', result);
+    });
+    logMessage('User Controller setCustomersLinesbyUser consumed by ', parameters);
+    return res.json(true);
+  } catch (error) {
+    t.rollback();
+    logError('Error in Controller User setCustomersLinesbyUser details ', error, parameters);
+    logError('Error in Controller User setCustomersLinesbyUser compressed', error.response ? error.response.data : error.message, parameters);
+    return returnError(error, res);
   }
 }
 
@@ -134,3 +178,4 @@ module.exports.getUser = getUser;
 module.exports.setBulkUpdate = setBulkUpdate;
 module.exports.setProfileUpdateStatus = setProfileUpdateStatus;
 module.exports.setProfileUpdateGeneral = setProfileUpdateGeneral;
+module.exports.setCustomersLinesbyUser = setCustomersLinesbyUser;
