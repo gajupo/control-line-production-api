@@ -30,7 +30,8 @@ function internalServerError(message, res) {
 }
 
 function returnError(error, res) {
-  res.status(error.statusCode || 500).send(error.response ? error.response.data : error.message);
+  // eslint-disable-next-line max-len
+  res.status(error.statusCode || error.response.status || 500).send(error.response ? error.response.data : error.message);
 }
 
 function badRequestError(message, res, errorList = undefined) {
