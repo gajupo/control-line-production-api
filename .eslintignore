@@ -5,5 +5,5 @@ build/*
 !build/index.js 
 dist/* 
 bundle.js 
-.*/* 
+./ 
 .*

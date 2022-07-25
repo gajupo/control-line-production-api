@@ -1,5 +1,12 @@
 const Joi = require('joi');
 
+/* const UserParameterSchema = Joi.object({
+  userId: Joi.number().positive().required(),
+  userName: Joi.string().required(),
+  name: Joi.string().required(),
+  rolId: Joi.number().positive().required(),
+}); */
+
 const PageParameterSchema = Joi.object({
   page: Joi.number().integer().positive().required(),
 });
@@ -63,6 +70,12 @@ const LineDashboardParamsSchema = Joi.object({
   ShiftStartStr: Joi.string().regex(/^([0-1]?\d|2[0-3])(?::([0-5]?\d))?(?::([0-5]?\d))?$/),
   // eslint-disable-next-line no-useless-escape
   ShiftEndStr: Joi.string().regex(/^([0-1]?\d|2[0-3])(?::([0-5]?\d))?(?::([0-5]?\d))?$/),
+});
+const CustomerListParamsSchema = Joi.object({
+  UserId: Joi.number().integer().positive().required(),
+  RolId: Joi.number().integer().positive().required(),
+  UserName: Joi.string().required(),
+  Name: Joi.string().required(),
 });
 function addMessageErrorIfNotValid(returned, error) {
   if (error) {
@@ -197,6 +210,25 @@ module.exports.validateLinesDashboradParams = function validateLinesDashboradPar
     errorList: [],
   };
   const { error } = LineDashboardParamsSchema.validate(reqParams);
+  addMessageErrorIfNotValid(returned, error);
+  return returned;
+};
+/**
+ * Validates if the query string params passed to query the customers list data are valid
+ * @param {*} reqParams
+ * @returns Object
+ * @example
+ *{
+    isValid: true || false,
+    errorList: [],
+  };
+ */
+module.exports.validateCustomerListParams = function validateCustomerListParams(reqParams) {
+  const returned = {
+    isValid: true,
+    errorList: [],
+  };
+  const { error } = CustomerListParamsSchema.validate(reqParams);
   addMessageErrorIfNotValid(returned, error);
   return returned;
 };

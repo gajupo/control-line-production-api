@@ -37,6 +37,11 @@ module.exports = sequelize.define('User', {
     allowNull: false,
     field: 'Status',
   },
+  userTypeId: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    field: 'UserTypeId',
+  },
 }, {
   tableName: 'Users',
   timestamps: false,
